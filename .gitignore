@@ -1,0 +1,27 @@
+# Zepp OS build artifacts
+/dist
+/build
+/.zeus
+
+# Zepp OS simulator & device cache
+/simulator
+/device
+/.cache
+
+# IDE & editor files
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & temporary files
+*.log
+*.tmp
+*.temp

@@ -1,0 +1,57 @@
+{
+  "configVersion": "v2",
+  "app": {
+    "appId": 20000,
+    "appName": "Empty",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.1"
+    },
+    "icon": "icon.png",
+    "vender": "zepp",
+    "description": "empty app"
+  },
+  "permissions": [],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "1.0.0",
+      "target": "1.0.1",
+      "minVersion": "1.0.0"
+    }
+  },
+  "targets": {
+    "390x450-amazfit-gts-3": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        {
+          "name": "Zurich",
+          "deviceSource": 224
+        },
+        {
+          "name": "ZurichW",
+          "deviceSource": 225
+        }
+      ],
+      "designWidth": 390
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "Empty"
+    }
+  },
+  "defaultLanguage": "en-US"
+}
