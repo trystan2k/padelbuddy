@@ -117,6 +117,13 @@ GitHub (`gh`) typical commands:
 - Close or reopen: `gh pr close <number>` / `gh pr reopen <number>`
 - Merge PR: `gh pr merge <number>`
 
+## User Confirmation Rules
+
+Before proceeding with commit or file operations:
+
+- If there are files modified by the user that are not related to the task being implemented, ask the user if those files should be committed or not.
+- DO NOT DELETE OR REVERT any file not changed by the task before confirming with the user.
+
 ## Subagent Usage (If Applicable)
 
 This subagent must not delegate to other subagents.

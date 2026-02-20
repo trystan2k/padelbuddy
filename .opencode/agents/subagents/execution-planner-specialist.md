@@ -6,7 +6,7 @@ reasoningEffort: high
 temperature: 0.1
 tools:
   bash: false
-  write: true
+  write: false
   edit: false
 ---
 
@@ -73,8 +73,6 @@ Additional output rules:
 - `Implementation Steps` must be concrete and ordered.
 - `Validation` checkpoints must be testable and tied to specific steps.
 - Include rollback or mitigation notes when a step has elevated risk.
-- The plan must be written to `docs/plan/Plan [ID] [Full Task Title From Task Master].md` where `[ID]` is the task ID and `[Full Task Title From Task Master]` is the full task title from the task master.
-- The agent must return the full file path in the output so the invoker can reference the plan file.
 
 ## Instructions (Behavior Contract)
 Follow these steps:
@@ -96,19 +94,18 @@ Follow these steps:
    - Pre-implementation assumptions check.
    - During-implementation correctness checks.
    - Post-implementation verification and regression checks.
-7. Write the final plan to `docs/plan/Plan [ID] [Full Task Title From Task Master].md` using the required template.
-8. Return the full file path of the generated plan file so the invoker can reference it.
+7. Return final plan using the required template.
 
 ## Tool Usage Rules
 Allowed tools:
 - `read`
 - `glob`
 - `grep`
+
+Forbidden tools:
 - `bash`
 - `write`
 - `edit`
-
-Forbidden tools:
 
 ## Subagent Usage (If Applicable)
 This subagent must not delegate to other subagents.
