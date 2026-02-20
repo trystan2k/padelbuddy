@@ -12,7 +12,11 @@ Key references:
 
 ## QA Gate Commands
 
-At the moment this project does not have a QA gate script to be executed, so if someone needs to run qa checks, just say it to report all ok.
+For the qa gate, run the following command:
+
+```bash
+npm run test
+```
 
 ## Feature branch naming
 
@@ -33,6 +37,17 @@ At the moment this project does not have a QA gate script to be executed, so if 
   - `feat: add user authentication`
   - `fix: resolve memory leak in score calculation`
   - `docs: update installation guide`
+
+## Tools Stack
+
+This repository uses the following tools:
+
+- **Zeus CLI**: For project scaffolding, local development, and app distribution. Use `zepp os` skill.
+- **Zepp App**: For testing and debugging on real Amazfit devices. Use `zepp os` skill.
+- **Zepp OS Simulator**: For local testing of the app on different screen sizes. Use `zepp os` skill.
+- **Node.js**: For running npm scripts and tools.
+- **npm**: Package manager for Node.js dependencies.
+- **Github**: Version control system for code collaboration. Use github-mcp when need to interact with the remote repository.
 
 ## Code Style Guidelines
 
