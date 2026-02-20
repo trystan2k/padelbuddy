@@ -1,31 +1,40 @@
 ---
 name: basic-memory
-description: "Use when an agent must create, update, or store development logs in Basic Memory with a consistent, reusable format for task implementation history."
+description: "Use when any agent must operate Basic Memory with an MCP-first approach and automatic CLI fallback for development log creation, updates, and storage with a consistent format."
 license: MIT
 compatibility: OpenCode
 metadata:
-  version: "1.0.0"
+  version: "2.0.0"
   owner: agent-skills
 ---
 
-# Basic Memory Development Logging
+# Basic Memory MCP-First Development Logging
 
 ## When to Use
 
-Use this skill when a task or subtask implementation has finished and the agent must store a development log in Basic Memory.
+Use this skill when an agent needs to execute any Basic Memory workflow through Basic Memory MCP first, with Basic Memory CLI fallback only when MCP is unavailable or fails.
+
+MCP scope for this skill:
+
+- Allowed MCP integration: `mcp_basic-memory` only.
+- Do not use any other MCP tool while executing this skill.
 
 Typical triggers:
 - "create development log"
 - "save implementation notes"
 - "store task summary in memory"
 - "record what changed for this task"
+- "update existing development log"
+- "check if log exists for task"
 
 ## Inputs
 
 Inputs:
 - Repository path.
+- Requested action intent (for example: `create`, `update`, `check-existence`, `search`).
+- Action parameters (task ID, PRD path, note title, folder path, and flags).
 - Task identifier (task ID, subtask ID, or equivalent).
-- Implementation context:
+- Implementation context (for create/update actions):
   - objective
   - files changed
   - key decisions
@@ -36,23 +45,43 @@ Inputs:
   - commit hash
   - related PR or MR
   - author or agent name
+- Safety flags when needed:
+  - `allow_install` (boolean)
+  - `confirmed` (boolean for destructive actions)
 
 If any required input is missing, stop and return a structured input error.
 
 ## Procedure
 
 Procedure:
-1. Validate and normalize the input fields.
-2. Resolve Basic Memory interface in this order:
+
+1. Attempt Basic Memory MCP first (`mcp_basic-memory`) for the requested intent.
+2. If MCP succeeds, continue with MCP for execution and verification.
+3. If MCP is unavailable or fails (missing tool, unsupported operation, transport error, timeout, permission error, or execution failure), record the failure reason and fallback to CLI.
+4. Resolve the CLI executable in this order:
    - `basic-memory`
    - `basic_memory`
-   - configured project memory wrapper command
-3. Run `<bm> --help` to confirm executable and available create or write command.
-4. Build the log body using the canonical format below.
-5. Ensure all fields are factual and derived from provided implementation context.
-6. Create the memory entry using discovered Basic Memory create command.
-7. Run a verification command to confirm persistence and obtain the entry ID.
-8. Return structured output including storage result and entry identifier.
+   - Configured project memory wrapper command
+5. Verify availability with `--version`. If missing and `allow_install` is false, fail with install guidance.
+6. Set repository context and validate whether the Basic Memory project is configured.
+7. Build a version-specific command map:
+   - Run `<bm> --help`.
+   - For the target intent, run `<bm> <subcommand> --help` before execution.
+   - Use discovered command names and flags from the installed version.
+8. Route the intent using the command catalog below.
+9. If the exact command is not available in the installed version, use the closest official alias shown in `<bm> --help`.
+10. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
+11. Build the log body using the canonical format below (for create/update actions).
+12. Ensure all fields are factual and derived from provided implementation context.
+13. Execute only Basic Memory CLI commands in fallback mode.
+14. Run post-action verification with one read command (`search-notes`, `list`, or equivalent) on the same channel used for execution (MCP or CLI).
+15. Return a structured execution report with exact commands/methods, outcomes, and an explicit `Execution Path` note (`MCP` or `CLI fallback`).
+
+MCP invocation requirements:
+
+- Use MCP tool calls (for example, write-note, search-notes, and other methods exposed by `mcp_basic-memory`) for MCP execution.
+- Never execute `mcp_basic-memory` in shell (`bash`) as if it were a binary.
+- If MCP tooling is unavailable in runtime, report the MCP tool error directly, then proceed with CLI fallback if allowed.
 
 Canonical development log format (required):
 
@@ -89,21 +118,61 @@ Canonical development log format (required):
 ## Outputs
 
 Outputs:
-- Markdown report with sections:
-  - `Logging Context`
-  - `Log Content`
-  - `Storage Result`
+
+- Markdown report with these sections in this exact order:
+  - `Preconditions`
+  - `Command Resolution`
+  - `Executed Commands`
+  - `Result Data`
+  - `Validation`
   - `Final Status`
 
-`Storage Result` must include:
-- Basic Memory command used
-- Stored entry identifier
-- Timestamp
-
 `Final Status` must be one of:
+
 - `success`
 - `partial`
 - `failed`
+
+### Command Catalog (CLI Reference)
+
+Use these commands as the default reference. Always confirm with `--help` before execution.
+
+Project bootstrap and setup:
+
+- `basic-memory project list`
+- `basic-memory project add <name> <path>`
+- `basic-memory project default <name>`
+- `basic-memory project remove <name>`
+- `basic-memory project info`
+
+Note operations:
+
+- `basic-memory tool write-note --title "<title>" --content "<content>" --project <name> --folder "<folder>"`
+- `basic-memory tool write-note --title "<title>" --project <name> --folder "<folder>"`
+- `basic-memory tool write-note --title "<title>" --tags "tag1" --tags "tag2" --project <name> --folder "<folder>"`
+- `basic-memory tool search-notes "<search-term>" --project <name>`
+
+Data import:
+
+- `basic-memory import memory-json /path/to/memory.json`
+- `basic-memory --project=<name> import claude conversations`
+
+System status:
+
+- `basic-memory status`
+- `basic-memory status --verbose`
+- `basic-memory status --json`
+- `basic-memory --version`
+
+### Intent-to-Command Routing Hints
+
+Use this mapping when parent agents provide high-level intent:
+
+- `create development log` -> `write-note` with canonical format
+- `update existing log` -> `write-note` (Basic Memory handles updates by title)
+- `check if log exists` -> `search-notes` by title
+- `search logs` -> `search-notes` with search term
+- `list all logs` -> `search-notes` or `list` (if available)
 
 ### File Naming Convention for Development Logs
 
@@ -123,24 +192,52 @@ Task [ID] [Full Task Title From Task Master].md
 ## Examples
 
 Input:
+
+- Repository: `/repo/app`
+- Action: `create`
 - Task ID: `42`
 - Objective: add retry logic for API client
 - Files changed: `src/api/client.ts`, `src/api/client.test.ts`
 - Validation: `npm test -- client.test.ts` passed
 
 Output:
-- `Logging Context`: task `42`, repository and metadata resolved.
-- `Log Content`: canonical development log generated with objective, files, decisions, validation, and follow-ups.
-- `Storage Result`: entry created via Basic Memory and ID returned.
+
+- `Preconditions`: Basic Memory executable resolved to `basic-memory`; project configured.
+- `Command Resolution`: intent `create` mapped to installed version command `<bm> tool write-note`.
+- `Executed Commands`: `<bm> tool write-note --title "Task 42 Add Retry Logic for API Client.md" --content "<log-content>" --project <name> --folder "development-logs"`.
+- `Result Data`: development log entry created.
+- `Validation`: `<bm> tool search-notes "Task 42 Add Retry Logic" --project <name>` confirms entry exists.
+- `Final Status`: `success`.
+
+Input:
+
+- Repository: `/repo/app`
+- Action: `check-existence`
+- Task ID: `15`
+
+Output:
+
+- `Preconditions`: Basic Memory executable resolved to `basic-memory`; project configured.
+- `Command Resolution`: intent `check-existence` mapped to `<bm> tool search-notes`.
+- `Executed Commands`: `<bm> tool search-notes "Task 15" --project <name>`.
+- `Result Data`: existing log entry found or not found.
+- `Validation`: search results confirm existence state.
 - `Final Status`: `success`.
 
 ## Notes and Edge Cases
 
 Notes:
+
+- Always attempt MCP first; do not start with CLI unless MCP is unavailable or has already failed for the request.
+- Treat requests that require Basic Memory MCP as valid; do not reject solely because MCP is requested.
+- Shell errors like `command not found: mcp_basic-memory` indicate incorrect invocation style, not a valid MCP availability check.
+- Command names can vary by Basic Memory version; always read `--help` first and adapt.
 - Always use the canonical format in this skill.
 - Never include secrets, API keys, tokens, or credentials.
-- If a create command is unavailable in the installed Basic Memory interface, return `failed` with exact command discovery output.
+- If a write-note command is unavailable in the installed Basic Memory interface, return `failed` with exact command discovery output.
 - If persistence succeeds but ID retrieval fails, return `partial` and include verification output.
+- **ALWAYS** check if the log already exists before creating a new one. Update if it exists, skip if no changes needed.
+- Do not create separate memories for subtasks; include subtask information as part of the parent task log.
 
 ## Essential Commands
 

@@ -4,6 +4,10 @@ mode: primary
 model: openai/gpt-5.3-codex
 temperature: 0
 tools:
+  mcp_taskmaster*: false
+  mcp_basic-memory*: false
+  mcp_github*: false
+  mcp_context7*: false
   bash: false
   write: false
   edit: false
@@ -81,7 +85,7 @@ Follow these steps in order.
    - If task is not expanded, ask `taskmaster-specialist` to expand it before implementation.
 
 2. Obtain Task Details
-   - Ask `taskmaster-specialist` for full task details, subtasks, dependencies, and acceptance criteria.
+   - Ask `taskmaster-specialist` for full task details, subtasks, dependencies, and acceptance criteria. Always pass the necessary information that the specification requires.
 
 3. Planning with Deepthink
    - Ask `execution-planner-specialist` to generate the detailed action plan using deepthink principles.
@@ -112,6 +116,7 @@ Follow these steps in order.
 10. Development Logging
     - Ask `development-log-specialist` to create and store the development log using `basic-memory` skill format.
     - Provide planning, implementation, testing, QA, and review context.
+    - Use the current project configuration in basic-memory to store the log.
 
 11. Mandatory User Approval Before Commit
     - Present the user with:
@@ -162,5 +167,7 @@ This agent must delegate all executable actions to these specialists:
 - `qa-gate-specialist` for quality gate checks.
 - `code-review-specialist` for review and improvement findings.
 - `development-log-specialist` for Basic Memory development logs.
+
+**IMPORTANT**: Always pass all required input information to specialists. Do not leave any information out.
 
 No action step may be executed directly by this orchestrator.

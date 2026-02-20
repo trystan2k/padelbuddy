@@ -28,6 +28,7 @@ At the moment this project does not have a QA gate script to be executed, so if 
 - **Format**: `[type]: [description]`
   - `type`: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
   - `description`: Brief description of the change.
+  - `task IDs`: Do not include task IDs/task numbers (for example, `PAD-001`) in commit messages unless explicitly requested.
 - **Examples**:
   - `feat: add user authentication`
   - `fix: resolve memory leak in score calculation`
@@ -40,8 +41,15 @@ At the moment this project does not have a QA gate script to be executed, so if 
 - **Naming Conventions**:
   - Files: `snake_case` or `kebab-case` generally preferred in Zepp OS projects (though some templates use `camelCase`). Follow existing project structure.
   - Variables/Functions: `camelCase`.
+- **Responsive Units Baseline**:
+  - Keep target-specific `designWidth` values in `app.json` (`454` for `gtr-3`, `390` for `gts-3`).
+  - Use responsive units for layout values (`rpx` preferred). Use `px` only when fixed physical sizing is required (for example, 1px dividers or bitmap-native asset dimensions).
 
 ## Stack used
+
+### Skills
+
+- Use `zepp-os` skill when working with Zepp OS specific features.
 
 ### Runtime & Framework
 
