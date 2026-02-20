@@ -129,9 +129,13 @@ The Game Screen is where all scoring interactions take place.
 
 - Game points: `0 → 15 → 30 → 40 → Game`
 - Sets consist of multiple games
-- A set is won according to standard padel rules (minimum configuration)
+- Traditional scoring model is used for v1:
+  - Deuce and advantage are enabled
+  - A game is won after winning the advantage point
+  - A set is won at 6 games with a minimum 2-game margin
+  - At `6-6` games, a tie-break is played (first to 7 points, win by 2)
 
-> Note: The initial version assumes standard padel rules without tie-break customization.
+> Note: Tie-break behavior is fixed in v1. Tie-break configuration remains out of scope.
 
 ---
 
@@ -289,7 +293,7 @@ Expected behavior:
 
 ## 13. Future Enhancements
 
-- Tie-break support
+- Tie-break configuration options (e.g., super tie-break)
 - Match history
 - Haptic feedback on score change
 - Voice input (if supported by Zepp OS)
@@ -299,9 +303,13 @@ Expected behavior:
 
 ## 14. Open Questions
 
-- Exact padel rule variations to support in future versions
 - Maximum number of sets per match
 - Whether to support doubles player names
+
+### 14.1 Resolved Clarifications
+
+- v1 scoring rules are fixed to traditional padel/tennis scoring (deuce/advantage + tie-break at `6-6`).
+- Engineering implementation approach for scoring logic is **Option 2**: state machine with transition history for deterministic undo.
 
 ---
 

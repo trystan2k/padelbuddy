@@ -1,0 +1,47 @@
+{
+  "models": {
+    "main": {
+      "provider": "zai",
+      "modelId": "glm-4.7",
+      "maxTokens": 524000,
+      "temperature": 0.2,
+      "baseURL": "https://api.z.ai/api/coding/paas/v4/"
+    },
+    "research": {
+      "provider": "zai",
+      "modelId": "glm-4.7",
+      "maxTokens": 524000,
+      "temperature": 0.1,
+      "baseURL": "https://api.z.ai/api/coding/paas/v4/"
+    },
+    "fallback": {
+      "provider": "zai",
+      "modelId": "glm-4.7",
+      "maxTokens": 524000,
+      "temperature": 0.2,
+      "baseURL": "https://api.z.ai/api/coding/paas/v4/"
+    }
+  },
+  "global": {
+    "logLevel": "info",
+    "debug": false,
+    "defaultNumTasks": 10,
+    "defaultSubtasks": 5,
+    "defaultPriority": "medium",
+    "projectName": "Task Master",
+    "ollamaBaseURL": "http://localhost:11434/api",
+    "bedrockBaseURL": "https://bedrock.us-east-1.amazonaws.com",
+    "responseLanguage": "English",
+    "enableCodebaseAnalysis": false,
+    "enableProxy": false,
+    "anonymousTelemetry": false,
+    "userId": "1234567890"
+  },
+  "claudeCode": {},
+  "codexCli": {},
+  "grokCli": {
+    "timeout": 120000,
+    "workingDirectory": null,
+    "defaultModel": "grok-4-latest"
+  }
+}
