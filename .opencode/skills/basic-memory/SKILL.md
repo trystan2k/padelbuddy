@@ -30,7 +30,8 @@ Typical triggers:
 ## Inputs
 
 Inputs:
-- Repository path.
+
+- Repository path (do not include it in the log, just the project name).
 - Requested action intent (for example: `create`, `update`, `check-existence`, `search`).
 - Action parameters (task ID, PRD path, note title, folder path, and flags).
 - Task identifier (task ID, subtask ID, or equivalent).
@@ -58,24 +59,16 @@ Procedure:
 1. Attempt Basic Memory MCP first (`mcp_basic-memory`) for the requested intent.
 2. If MCP succeeds, continue with MCP for execution and verification.
 3. If MCP is unavailable or fails (missing tool, unsupported operation, transport error, timeout, permission error, or execution failure), record the failure reason and fallback to CLI.
-4. Resolve the CLI executable in this order:
-   - `basic-memory`
-   - `basic_memory`
-   - Configured project memory wrapper command
-5. Verify availability with `--version`. If missing and `allow_install` is false, fail with install guidance.
-6. Set repository context and validate whether the Basic Memory project is configured.
-7. Build a version-specific command map:
-   - Run `<bm> --help`.
-   - For the target intent, run `<bm> <subcommand> --help` before execution.
-   - Use discovered command names and flags from the installed version.
-8. Route the intent using the command catalog below.
-9. If the exact command is not available in the installed version, use the closest official alias shown in `<bm> --help`.
-10. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
-11. Build the log body using the canonical format below (for create/update actions).
-12. Ensure all fields are factual and derived from provided implementation context.
-13. Execute only Basic Memory CLI commands in fallback mode.
-14. Run post-action verification with one read command (`search-notes`, `list`, or equivalent) on the same channel used for execution (MCP or CLI).
-15. Return a structured execution report with exact commands/methods, outcomes, and an explicit `Execution Path` note (`MCP` or `CLI fallback`).
+4. Use 'bm' or 'basic-memory' CLI as a fallback.
+5. Set repository context and validate whether the Basic Memory project is configured.
+6. Route the intent using the command catalog below.
+7. If the exact command is not available in the installed version, use the closest official alias shown in `<bm> --help`.
+8. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
+9. Build the log body using the canonical format below (for create/update actions).
+10. Ensure all fields are factual and derived from provided implementation context.
+11. Execute only Basic Memory CLI commands in fallback mode.
+12. Run post-action verification with one read command (`search-notes`, `list`, or equivalent) on the same channel used for execution (MCP or CLI).
+13. Return a structured execution report with exact commands/methods, outcomes, and an explicit `Execution Path` note (`MCP` or `CLI fallback`).
 
 MCP invocation requirements:
 
@@ -91,7 +84,7 @@ Canonical development log format (required):
 ## Metadata
 - Task ID: <task-id>
 - Date (UTC): <YYYY-MM-DDTHH:MM:SSZ>
-- Repository: <repo-name-or-path>
+- Project: <project-name>
 - Branch: <branch-or-n/a>
 - Commit: <commit-hash-or-n/a>
 
@@ -193,7 +186,7 @@ Task [ID] [Full Task Title From Task Master].md
 
 Input:
 
-- Repository: `/repo/app`
+- Project: `padelscore`
 - Action: `create`
 - Task ID: `42`
 - Objective: add retry logic for API client
@@ -211,7 +204,7 @@ Output:
 
 Input:
 
-- Repository: `/repo/app`
+- Project: `padelscore`
 - Action: `check-existence`
 - Task ID: `15`
 

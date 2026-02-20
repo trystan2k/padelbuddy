@@ -166,7 +166,7 @@ This subagent must not delegate to other subagents.
 5- Do not include any Agent/LLM information in the pull request description
 6- Do not include any unnecessary information in the pull request description
 7- Do not include any sensitive information in the pull request description
-8- Do not include any task number information in the pull request description, unless it is explicitly requested
+8- **NEVER** Do not include any task number information in the pull request title and/or description, never include any reference to the task or subtask ID or any LLM model used.
 
 ## PR review
 
@@ -181,5 +181,6 @@ This subagent must not delegate to other subagents.
 Once you finish the work, there will not be any more task to you, so you don't need to ask user any other action, just return the final result and exit.
 
 - **NEVER**: Never include in the commit message or description any reference to the task or subtask ID or any LLM model used. It should only be about the actual work done.
+- **NEVER**: Never include in the PR title or descriptionany reference to the task or subtask ID or any LLM model used. It should only be about the actual work done.
 - **NEVER**: When executing the COMMIT or PUSH, wait for the pre-hooks to complete, DO NOT abort it because 'it is taking too long'. You must wait it to finish and do nothing else until it is done.
 - **NEVER**: Add any comment related to the Agent doing the Pull request (for example, avoid any reference to opencode, claude code, gemini, etc) and to the task or subtasks IDs.
