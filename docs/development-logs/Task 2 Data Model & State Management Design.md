@@ -9,7 +9,7 @@ permalink: development-logs/task-2-data-model-state-management-design.md
 ## Metadata
 - Task ID: 2
 - Date (UTC): 2026-02-20T12:00:00Z
-- Repository: /Users/trystan2k/Documents/Thiago/Repos/padelscore
+- Repository: padelscore
 - Branch: feature/PAD-2-data-model-state-management-design
 - Commit: n/a
 

@@ -35,7 +35,7 @@ This agent must NOT:
 
 Inputs:
 
-- Repository path.
+- Repository path (do not include it in the log, just the project name).
 - Requested action (create, update, check existence).
 - Task or subtask identifier.
 - Implementation context (what was changed, validation results, files, decisions, risks).

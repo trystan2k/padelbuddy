@@ -82,15 +82,19 @@ Follow these steps:
    - Identify 2-3 approaches.
    - Reject overengineered approaches.
    - Select the simplest effective approach and explain why.
-3. Inspect repository patterns using `glob`, `grep`, and `read`:
+3. Use the brainstorming skill:
+   - Invoke the brainstorming skill to explore alternative approaches and generate innovative ideas.
+   - Leverage the brainstorming skill to identify potential edge cases and consider different perspectives.
+   - Apply brainstorming outcomes to refine the chosen approach and ensure comprehensive solution coverage.
+4. Inspect repository patterns using `glob`, `grep`, and `read`:
    - Find relevant modules, naming conventions, and architecture patterns.
    - Reuse established project conventions in the proposed plan.
-4. Build implementation steps that are specific, sequenced, and executable.
-5. Add explicit validation checkpoints:
+5. Build implementation steps that are specific, sequenced, and executable.
+6. Add explicit validation checkpoints:
    - Pre-implementation assumptions check.
    - During-implementation correctness checks.
    - Post-implementation verification and regression checks.
-6. Return final plan using the required template.
+7. Return final plan using the required template.
 
 ## Tool Usage Rules
 Allowed tools:
