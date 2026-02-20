@@ -2,7 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { createInitialMatchState } from '../utils/match-state.js'
-import { MATCH_STATE_STORAGE_KEY, loadState, saveState } from '../utils/storage.js'
+import {
+  MATCH_STATE_STORAGE_KEY,
+  clearState,
+  loadState,
+  saveState
+} from '../utils/storage.js'
 
 test('saveState serializes MatchState and persists it with the stable storage key', () => {
   const state = createInitialMatchState(1700000000)
@@ -31,6 +36,65 @@ test('saveState serializes MatchState and persists it with the stable storage ke
   assert.equal(capturedKey, MATCH_STATE_STORAGE_KEY)
   assert.equal(capturedValue, JSON.stringify(state))
   assert.deepEqual(JSON.parse(capturedValue), state)
+})
+
+test('clearState uses removeItem when runtime storage supports it', () => {
+  const originalSettingsStorage = globalThis.settingsStorage
+
+  let removedKey = ''
+  let setItemCalls = 0
+
+  globalThis.settingsStorage = {
+    removeItem(key) {
+      removedKey = key
+    },
+    setItem() {
+      setItemCalls += 1
+    }
+  }
+
+  try {
+    clearState()
+  } finally {
+    if (typeof originalSettingsStorage === 'undefined') {
+      delete globalThis.settingsStorage
+    } else {
+      globalThis.settingsStorage = originalSettingsStorage
+    }
+  }
+
+  assert.equal(removedKey, MATCH_STATE_STORAGE_KEY)
+  assert.equal(setItemCalls, 0)
+})
+
+test('clearState falls back to setItem when removeItem is unavailable', () => {
+  const originalSettingsStorage = globalThis.settingsStorage
+
+  let setItemCallCount = 0
+  let setItemPayload = null
+
+  globalThis.settingsStorage = {
+    setItem(key, value) {
+      setItemCallCount += 1
+      setItemPayload = { key, value }
+    }
+  }
+
+  try {
+    clearState()
+  } finally {
+    if (typeof originalSettingsStorage === 'undefined') {
+      delete globalThis.settingsStorage
+    } else {
+      globalThis.settingsStorage = originalSettingsStorage
+    }
+  }
+
+  assert.equal(setItemCallCount, 1)
+  assert.deepEqual(setItemPayload, {
+    key: MATCH_STATE_STORAGE_KEY,
+    value: ''
+  })
 })
 
 test('loadState retrieves and parses saved MatchState using the stable storage key', () => {
