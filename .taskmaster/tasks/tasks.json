@@ -84,15 +84,52 @@
         "id": "2",
         "title": "Data Model & State Management Design",
         "description": "Define the data structures for the game state, scoring history, and team configurations.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "Create JavaScript/TypeScript interfaces for `MatchState` including: Team A/B scores (points, games), current set status, and match status (active/finished). Implement a history stack structure to store past states for the Undo functionality (as per 'Option 2' state machine approach). Define constants for scoring sequences (0, 15, 30, 40, Ad, Game).",
         "testStrategy": "Unit tests to verify that the state object initializes correctly with zero values and that the history stack can push and pop deep copies of the state without reference errors.",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define TypeScript Interfaces for Game Entities",
+            "description": "Create TypeScript interfaces for MatchState, Team configurations, and status enumerations to type-check the game data.",
+            "dependencies": [],
+            "details": "Define `MatchState` interface including properties for Team A/B scores (points, games), current set status, and match status (active/finished). Create supporting types for TeamScore if necessary.",
+            "status": "done",
+            "testStrategy": "Unit tests to verify interfaces compile correctly and accept valid data shapes for match initialization.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-20T13:23:11.492Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement History Stack with Deep Copy Logic",
+            "description": "Develop the history stack data structure required for the Undo functionality, ensuring immutability via deep copying.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement a stack class or module with `push(state)` and `pop()` methods. Integrate deep copy logic (e.g., using JSON.parse(JSON.stringify()) or a utility library) to ensure stored states are independent snapshots.",
+            "status": "done",
+            "testStrategy": "Unit tests to verify that pushing a state and modifying the original does not affect the stored history, and that pop correctly restores previous states.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-20T13:23:13.045Z"
+          },
+          {
+            "id": 3,
+            "title": "Define Scoring Constants and Enumerations",
+            "description": "Establish the standard scoring sequences and domain constants used throughout the scoring logic.",
+            "dependencies": [],
+            "details": "Define constants for the scoring sequence (0, 15, 30, 40, Ad, Game). Create enumerations for game phases or specific states to ensure type safety in the scoring engine.",
+            "status": "done",
+            "testStrategy": "Validation to ensure constant values match standard Padel/Tennis scoring rules and are accessible for import by other modules.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-20T13:23:14.673Z"
+          }
+        ],
         "complexity": 5,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Expand into: 1) Defining TypeScript interfaces for MatchState and related entities, 2) Implementing the history stack structure with deep copy logic, and 3) Defining scoring constants and enumerations."
+        "expansionPrompt": "Expand into: 1) Defining TypeScript interfaces for MatchState and related entities, 2) Implementing the history stack structure with deep copy logic, and 3) Defining scoring constants and enumerations.",
+        "updatedAt": "2026-02-20T13:23:14.673Z"
       },
       {
         "id": "3",
@@ -229,9 +266,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-20T07:17:14.797Z",
+      "lastModified": "2026-02-20T13:23:14.673Z",
       "taskCount": 10,
-      "completedCount": 1,
+      "completedCount": 2,
       "tags": [
         "master"
       ]

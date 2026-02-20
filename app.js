@@ -1,5 +1,11 @@
+import { createInitialMatchState } from './utils/match-state'
+import { createHistoryStack } from './utils/history-stack'
+
 App({
-  globalData: {},
+  globalData: {
+    matchState: createInitialMatchState(),
+    matchHistory: createHistoryStack()
+  },
   onCreate(options) {
     console.log('app on create invoke')
   },
