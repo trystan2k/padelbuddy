@@ -4,7 +4,7 @@ mode: subagent
 model: github-copilot/gpt-5-mini
 temperature: 0
 tools:
-  mcp_github: true
+  mcp_github*: true
   bash: true
   write: false
   edit: false

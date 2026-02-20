@@ -5,8 +5,8 @@ model: openai/gpt-5.3-codex
 reasoningEffort: high
 temperature: 0
 tools:
-  mcp_chrome-devtools: true
-  mcp_playwright: true
+  mcp_chrome-devtools*: true
+  mcp_playwright*: true
   bash: true
   write: true
   edit: true

@@ -47,6 +47,10 @@ At the moment this project does not have a QA gate script to be executed, so if 
 
 ## Stack used
 
+### Skills
+
+- Use `zepp-os` skill when working with Zepp OS specific features.
+
 ### Runtime & Framework
 
 - **Platform**: Zepp OS (Amazfit devices like GTR 3, T-Rex 2, Balance, etc.)

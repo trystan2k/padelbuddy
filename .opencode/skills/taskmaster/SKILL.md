@@ -1,10 +1,10 @@
 ---
 name: taskmaster
-description: "Use when any agent must operate Taskmaster through CLI only: install, initialize, parse PRDs, create/expand/update tasks, manage status/dependencies, and inspect progress."
+description: "Use when any agent must operate Taskmaster with an MCP-first approach and automatic CLI fallback for init, PRD parsing, task lifecycle, dependencies, and status workflows."
 license: MIT
 compatibility: OpenCode
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   owner: agent-skills
   references:
     - https://skills.sh/sfc-gh-dflippo/snowflake-dbt-demo/task-master-install
@@ -14,11 +14,15 @@ metadata:
     - https://raw.githubusercontent.com/eyaltoledano/claude-task-master/main/docs/command-reference.md
 ---
 
-# Taskmaster CLI Operations
+# Taskmaster MCP-First Operations
 
 ## When to Use
 
-Use this skill when an agent needs to execute any Taskmaster workflow through CLI only.
+Use this skill when an agent needs to execute any Taskmaster workflow through Taskmaster MCP first, with Taskmaster CLI fallback only when MCP is unavailable or fails.
+
+MCP scope for this skill:
+- Allowed MCP integration: `mcp_task-master-ai` only.
+- Do not use any other MCP tool while executing this skill.
 
 Typical triggers:
 - Initialize Taskmaster in a repository.
@@ -47,22 +51,30 @@ If any required input is missing, stop and return a structured input error.
 ## Procedure
 
 Procedure:
-1. Resolve the CLI executable in this order:
+1. Attempt Taskmaster MCP first (`mcp_task-master-ai`) for the requested intent.
+2. If MCP succeeds, continue with MCP for execution and verification.
+3. If MCP is unavailable or fails (missing tool, unsupported operation, transport error, timeout, permission error, or execution failure), record the failure reason and fallback to CLI.
+4. Resolve the CLI executable in this order:
    - `task-master`
    - `taskmaster`
    - `npx -y task-master-ai`
-2. Verify availability with `--version`. If missing and `allow_install` is false, fail with install guidance.
-3. Set repository context and validate whether `.taskmaster/` exists.
-4. Build a version-specific command map:
+5. Verify availability with `--version`. If missing and `allow_install` is false, fail with install guidance.
+6. Set repository context and validate whether `.taskmaster/` exists.
+7. Build a version-specific command map:
    - Run `<tm> --help`.
    - For the target intent, run `<tm> <subcommand> --help` before execution.
    - Use discovered command names and flags from the installed version.
-5. Route the intent using the command catalog below.
-6. If the exact command is not available in the installed version, use the closest official alias shown in `<tm> --help`.
-7. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
-8. Execute only Taskmaster CLI commands.
-9. Run post-action verification with one read command (`list`, `show`, or equivalent).
-10. Return a structured execution report with exact commands and outcomes.
+8. Route the intent using the command catalog below.
+9. If the exact command is not available in the installed version, use the closest official alias shown in `<tm> --help`.
+10. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
+11. Execute only Taskmaster CLI commands in fallback mode.
+12. Run post-action verification with one read command (`list`, `show`, or equivalent) on the same channel used for execution (MCP or CLI).
+13. Return a structured execution report with exact commands/methods, outcomes, and an explicit `Execution Path` note (`MCP` or `CLI fallback`).
+
+MCP invocation requirements:
+- Use MCP tool calls (for example, task/list/get methods exposed by `mcp_task-master-ai`) for MCP execution.
+- Never execute `mcp_task-master-ai` in shell (`bash`) as if it were a binary.
+- If MCP tooling is unavailable in runtime, report the MCP tool error directly, then proceed with CLI fallback if allowed.
 
 ### Command Catalog (CLI Reference)
 
@@ -252,7 +264,9 @@ Output:
 ## Notes and Edge Cases
 
 Notes:
-- Always use CLI only; do not use MCP endpoints.
+- Always attempt MCP first; do not start with CLI unless MCP is unavailable or has already failed for the request.
+- Treat requests that require Taskmaster MCP as valid; do not reject solely because MCP is requested.
+- Shell errors like `command not found: mcp_task-master-ai` indicate incorrect invocation style, not a valid MCP availability check.
 - Command names can vary by Taskmaster version; always read `--help` first and adapt.
 - If `.taskmaster/` is missing for non-bootstrap actions, fail with actionable init guidance.
 - When status value is unsupported in the installed version, return supported statuses from help output.
