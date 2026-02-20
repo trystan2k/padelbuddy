@@ -12,7 +12,11 @@ Key references:
 
 ## QA Gate Commands
 
-At the moment this project does not have a QA gate script to be executed, so if someone needs to run qa checks, just say it to report all ok.
+For the qa gate, run the following command:
+
+```bash
+npm run test
+```
 
 ## Feature branch naming
 
