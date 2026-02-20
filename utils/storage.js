@@ -7,7 +7,7 @@ const scorePointSet = new Set(SCORE_POINT_SEQUENCE)
 const fallbackStorage = createInMemoryStorageAdapter()
 
 /**
- * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null | undefined) }}
+ * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null | undefined), removeItem: (key: string) => void }}
  */
 function getSettingsStorage() {
   const runtimeStorage = resolveRuntimeStorage()
@@ -45,8 +45,12 @@ export function loadState() {
   }
 }
 
+export function clearState() {
+  getSettingsStorage().removeItem(MATCH_STATE_STORAGE_KEY)
+}
+
 /**
- * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null) } | null}
+ * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null), removeItem: (key: string) => void } | null}
  */
 function resolveRuntimeStorage() {
   if (typeof settingsStorage !== 'undefined' && settingsStorage) {
@@ -61,8 +65,8 @@ function resolveRuntimeStorage() {
 }
 
 /**
- * @param {{ setItem?: (key: string, value: string) => void, getItem?: (key: string) => (string | null | undefined) }} storage
- * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null) }}
+ * @param {{ setItem?: (key: string, value: string) => void, getItem?: (key: string) => (string | null | undefined), removeItem?: (key: string) => void }} storage
+ * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null), removeItem: (key: string) => void }}
  */
 function createStorageAdapter(storage) {
   return {
@@ -93,12 +97,31 @@ function createStorageAdapter(storage) {
       } catch {
         return null
       }
+    },
+    removeItem(key) {
+      if (typeof storage.removeItem === 'function') {
+        try {
+          storage.removeItem(key)
+        } catch {
+          // Ignore storage delete errors so app runtime does not crash.
+        }
+
+        return
+      }
+
+      if (typeof storage.setItem === 'function') {
+        try {
+          storage.setItem(key, '')
+        } catch {
+          // Ignore storage fallback delete errors so app runtime does not crash.
+        }
+      }
     }
   }
 }
 
 /**
- * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null) }}
+ * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null), removeItem: (key: string) => void }}
  */
 function createInMemoryStorageAdapter() {
   const memoryStorage = new Map()
@@ -109,6 +132,9 @@ function createInMemoryStorageAdapter() {
     },
     getItem(key) {
       return memoryStorage.has(key) ? memoryStorage.get(key) : null
+    },
+    removeItem(key) {
+      memoryStorage.delete(key)
     }
   }
 }

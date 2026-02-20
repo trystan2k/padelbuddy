@@ -337,7 +337,7 @@
         "id": "6",
         "title": "Home Screen UI Implementation",
         "description": "Build the Home Screen with Start and Resume functionality based on the design reference.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "1",
           "3"
@@ -345,10 +345,49 @@
         "priority": "medium",
         "details": "Create `page/index` using Zepp UI components. Implement the App Title/Logo. Add 'Start New Game' and 'Resume Game' buttons. Use the `loadState` result to conditionally render the 'Resume Game' button (only if a saved game exists). Apply design tokens (colors, fonts) from the Lovable reference.",
         "testStrategy": "UI Test: Verify button placement and text match the 'Game Start' design. Functional Test: With no data, only 'Start' is shown. With data, both are shown. Clicking 'Start' clears storage and navigates. Clicking 'Resume' navigates without clearing.",
-        "subtasks": [],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Home Page Structure and App Title/Logo",
+            "description": "Initialize the `page/index` file and implement the static visual elements including the App Title and Logo using Zepp UI components.",
+            "dependencies": [],
+            "details": "Create the `page/index` file structure. Implement the App Title and Logo widgets. Apply the design tokens (colors, fonts) from the Lovable reference to ensure visual consistency with the design spec.",
+            "status": "done",
+            "testStrategy": "Visual inspection to ensure the App Title and Logo match the 'Game Start' design reference and the layout is correctly centered.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-20T16:49:04.579Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Start New Game Button and Logic",
+            "description": "Add the 'Start New Game' button to the interface and configure the logic to clear storage and navigate to the game screen.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add the 'Start New Game' button component to the layout. Implement the click event handler to clear any saved game state and navigate the user to the game page (`page/game`).",
+            "status": "done",
+            "testStrategy": "Functional test to verify clicking 'Start New Game' clears any existing storage and navigates correctly to the game screen.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-20T16:52:38.735Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Conditional Resume Game Button and Data Fetching",
+            "description": "Integrate data fetching to check for saved games and conditionally render the 'Resume Game' button based on the result.",
+            "dependencies": [
+              2
+            ],
+            "details": "Use the `loadState` function to check for a saved game state. Conditionally render the 'Resume Game' button only if data exists. Implement the click handler to navigate using the loaded state without clearing it.",
+            "status": "done",
+            "testStrategy": "Functional test verifying the button only appears when saved data exists, and clicking it loads the specific state and navigates correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-20T17:12:16.550Z"
+          }
+        ],
         "complexity": 4,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Expand into: 1) Creating the basic page structure and adding App Title/Logo, 2) Implementing the 'Start New Game' button and logic, and 3) Implementing the conditional 'Resume Game' button and data fetching."
+        "expansionPrompt": "Expand into: 1) Creating the basic page structure and adding App Title/Logo, 2) Implementing the 'Start New Game' button and logic, and 3) Implementing the conditional 'Resume Game' button and data fetching.",
+        "updatedAt": "2026-02-20T17:12:16.550Z"
       },
       {
         "id": "7",
@@ -420,9 +459,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-20T16:26:03.053Z",
+      "lastModified": "2026-02-20T17:12:16.550Z",
       "taskCount": 10,
-      "completedCount": 5,
+      "completedCount": 6,
       "tags": [
         "master"
       ]

@@ -1,2 +1,29 @@
-msgid "example"
-msgstr "This is an example in device"
+msgid "home.logo"
+msgstr "PADEL"
+
+msgid "home.title"
+msgstr "Scoreboard"
+
+msgid "home.startNewGame"
+msgstr "Start New Game"
+
+msgid "home.resumeGame"
+msgstr "Resume Game"
+
+msgid "game.title"
+msgstr "Match Score"
+
+msgid "game.setLabel"
+msgstr "Set"
+
+msgid "game.gamesLabel"
+msgstr "Games"
+
+msgid "game.teamAAddPoint"
+msgstr "+ Team A"
+
+msgid "game.teamBAddPoint"
+msgstr "+ Team B"
+
+msgid "game.undo"
+msgstr "Undo"
