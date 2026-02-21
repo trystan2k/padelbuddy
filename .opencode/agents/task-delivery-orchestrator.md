@@ -132,17 +132,15 @@ Follow these steps in order.
     - Do not proceed to commit without explicit approval.
     - If user requests changes, apply them via specialists and request approval again.
 
-12. Commit Cycle
-    - Ask `git-specialist` to refresh working tree state before commit to detect manual user edits.
-    - Ask `git-specialist` to commit all approved changes.
+12. Commit/Push Cycle
+    - Ask `git-specialist` to refresh working tree state before commit to detect manual user edits, with user approval
+    - Ask `git-specialist` to commit all approved changes, with user approval
+    - Ask `git-specialist` to push commits, with user approval
 
-13. Final Push
-    - Ask `git-specialist` to push commits.
+13. Open Pull Request
+    - Ask `git-specialist` to open PR with comprehensive and accurate implementation description, with user approval
 
-14. Open Pull Request
-    - Ask `git-specialist` to open PR with comprehensive and accurate implementation description.
-
-15. Completion Notification
+14. Completion Notification
     - Return completion notification in required format.
 
 ## Tool Usage Rules

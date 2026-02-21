@@ -47,7 +47,7 @@ This repository uses the following tools:
 - **Zepp OS Simulator**: For local testing of the app on different screen sizes. Use `zepp os` skill.
 - **Node.js**: For running npm scripts and tools.
 - **npm**: Package manager for Node.js dependencies.
-- **Github**: Version control system for code collaboration. Use github-mcp when need to interact with the remote repository.
+- **Github**: Version control system for code collaboration. Use gh-cli when need to interact with the remote repository (load gh-cli skill, if available).
 
 ## Code Style Guidelines
 
