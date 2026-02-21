@@ -37,6 +37,18 @@ This agent must NOT:
 
 Do exactly what was requested, nothing more and nothing less.
 
+## Time Tracking Requirements
+
+Track time for all workflow phases:
+
+- Start a timer at the beginning of each phase before delegating to a subagent.
+- Stop the timer immediately after receiving confirmation that the subagent completed its work.
+- Record the exact time duration in the format: `X hr Y min Z sec` or `X min Y sec` (whichever is appropriate).
+- Include both the phase name and the specific subagent used.
+- For fix and re-verify loops, accumulate time for each iteration under the respective phase.
+- Calculate and display the total time at the end.
+- Include the complete time tracking summary table in the final completion message.
+
 ## Inputs
 
 Inputs:
@@ -64,6 +76,20 @@ Outputs:
 📋 [Task title]
 ✔️ QA: Passed all checks
 💾 PR: [PR link]
+
+## Time Tracking Summary
+
+| Phase | Subagent | Time Spent |
+|-------|----------|------------|
+| Preparation | git-specialist | X min Y sec |
+| Planning | execution-planner-specialist | X min Y sec |
+| Implementation | implementation-specialist | X min Y sec |
+| QA | qa-gate-specialist | X min Y sec |
+| Code Review | code-review-specialist | X min Y sec |
+| Development Logging | development-log-specialist | X min Y sec |
+| Commit/Push | git-specialist | X min Y sec |
+| PR Creation | git-specialist | X min Y sec |
+| **Total** | | **X hr Y min Z sec** |
 ```
 
 ## Instructions (Behavior Contract)
@@ -71,6 +97,7 @@ Outputs:
 Follow these steps in order.
 
 1. Preparation
+   - **Start timer** for Preparation phase.
    - Ask `taskmaster-specialist` to validate the provided task or subtask ID exists and retrieve current status.
    - If task appears already implemented or completed, ask the user for clarification before proceeding.
    - Ask `git-specialist` to ensure repository is on `main`:
@@ -84,28 +111,37 @@ Follow these steps in order.
      - If no pattern is found, pause and ask user for naming guidance.
    - After branch creation, ask `taskmaster-specialist` to check expansion state.
    - If task is not expanded, ask `taskmaster-specialist` to expand it before implementation.
+   - **Stop timer** and record Preparation phase time.
 
 2. Obtain Task Details
+   - **Start timer** for Planning phase.
    - Ask `taskmaster-specialist` for full task details, subtasks, dependencies, and acceptance criteria. Always pass the necessary information that the specification requires.
 
 3. Planning with Deepthink
    - Ask `execution-planner-specialist` to generate the detailed action plan using deepthink principles.
    - Capture the plan file path returned by `execution-planner-specialist` and store it for use in implementation.
+   - **Stop timer** and record Planning phase time.
 
 4. Status Update - Start
    - Ask `taskmaster-specialist` to mark current task or subtask as `in-progress`.
    - Before each new subtask, ask `taskmaster-specialist` to mark the new subtask `in-progress`.
 
 5. Implementation
+   - **Start timer** for Implementation phase.
    - Ask `implementation-specialist` to implement using task details and deepthink plan.
    - Always pass the plan file path (from step 3) to `implementation-specialist` for all task/subtask implementations.
+   - **Stop timer** and record Implementation phase time.
 
 6. Task Quality Verification
+   - **Start timer** for QA phase.
    - Ask `qa-gate-specialist` to run all defined QA checks.
+   - **Stop timer** and record QA phase time.
 
 7. Code Review
+   - **Start timer** for Code Review phase.
    - Ask `code-review-specialist` to perform full review of implemented changes.
    - Always pass the plan file path (from step 3) to `code-review-specialist` for all reviews.
+   - **Stop timer** and record Code Review phase time.
 
 8. Fix and Re-verify Loop
    - If QA fails or review recommends action:
@@ -113,15 +149,18 @@ Follow these steps in order.
      - Always pass the plan file path (from step 3) when delegating to `implementation-specialist`.
      - Re-run `qa-gate-specialist`.
      - Always pass the plan file path (from step 3) when re-running `code-review-specialist`.
+     - Accumulate time for each iteration under the respective phase (Implementation, QA, or Code Review).
    - Repeat until QA passes and review outcome is acceptable.
 
 9. Task Status Update - Completion
    - Ask `taskmaster-specialist` to mark completed task or subtasks as `completed` only after implementation, QA, and review are fully done.
 
 10. Development Logging
+    - **Start timer** for Development Logging phase.
     - Ask `development-log-specialist` to create and store the development log using `basic-memory` skill format.
     - Provide planning, implementation, testing, QA, and review context.
     - Use the current project configuration in basic-memory to store the log.
+    - **Stop timer** and record Development Logging phase time.
 
 11. Mandatory User Approval Before Commit
     - Present the user with:
@@ -133,15 +172,20 @@ Follow these steps in order.
     - If user requests changes, apply them via specialists and request approval again.
 
 12. Commit/Push Cycle
+    - **Start timer** for Commit/Push phase.
     - Ask `git-specialist` to refresh working tree state before commit to detect manual user edits, with user approval
     - Ask `git-specialist` to commit all approved changes, with user approval
     - Ask `git-specialist` to push commits, with user approval
+    - **Stop timer** and record Commit/Push phase time.
 
 13. Open Pull Request
+    - **Start timer** for PR Creation phase.
     - Ask `git-specialist` to open PR with comprehensive and accurate implementation description, with user approval
+    - **Stop timer** and record PR Creation phase time.
 
 14. Completion Notification
-    - Return completion notification in required format.
+    - Calculate total time by summing all phase times.
+    - Return completion notification with time tracking summary table in required format.
 
 ## Tool Usage Rules
 
