@@ -1395,7 +1395,7 @@
         "description": "Refactor the Game Screen UI to ensure Add Point buttons meet the 44x44 px touch target requirement, optimizing layout for round and square Zepp OS screens without breaking existing functionality.",
         "details": "Modify the `page/game` layout to increase the dimensions of Team A and Team B Add/Remove point controls to a minimum of 44x44 px. Adjust the Points Display and Set Points display areas (referencing Task 15) to be more compact or repositioned to accommodate larger controls. Reduce non-essential UI elements (padding, chrome) if necessary to maximize space. Ensure layout logic handles dynamic sizing for Round (designWidth 454) and Square (designWidth 390) screens. Maintain event bindings established in Task 8 and ensure visual separation between interactive elements to prevent accidental adjacent taps.",
         "testStrategy": "Visual QA on Zepp OS simulator (round 454, square 390) to verify 44px minimum touch targets and adequate spacing. Conduct manual on-device rapid tap tests to verify responsiveness and prevent accidental touches. Verify accessibility standards (contrast, separation). Run regression tests for scoring flows and save/restore functionality to ensure UI changes do not break existing logic.",
-        "status": "pending",
+        "status": "cancelled",
         "dependencies": [
           "7",
           "8",
@@ -1404,14 +1404,96 @@
           "4"
         ],
         "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2026-02-22T16:47:53.181Z"
+      },
+      {
+        "id": "22",
+        "title": "Redesign Game Screen UI for Enhanced Readability and Touch Interaction",
+        "description": "Overhaul the Game Screen interface to improve readability by replacing the segmented card layout with a streamlined header for Sets and Games. Modify the scoring interaction to allow adding points by tapping the score display directly, with dedicated minus buttons positioned below.",
+        "details": "Refactor the `page/game` layout to eliminate the segmented card style. Implement a new, cleaner header section that distinctly displays 'SETS' and 'GAMES' labels alongside the corresponding values for Team A and Team B. Apply design tokens to increase font sizes significantly across all text elements for better legibility. Redesign the central score area so that the Point Score (0, 15, 30, etc.) acts as a large, touch-sensitive button; tapping this area should trigger the `addPoint` logic. Place explicit, styled 'Minus' (-) buttons directly below the score displays to handle `removePoint` actions. Ensure the layout remains responsive for both Round (454px) and Square (390px) screens, adjusting padding and flex distribution to prevent overlap.",
+        "testStrategy": "Visual QA: Verify the new header layout clearly separates 'SETS' and 'GAMES' and that font sizes are visibly larger than the previous implementation. Functional Test: Tap the main score display for a team; verify that the score increments correctly and the UI updates immediately. Functional Test: Tap the 'Minus' button below the score; verify the score decrements correctly. Layout Test: Run on Round and Square simulators to ensure the tappable score areas are large enough to be easily hit and do not overlap with other elements. Regression Test: Resume a match and verify the new UI correctly populates with the existing `MatchState` data.",
+        "status": "done",
+        "dependencies": [
+          "7",
+          "8",
+          "15"
+        ],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2026-02-22T17:04:07.334Z"
+      },
+      {
+        "id": "23",
+        "title": "Implement Scrollable Match History on Summary Screen",
+        "description": "Replace static history text with a scrollable SCROLL_LIST widget to accommodate longer match histories, adjust font sizing, and remove the Start New Game button from the Summary Screen.",
+        "details": "This task modifies the existing Match Summary Screen (Task 18) to enhance the match history display. Implementation steps:\n\n1. **Replace Static History with SCROLL_LIST**: Remove the current static text display for set history. Implement a SCROLL_LIST widget that dynamically populates with items from the `setHistory` array in the MatchState. Each list item should display a single set result (e.g., 'Set 1: 6-4'). Configure the scrollable list to handle histories longer than the screen viewport.\n\n2. **Increase Font Scale**: Update the body font scale property from 0.04 to 0.08 to improve text readability. This may require adjusting the scrollable list item height to prevent text clipping.\n\n3. **Remove Start New Game Button**: Delete the 'Start New Game' button from the Summary Screen UI. Ensure the 'Home' button remains and continues to navigate properly to the Home screen.\n\n4. **UI Adjustments**: Re-layout the Summary Screen components to accommodate the new scrollable list. The layout should flow: Winner announcement, final score, scrollable set history list, and Home button at the bottom.\n\nNote: The Start New Game functionality was already handled in Task 19, so removing this button is purely a UI change. The data source (setHistory from MatchState) remains unchanged from Task 16.",
+        "testStrategy": "1. Visual QA with short match: Complete a 1-set match and verify the scrollable list displays 'Set 1: X-Y' correctly with the larger font size (0.08).\n\n2. Scroll functionality test: Complete a 3 or 5-set match where the history exceeds the screen height. Verify the list is scrollable and all sets are accessible.\n\n3. Button verification: Confirm only the Home button exists on the Summary screen. Clicking it should navigate to the Home screen.\n\n4. Text readability: Verify the increased font scale (0.08) renders clearly without overlapping other UI elements.\n\n5. Edge case: Test with a match that went to tie-breaks to ensure set history formatting remains correct in the scrollable list (e.g., 'Set 2: 7-6').",
+        "status": "pending",
+        "dependencies": [
+          "18",
+          "16"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "24",
+        "title": "Simplify New Game Start Flow on Home Screen",
+        "description": "Remove the confirmation mechanism when starting a new game from the home screen to reduce friction and allow immediate game start without any intermediate confirmation step or timer logic.",
+        "details": "Modify the Home Screen 'Start New Game' button behavior to eliminate the confirmation dialog flow. Remove any UI components related to the confirmation modal (dialog text, confirm/cancel buttons, backdrop). Delete state variables tracking confirmation visibility (e.g., `showConfirmDialog`, `isConfirming`). Remove any timer logic associated with auto-dismissing confirmation dialogs or countdown timers. Update the 'Start New Game' click event handler to directly execute the start sequence: 1) Call the match reset/cleanup function from Task 19 to clear existing session data, 2) Navigate immediately to the Match Setup screen. Ensure this simplification only affects the Home Screen start flow and does not impact other areas of the app that may use confirmation patterns. Clean up any unused CSS/styling and event listeners previously associated with the confirmation dialog.",
+        "testStrategy": "Functional Test: Tap 'Start New Game' button on Home Screen and verify immediate navigation to Match Setup screen without any confirmation dialog appearing. Integration Test: With an active saved game, tap 'Start New Game' and verify storage is cleared (check for null ACTIVE_MATCH_SESSION) and Match Setup loads correctly. Regression Test: Verify 'Resume Game' button continues to work as expected and is unaffected by the start flow changes. Edge Case Test: Rapid successive taps on 'Start New Game' should not cause multiple navigation attempts or storage conflicts. Visual Inspection: Confirm no visual artifacts or unused UI elements remain from the removed confirmation dialog.",
+        "status": "pending",
+        "dependencies": [
+          "6",
+          "19"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "25",
+        "title": "Implement Screen Keep-Awake During Active Game",
+        "description": "Implement screen keep-awake functionality to prevent the watch from returning to the watchface when the screen turns off during an active game, with maximum brightness setting and simulator compatibility handling.",
+        "details": "Implement screen keep-awake functionality for the Game Screen to ensure continuous gameplay visibility during active matches. On `page/game` initialization or `onShow` lifecycle event, call the Zepp OS screen wake API (e.g., `wearable.keepScreenOn()` or `wakelock.acquire()`) to prevent the screen from turning off. Set the bright screen time to maximum using the appropriate brightness settings API (e.g., `setBrightScreenDuration(MAX)`). Store the reference to the wake lock or screen keep setting in a module-level variable for cleanup. On page exit (`onHide`, `onDestroy`, or navigation away), release the wake lock or cancel the keep-awake request to restore normal power behavior. Wrap all API calls in try-catch blocks with feature detection (check if APIs exist before calling) to handle the simulator environment where these APIs may be unavailable. Add a fallback mechanism or graceful degradation if the APIs are not present (e.g., log a warning to console but allow the app to continue functioning). Ensure the implementation does not cause memory leaks by properly cleaning up references and avoiding multiple wake lock acquisitions.",
+        "testStrategy": "Functional Test: Deploy the app to a physical watch device. Navigate to the Game Screen and verify the screen does not turn off after the default timeout period (wait at least 1-2 minutes without interaction). Functional Test: Exit the Game Screen (navigate back or to another page) and verify that normal screen timeout behavior is restored. Simulator Test: Run the app in the Zepp simulator environment. Navigate to the Game Screen and verify the app does not crash or throw errors when keep-awake APIs are unavailable. Memory Test: Repeatedly enter and exit the Game Screen (10+ times) to verify there are no memory leaks or accumulating wake lock references. Integration Test: Play a full match from start to finish to ensure keep-awake functionality persists throughout the entire gameplay session and properly disengages upon match completion.",
+        "status": "pending",
+        "dependencies": [
+          "7"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "26",
+        "title": "Update App Icons for GTR-3 and GTS-3 Devices",
+        "description": "Replace the existing icon.png assets specifically for GTR-3 and GTS-3 device targets with updated versions. Additionally, update the project documentation to include a visual reference of the new sample icon.",
+        "details": "Locate the asset directories specific to the GTR-3 and GTS-3 devices within the project structure (typically found under directories named or tagged with device identifiers). Replace the current `icon.png` files in these directories with the updated icon assets. Ensure that the new assets adhere to the specific resolution requirements for GTR-3 (usually 454x454 pixels) and GTS-3 (usually 390x390 pixels) and are in the supported format (e.g., PNG). Navigate to the project documentation file (e.g., README.md or docs folder) and insert the new sample icon image. Add a caption or label indicating it is the updated reference icon for the application.",
+        "testStrategy": "Build the application specifically for GTR-3 and GTS-3 targets using the Zepp OS tooling. Deploy the built application to the respective simulators or physical devices. Visually inspect the app icon on the device home screen/app drawer to verify it matches the new design and is not distorted or pixelated. Review the documentation file to ensure the embedded sample icon renders correctly and is clearly visible.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "27",
+        "title": "Refactor Tests to Use Synchronous Storage APIs",
+        "description": "Update all test files to replace asynchronous storage calls with synchronous adapter methods, aligning test patterns with the production Zepp OS `hmFS` file system APIs.",
+        "details": "Locate all test files that utilize the storage layer (specifically those testing `saveState`, `loadState`, or persistence logic). Remove `async`/`await` keywords from test function definitions and within the test bodies where storage operations occur. Replace the asynchronous calls with the synchronous `hmFS.SysProSetChars` and `hmFS.SysProGetChars` methods (or their synchronous adapter wrappers) to match the production implementation. Delete any `setTimeout`, `waitFor`, or promise-based delay logic that was previously required to wait for asynchronous storage operations to complete. Simplify test assertions by removing `await` prefixes and validating the state immediately following the synchronous function call. Ensure mock implementations in the test environment are updated to return values directly instead of resolving Promises.",
+        "testStrategy": "Run the full test suite to verify all storage-related tests pass without 'UnhandledPromiseRejection' errors or timeout failures. Verify that tests execute faster due to the removal of artificial delays. Confirm that tests for edge cases (e.g., reading empty storage, handling corrupted data) still function correctly with the synchronous read/write pattern.",
+        "status": "pending",
+        "dependencies": [
+          "3"
+        ],
+        "priority": "medium",
         "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-22T09:55:22.387Z",
-      "taskCount": 21,
-      "completedCount": 20,
+      "lastModified": "2026-02-22T17:04:07.334Z",
+      "taskCount": 27,
+      "completedCount": 21,
       "tags": [
         "master"
       ]
