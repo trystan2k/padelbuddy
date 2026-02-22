@@ -591,12 +591,49 @@ Page({
     this.keepScreenOn()
     this.ensureRuntimeState()
     this.renderGameScreen()
+    this.registerGestureHandler()
   },
 
   onDestroy() {
     this.releaseScreenOn()
     this.handleLifecycleAutoSave()
     this.clearWidgets()
+    this.unregisterGestureHandler()
+  },
+
+  registerGestureHandler() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.registerGestureEvent !== 'function') {
+      return
+    }
+
+    try {
+      hmApp.registerGestureEvent((event) => {
+        if (event === hmApp.gesture.RIGHT) {
+          // Save state before navigating
+          this.saveCurrentRuntimeState({ force: true })
+          // Navigate directly to Home Screen
+          this.navigateToHomePage()
+          // Return true to skip default goBack() behavior
+          return true
+        }
+        // For other gestures, don't skip default behavior
+        return false
+      })
+    } catch {
+      // Non-fatal: gesture registration failed
+    }
+  },
+
+  unregisterGestureHandler() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.unregisterGestureEvent !== 'function') {
+      return
+    }
+
+    try {
+      hmApp.unregisterGestureEvent()
+    } catch {
+      // Non-fatal: gesture unregistration failed
+    }
   },
 
   keepScreenOn() {
@@ -931,19 +968,16 @@ Page({
   },
 
   navigateToHomePage() {
-    if (typeof hmApp === 'undefined') {
+    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
       return
     }
 
-    if (typeof hmApp.goBack === 'function') {
-      hmApp.goBack()
-      return
-    }
-
-    if (typeof hmApp.gotoPage === 'function') {
+    try {
       hmApp.gotoPage({
         url: 'page/index'
       })
+    } catch {
+      // Non-fatal: navigation failed
     }
   },
 
