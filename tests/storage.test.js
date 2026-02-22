@@ -11,25 +11,28 @@ import {
 
 test('saveState serializes MatchState and persists it with the stable storage key', () => {
   const state = createInitialMatchState(1700000000)
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
   let capturedKey = ''
   let capturedValue = ''
 
-  globalThis.settingsStorage = {
-    setItem(key, value) {
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {
       capturedKey = key
       capturedValue = value
+    },
+    SysProGetChars(key) {
+      return null
     }
   }
 
   try {
     saveState(state)
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -39,27 +42,31 @@ test('saveState serializes MatchState and persists it with the stable storage ke
 })
 
 test('clearState uses removeItem when runtime storage supports it', () => {
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
   let removedKey = ''
   let setItemCalls = 0
 
-  globalThis.settingsStorage = {
-    removeItem(key) {
-      removedKey = key
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {
+      if (value === '') {
+        removedKey = key
+      } else {
+        setItemCalls += 1
+      }
     },
-    setItem() {
-      setItemCalls += 1
+    SysProGetChars(key) {
+      return null
     }
   }
 
   try {
     clearState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -68,25 +75,28 @@ test('clearState uses removeItem when runtime storage supports it', () => {
 })
 
 test('clearState falls back to setItem when removeItem is unavailable', () => {
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
   let setItemCallCount = 0
   let setItemPayload = null
 
-  globalThis.settingsStorage = {
-    setItem(key, value) {
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {
       setItemCallCount += 1
       setItemPayload = { key, value }
+    },
+    SysProGetChars(key) {
+      return null
     }
   }
 
   try {
     clearState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -99,12 +109,13 @@ test('clearState falls back to setItem when removeItem is unavailable', () => {
 
 test('loadState retrieves and parses saved MatchState using the stable storage key', () => {
   const state = createInitialMatchState(1700000000)
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
   let capturedKey = ''
 
-  globalThis.settingsStorage = {
-    getItem(key) {
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {},
+    SysProGetChars(key) {
       capturedKey = key
       return JSON.stringify(state)
     }
@@ -115,10 +126,10 @@ test('loadState retrieves and parses saved MatchState using the stable storage k
   try {
     loadedState = loadState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -127,12 +138,13 @@ test('loadState retrieves and parses saved MatchState using the stable storage k
 })
 
 test('loadState returns null when no saved state exists', () => {
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
   let capturedKey = ''
 
-  globalThis.settingsStorage = {
-    getItem(key) {
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {},
+    SysProGetChars(key) {
       capturedKey = key
       return null
     }
@@ -143,10 +155,10 @@ test('loadState returns null when no saved state exists', () => {
   try {
     loadedState = loadState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -155,10 +167,11 @@ test('loadState returns null when no saved state exists', () => {
 })
 
 test('loadState returns null when saved state payload is corrupted JSON', () => {
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
-  globalThis.settingsStorage = {
-    getItem() {
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {},
+    SysProGetChars(key) {
       return '{bad-json'
     }
   }
@@ -168,10 +181,10 @@ test('loadState returns null when saved state payload is corrupted JSON', () => 
   try {
     loadedState = loadState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -180,10 +193,10 @@ test('loadState returns null when saved state payload is corrupted JSON', () => 
 
 test('saveState and loadState gracefully fallback when settingsStorage is unavailable', () => {
   const state = createInitialMatchState(1700000001)
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
-  if (typeof originalSettingsStorage !== 'undefined') {
-    delete globalThis.settingsStorage
+  if (typeof originalHmFS !== 'undefined') {
+    delete globalThis.hmFS
   }
 
   let loadedState
@@ -192,10 +205,10 @@ test('saveState and loadState gracefully fallback when settingsStorage is unavai
     assert.doesNotThrow(() => saveState(state))
     loadedState = loadState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 
@@ -203,10 +216,11 @@ test('saveState and loadState gracefully fallback when settingsStorage is unavai
 })
 
 test('loadState returns null when payload is valid JSON but invalid MatchState shape', () => {
-  const originalSettingsStorage = globalThis.settingsStorage
+  const originalHmFS = globalThis.hmFS
 
-  globalThis.settingsStorage = {
-    getItem() {
+  globalThis.hmFS = {
+    SysProSetChars(key, value) {},
+    SysProGetChars(key) {
       return JSON.stringify({
         teams: {
           teamA: { id: 'teamA', label: 'Team A' },
@@ -227,10 +241,10 @@ test('loadState returns null when payload is valid JSON but invalid MatchState s
   try {
     loadedState = loadState()
   } finally {
-    if (typeof originalSettingsStorage === 'undefined') {
-      delete globalThis.settingsStorage
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
     } else {
-      globalThis.settingsStorage = originalSettingsStorage
+      globalThis.hmFS = originalHmFS
     }
   }
 

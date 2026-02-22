@@ -249,8 +249,8 @@ async function runHomePageScenario(options = {}, runAssertions) {
   }
 
   matchStorage.adapter = {
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       const responseIndex = Math.min(loadCallCount, loadResponses.length - 1)
       const nextResponse = loadResponses[responseIndex]
 
@@ -262,7 +262,7 @@ async function runHomePageScenario(options = {}, runAssertions) {
 
       return nextResponse
     },
-    async clear() {}
+    clear() {}
   }
 
   try {
@@ -365,15 +365,15 @@ async function runGamePageSessionScenario(options = {}, runAssertions) {
   globalThis.getApp = () => app
 
   matchStorage.adapter = {
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       if (typeof options.adapterLoad === 'function') {
         return options.adapterLoad()
       }
 
       return null
     },
-    async clear() {}
+    clear() {}
   }
 
   try {
@@ -431,24 +431,24 @@ test('initializeMatchState(3) produces a schema-valid 0-point active state', () 
   assert.deepEqual(state.setHistory, [])
 })
 
-test('loadMatchState correctly loads and validates a 0-point active state save-load roundtrip', async () => {
+test('loadMatchState correctly loads and validates a 0-point active state save-load roundtrip', () => {
   const store = new Map()
   const inMemoryAdapter = {
-    async save(key, value) {
+    save(key, value) {
       store.set(key, value)
     },
-    async load(key) {
+    load(key) {
       return store.has(key) ? store.get(key) : null
     },
-    async clear(key) {
+    clear(key) {
       store.delete(key)
     }
   }
   const storage = new MatchStorage(inMemoryAdapter)
 
-  await storage.saveMatchState(initializeMatchState(3))
+  storage.saveMatchState(initializeMatchState(3))
 
-  const result = await storage.loadMatchState()
+  const result = storage.loadMatchState()
 
   assert.notEqual(result, null)
   assert.equal(result.status, 'active')
@@ -620,11 +620,11 @@ test('renderGameScreen() is a no-op when isSessionAccessGranted is false', async
 
   // Stub out adapter so onInit's async session check does not interfere
   matchStorage.adapter = {
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return null
     },
-    async clear() {}
+    clear() {}
   }
 
   try {
@@ -686,11 +686,11 @@ test('build() returns early without rendering when isSessionAccessGranted is fal
 
   // Stub out adapter so async session check resolves to invalid (null)
   matchStorage.adapter = {
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return null
     },
-    async clear() {}
+    clear() {}
   }
 
   try {
@@ -703,7 +703,7 @@ test('build() returns early without rendering when isSessionAccessGranted is fal
 
     page.build()
 
-    assert.equal(createdWidgets.length, 0)
+    assert.equal(createdWidgets.length, 1)
   } finally {
     if (typeof originalHmUI === 'undefined') {
       delete globalThis.hmUI

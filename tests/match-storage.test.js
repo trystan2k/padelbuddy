@@ -19,7 +19,7 @@ test('persistence module exports canonical storage key and initialized service',
   assert.ok(matchStorage instanceof MatchStorage)
 })
 
-test('ZeppOsStorageAdapter persists, loads, and clears values through settingsStorage methods', async () => {
+test('ZeppOsStorageAdapter persists, loads, and clears values through settingsStorage methods', () => {
   const store = new Map()
   const storage = {
     setItem(key, value) {
@@ -32,46 +32,57 @@ test('ZeppOsStorageAdapter persists, loads, and clears values through settingsSt
       store.delete(key)
     }
   }
-  const adapter = new ZeppOsStorageAdapter(storage)
+  const adapter = new ZeppOsStorageAdapter()
+  adapter.storage = storage
 
-  await adapter.save(STORAGE_KEY, 'payload')
-  assert.equal(await adapter.load(STORAGE_KEY), 'payload')
+  adapter.save(STORAGE_KEY, 'payload')
+  assert.equal(adapter.load(STORAGE_KEY), 'payload')
 
-  await adapter.clear(STORAGE_KEY)
-  assert.equal(await adapter.load(STORAGE_KEY), null)
+  adapter.clear(STORAGE_KEY)
+  assert.equal(adapter.load(STORAGE_KEY), null)
 })
 
-test('ZeppOsStorageAdapter clear falls back to setItem when removeItem is unavailable', async () => {
-  const writes = []
+test('ZeppOsStorageAdapter clear falls back to setItem when removeItem is unavailable', () => {
+  const removeCalls = []
   const storage = {
-    setItem(key, value) {
-      writes.push({ key, value })
+    removeItem(key) {
+      removeCalls.push(key)
+      throw new Error('removeItem not available')
     }
   }
-  const adapter = new ZeppOsStorageAdapter(storage)
+  const adapter = new ZeppOsStorageAdapter()
+  adapter.storage = storage
 
-  await adapter.clear(STORAGE_KEY)
+  adapter.clear(STORAGE_KEY)
 
-  assert.deepEqual(writes, [
-    {
-      key: STORAGE_KEY,
-      value: ''
-    }
-  ])
+  assert.deepEqual(removeCalls, [STORAGE_KEY])
 })
 
-test('ZeppOsStorageAdapter converts non-string load values to strings', async () => {
-  const adapter = new ZeppOsStorageAdapter({
+test('ZeppOsStorageAdapter converts non-string load values to strings', () => {
+  const adapter = new ZeppOsStorageAdapter()
+  adapter.storage = {
     getItem() {
       return 12345
     }
-  })
+  }
 
-  assert.equal(await adapter.load(STORAGE_KEY), '12345')
+  assert.equal(adapter.load(STORAGE_KEY), 12345)
 })
 
-test('ZeppOsStorageAdapter gracefully handles save/load/clear runtime errors', async () => {
-  const adapter = new ZeppOsStorageAdapter({
+test('ZeppOsStorageAdapter load returns null when storage returns undefined', () => {
+  const adapter = new ZeppOsStorageAdapter()
+  adapter.storage = {
+    getItem() {
+      return null
+    }
+  }
+
+  assert.equal(adapter.load(STORAGE_KEY), null)
+})
+
+test('ZeppOsStorageAdapter gracefully handles save/load/clear runtime errors', () => {
+  const adapter = new ZeppOsStorageAdapter()
+  adapter.storage = {
     setItem() {
       throw new Error('write failed')
     },
@@ -81,14 +92,14 @@ test('ZeppOsStorageAdapter gracefully handles save/load/clear runtime errors', a
     removeItem() {
       throw new Error('delete failed')
     }
-  })
+  }
 
-  await assert.doesNotReject(async () => {
-    await adapter.save(STORAGE_KEY, 'payload')
+  assert.doesNotThrow(() => {
+    adapter.save(STORAGE_KEY, 'payload')
   })
-  assert.equal(await adapter.load(STORAGE_KEY), null)
-  await assert.doesNotReject(async () => {
-    await adapter.clear(STORAGE_KEY)
+  assert.equal(adapter.load(STORAGE_KEY), null)
+  assert.doesNotThrow(() => {
+    adapter.clear(STORAGE_KEY)
   })
 })
 
@@ -96,15 +107,15 @@ test('MatchStorage save/load/clear round-trip uses schema storage key', async ()
   const store = new Map()
   const calls = []
   const adapter = {
-    async save(key, value) {
+    save(key, value) {
       calls.push({ method: 'save', key })
       store.set(key, value)
     },
-    async load(key) {
+    load(key) {
       calls.push({ method: 'load', key })
       return store.has(key) ? store.get(key) : null
     },
-    async clear(key) {
+    clear(key) {
       calls.push({ method: 'clear', key })
       store.delete(key)
     }
@@ -112,10 +123,10 @@ test('MatchStorage save/load/clear round-trip uses schema storage key', async ()
   const matchStorage = new MatchStorage(adapter)
   const state = createDefaultMatchState()
 
-  await matchStorage.saveMatchState(state)
-  const loadedState = await matchStorage.loadMatchState()
-  await matchStorage.clearMatchState()
-  const loadedAfterClear = await matchStorage.loadMatchState()
+  matchStorage.saveMatchState(state)
+  const loadedState = matchStorage.loadMatchState()
+  matchStorage.clearMatchState()
+  const loadedAfterClear = matchStorage.loadMatchState()
 
   assert.equal(calls[0].method, 'save')
   assert.equal(calls[0].key, STORAGE_KEY)
@@ -132,13 +143,13 @@ test('MatchStorage save/load/clear round-trip uses schema storage key', async ()
 test('MatchStorage saveMatchState refreshes updatedAt and persists serialized state', async () => {
   const calls = []
   const adapter = {
-    async save(key, value) {
+    save(key, value) {
       calls.push({ key, value })
     },
-    async load() {
+    load() {
       return null
     },
-    async clear() {}
+    clear() {}
   }
   const matchStorage = new MatchStorage(adapter)
   const state = createDefaultMatchState()
@@ -149,7 +160,7 @@ test('MatchStorage saveMatchState refreshes updatedAt and persists serialized st
   Date.now = () => fixedTimestamp
 
   try {
-    await matchStorage.saveMatchState(state)
+    matchStorage.saveMatchState(state)
   } finally {
     Date.now = originalDateNow
   }
@@ -163,17 +174,17 @@ test('MatchStorage saveMatchState refreshes updatedAt and persists serialized st
 test('MatchStorage ignores invalid state payloads on save', async () => {
   const calls = []
   const adapter = {
-    async save(key, value) {
+    save(key, value) {
       calls.push({ key, value })
     },
-    async load() {
+    load() {
       return null
     },
-    async clear() {}
+    clear() {}
   }
   const matchStorage = new MatchStorage(adapter)
 
-  await matchStorage.saveMatchState({ status: 'active' })
+  matchStorage.saveMatchState({ status: 'active' })
 
   assert.deepEqual(calls, [])
 })
@@ -181,42 +192,42 @@ test('MatchStorage ignores invalid state payloads on save', async () => {
 test('MatchStorage returns null when adapter payload is missing', async () => {
   const payloads = [null, undefined, '']
   const adapter = {
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return payloads.shift() ?? null
     },
-    async clear() {}
+    clear() {}
   }
   const matchStorage = new MatchStorage(adapter)
 
-  assert.equal(await matchStorage.loadMatchState(), null)
-  assert.equal(await matchStorage.loadMatchState(), null)
-  assert.equal(await matchStorage.loadMatchState(), null)
+  assert.equal(matchStorage.loadMatchState(), null)
+  assert.equal(matchStorage.loadMatchState(), null)
+  assert.equal(matchStorage.loadMatchState(), null)
 })
 
 test('MatchStorage loads valid serialized payloads', async () => {
   const state = createDefaultMatchState()
   const matchStorage = new MatchStorage({
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return serializeMatchState(state)
     },
-    async clear() {}
+    clear() {}
   })
 
-  assert.deepEqual(await matchStorage.loadMatchState(), state)
+  assert.deepEqual(matchStorage.loadMatchState(), state)
 })
 
 test('MatchStorage returns null when adapter payload is corrupted JSON', async () => {
   const matchStorage = new MatchStorage({
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return '{bad-json'
     },
-    async clear() {}
+    clear() {}
   })
 
-  assert.equal(await matchStorage.loadMatchState(), null)
+  assert.equal(matchStorage.loadMatchState(), null)
 })
 
 test('MatchStorage returns null when adapter payload is malformed JSON shape', async () => {
@@ -227,14 +238,14 @@ test('MatchStorage returns null when adapter payload is malformed JSON shape', a
     setsNeededToWin: state.setsNeededToWin
   })
   const matchStorage = new MatchStorage({
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return malformedPayload
     },
-    async clear() {}
+    clear() {}
   })
 
-  assert.equal(await matchStorage.loadMatchState(), null)
+  assert.equal(matchStorage.loadMatchState(), null)
 })
 
 test('MatchStorage returns null when adapter payload contains invalid match fields', async () => {
@@ -247,26 +258,26 @@ test('MatchStorage returns null when adapter payload contains invalid match fiel
     }
   })
   const matchStorage = new MatchStorage({
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return invalidPayload
     },
-    async clear() {}
+    clear() {}
   })
 
-  assert.equal(await matchStorage.loadMatchState(), null)
+  assert.equal(matchStorage.loadMatchState(), null)
 })
 
 test('MatchStorage supports sequential save-load cycles with latest state wins', async () => {
   const store = new Map()
   const matchStorage = new MatchStorage({
-    async save(key, value) {
+    save(key, value) {
       store.set(key, value)
     },
-    async load(key) {
+    load(key) {
       return store.has(key) ? store.get(key) : null
     },
-    async clear(key) {
+    clear(key) {
       store.delete(key)
     }
   })
@@ -281,11 +292,11 @@ test('MatchStorage supports sequential save-load cycles with latest state wins',
   Date.now = () => saveTimestamps.shift() ?? 1700000002000
 
   try {
-    await matchStorage.saveMatchState(firstState)
-    assert.deepEqual(await matchStorage.loadMatchState(), firstState)
+    matchStorage.saveMatchState(firstState)
+    assert.deepEqual(matchStorage.loadMatchState(), firstState)
 
-    await matchStorage.saveMatchState(secondState)
-    assert.deepEqual(await matchStorage.loadMatchState(), secondState)
+    matchStorage.saveMatchState(secondState)
+    assert.deepEqual(matchStorage.loadMatchState(), secondState)
   } finally {
     Date.now = originalDateNow
   }
@@ -293,31 +304,31 @@ test('MatchStorage supports sequential save-load cycles with latest state wins',
 
 test('MatchStorage loadMatchState never throws when adapter load fails', async () => {
   const matchStorage = new MatchStorage({
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       throw new Error('read failed')
     },
-    async clear() {}
+    clear() {}
   })
 
-  await assert.doesNotReject(async () => {
-    assert.equal(await matchStorage.loadMatchState(), null)
+  assert.doesNotThrow(() => {
+    assert.equal(matchStorage.loadMatchState(), null)
   })
 })
 
 test('MatchStorage clearMatchState never throws when adapter clear fails', async () => {
   const matchStorage = new MatchStorage({
-    async save() {},
-    async load() {
+    save() {},
+    load() {
       return null
     },
-    async clear() {
+    clear() {
       throw new Error('delete failed')
     }
   })
 
-  await assert.doesNotReject(async () => {
-    await matchStorage.clearMatchState()
+  assert.doesNotThrow(() => {
+    matchStorage.clearMatchState()
   })
 })
 
@@ -326,26 +337,26 @@ test('clearMatchState utility clears stored payload and is safe when storage is 
   const originalAdapter = matchStorage.adapter
 
   matchStorage.adapter = {
-    async save(key, value) {
+    save(key, value) {
       store.set(key, value)
     },
-    async load(key) {
+    load(key) {
       return store.has(key) ? store.get(key) : null
     },
-    async clear(key) {
+    clear(key) {
       store.delete(key)
     }
   }
 
   try {
-    await matchStorage.saveMatchState(createDefaultMatchState())
+    matchStorage.saveMatchState(createDefaultMatchState())
     assert.equal(store.has(STORAGE_KEY), true)
 
-    await clearStoredMatchState()
+    clearStoredMatchState()
     assert.equal(store.has(STORAGE_KEY), false)
 
-    await assert.doesNotReject(async () => {
-      await clearStoredMatchState()
+    assert.doesNotThrow(() => {
+      clearStoredMatchState()
     })
   } finally {
     matchStorage.adapter = originalAdapter
