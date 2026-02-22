@@ -7,15 +7,15 @@ metadata:
   version: "1.0.0"
   owner: agent-skills
   references:
-    - https://docs.zepp.com/docs/intro/
-    - https://docs.zepp.com/docs/guides/quick-start/
-    - https://docs.zepp.com/docs/guides/architecture/arc/
-    - https://docs.zepp.com/docs/guides/framework/device/intro/
-    - https://docs.zepp.com/docs/reference/app-json/
-    - https://docs.zepp.com/docs/guides/framework/device/compatibility/
-    - https://docs.zepp.com/docs/guides/framework/device/screen-adaption/
-    - https://docs.zepp.com/docs/guides/tools/cli/
-    - https://docs.zepp.com/docs/guides/tools/zepp-app/
+    - https://docs.zepp.com/docs/1.0/intro/
+    - https://docs.zepp.com/docs/1.0/guides/quick-start/
+    - https://docs.zepp.com/docs/1.0/guides/architecture/arc/
+    - https://docs.zepp.com/docs/1.0/guides/framework/device/intro/
+    - https://docs.zepp.com/docs/1.0/reference/app-json/
+    - https://docs.zepp.com/docs/1.0/guides/framework/device/compatibility/
+    - https://docs.zepp.com/docs/1.0/guides/framework/device/screen-adaption/
+    - https://docs.zepp.com/docs/1.0/guides/tools/cli/
+    - https://docs.zepp.com/docs/1.0/guides/tools/zepp-app/
 ---
 
 # Zepp OS Senior Specialist
@@ -269,15 +269,15 @@ When responding with a plan or implementation summary, include:
 
 ## Quick References
 
-- Intro: https://docs.zepp.com/docs/intro/
-- Quick Start: https://docs.zepp.com/docs/guides/quick-start/
-- Architecture: https://docs.zepp.com/docs/guides/architecture/arc/
-- Device App framework: https://docs.zepp.com/docs/guides/framework/device/intro/
-- app.json reference: https://docs.zepp.com/docs/reference/app-json/
-- API_LEVEL compatibility: https://docs.zepp.com/docs/guides/framework/device/compatibility/
-- Screen adaptation spec: https://docs.zepp.com/docs/guides/framework/device/screen-adaption/
-- Zeus CLI: https://docs.zepp.com/docs/guides/tools/cli/
-- Zepp App dev mode: https://docs.zepp.com/docs/guides/tools/zepp-app/
-- Device matrix: https://docs.zepp.com/docs/reference/related-resources/device-list/
-- Best practices index: https://docs.zepp.com/docs/guides/best-practice/debug/
-- Release process: https://docs.zepp.com/docs/distribute/
+- Intro: <https://docs.zepp.com/docs/1.0/intro/>
+- Quick Start: <https://docs.zepp.com/docs/1.0/guides/quick-start/>
+- Architecture: <https://docs.zepp.com/docs/1.0/guides/architecture/arc/>
+- Device App framework: <https://docs.zepp.com/docs/1.0/guides/framework/device/intro/>
+- app.json reference: <https://docs.zepp.com/docs/1.0/reference/app-json/>
+- API_LEVEL compatibility: <https://docs.zepp.com/docs/1.0/guides/framework/device/compatibility/>
+- Screen adaptation spec: <https://docs.zepp.com/docs/1.0/guides/framework/device/screen-adaption/>
+- Zeus CLI: <https://docs.zepp.com/docs/1.0/guides/tools/cli/>
+- Zepp App dev mode: <https://docs.zepp.com/docs/1.0/guides/tools/zepp-app/>
+- Device matrix: <https://docs.zepp.com/docs/1.0/reference/related-resources/device-list/>
+- Best practices index: <https://docs.zepp.com/docs/1.0/guides/best-practice/debug/>
+- Release process: <https://docs.zepp.com/docs/1.0/distribute/>
