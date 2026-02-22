@@ -1,14 +1,24 @@
 {
-  "name": "padel-score",
+  "name": "padel-buddy",
   "version": "1.0.0",
-  "description": "",
+  "description": "A padel score tracking app for Amazfit watches running Zepp OS. Track match scores directly from your wrist with an intuitive interface designed for padel players.",
   "type": "module",
   "main": "app.js",
   "scripts": {
     "test": "node --test"
   },
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "padel",
+    "score",
+    "tracker",
+    "amazfit",
+    "zepp-os",
+    "watch",
+    "sports",
+    "tennis"
+  ],
+  "author": "Thiago Mendonca <trystan2k@gmail.com>",
+  "license": "MIT",
   "devDependencies": {
     "@zeppos/device-types": "^1.0.0"
   }

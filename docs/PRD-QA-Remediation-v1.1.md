@@ -4,7 +4,7 @@
 
 ### 1.1 Document Name
 
-Padel Scoreboard - QA Reliability and Match Flow Enhancements (v1.1)
+Padel Buddy - QA Reliability and Match Flow Enhancements (v1.1)
 
 ### 1.2 Background
 

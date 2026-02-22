@@ -186,7 +186,7 @@ Task [ID] [Full Task Title From Task Master]
 
 Input:
 
-- Project: `padelscore`
+- Project: `projectA`
 - Action: `create`
 - Task ID: `42`
 - Objective: add retry logic for API client
@@ -204,7 +204,7 @@ Output:
 
 Input:
 
-- Project: `padelscore`
+- Project: `projectA`
 - Action: `check-existence`
 - Task ID: `15`
 

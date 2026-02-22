@@ -11,7 +11,7 @@
     },
     "mcp_basic-memory": {
       "type": "local",
-      "command": ["uvx", "basic-memory", "mcp", "--project", "padelscore"],
+      "command": ["uvx", "basic-memory", "mcp", "--project", "padelbuddy"],
       "enabled": true
     },
     "mcp_serena": {
@@ -26,7 +26,7 @@
         "--enable-web-dashboard",
         "false",
         "--project",
-        "padelscore"
+        "padelbuddy"
       ]
     },
     "mcp_github": {

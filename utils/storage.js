@@ -1,7 +1,7 @@
 import { MATCH_STATUS } from './match-state.js'
 import { SCORE_POINT_SEQUENCE } from './scoring-constants.js'
 
-export const MATCH_STATE_STORAGE_KEY = 'padel-score.match-state'
+export const MATCH_STATE_STORAGE_KEY = 'padel-buddy.match-state'
 
 const scorePointSet = new Set(SCORE_POINT_SEQUENCE)
 const fallbackStorage = createInMemoryStorageAdapter()

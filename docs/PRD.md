@@ -4,11 +4,11 @@
 
 ### 1.1 Product Name
 
-Padel Scoreboard for Zepp OS (Amazfit Watch)
+Padel Buddy for Zepp OS (Amazfit Watch)
 
 ### 1.2 Purpose
 
-The purpose of this application is to provide a **simple, fast, and reliable padel scoreboard** optimized for Amazfit smartwatches running **Zepp OS**. The app allows users to track padel match scores directly from their wrist without distractions, supporting common in-game actions such as scoring points, undoing mistakes, tracking sets, and resuming interrupted games.
+The purpose of this application is to provide a **simple, fast, and reliable Padel Buddy** optimized for Amazfit smartwatches running **Zepp OS**. The app allows users to track padel match scores directly from their wrist without distractions, supporting common in-game actions such as scoring points, undoing mistakes, tracking sets, and resuming interrupted games.
 
 ### 1.3 Target Platform
 

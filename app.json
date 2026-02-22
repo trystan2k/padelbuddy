@@ -2,7 +2,7 @@
   "configVersion": "v2",
   "app": {
     "appId": 20000,
-    "appName": "Padel Score",
+    "appName": "Padel Buddy",
     "appType": "app",
     "version": {
       "code": 1,
@@ -74,7 +74,7 @@
   },
   "i18n": {
     "en-US": {
-      "appName": "Padel Score"
+      "appName": "Padel Buddy"
     }
   },
   "defaultLanguage": "en-US"

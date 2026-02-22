@@ -1,8 +1,8 @@
-# AGENTS.md – Coding Agent Guide for padelscore
+# AGENTS.md – Coding Agent Guide for padelbuddy
 
 ## Project context
 
-We are developing a **padel score app** for **Amazfit watches** running **Zepp OS** (v1.0+).
+We are developing a **padel buddy app** for **Amazfit watches** running **Zepp OS** (v1.0+).
 The app will allow users to track the score of a padel match directly from their wrist.
 
 Key references:
@@ -25,7 +25,7 @@ npm run test
   - `title`: Descriptive name of the feature, obtained from task master
 - **Examples**:
   - `feature/PAD-001-user-auth`: User authentication flow.
-  - `feature/PAD-002-score-tracking`: Padel score tracking functionality.
+  - `feature/PAD-002-score-tracking`: Padel buddy score tracking functionality.
 
 ## Commit Messages
 

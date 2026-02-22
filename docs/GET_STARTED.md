@@ -1,4 +1,4 @@
-# Zepp OS / Amazfit Padel Score App - Get Started
+# Zepp OS / Amazfit Padel Buddy App - Get Started
 
 This guide summarizes what you need to start building an Amazfit smartwatch app to track padel scores.
 
@@ -20,7 +20,7 @@ npm i -g @zeppos/zeus-cli
 Create a new project:
 
 ```bash
-zeus create padel-score
+zeus create padel-buddy
 ```
 
 Run and iterate in simulator:
@@ -47,7 +47,7 @@ Build a distributable package:
 zeus build
 ```
 
-## Recommended MVP for a Padel Score App
+## Recommended MVP for a Padel Buddy App
 
 Start with a Device App only (watch UI), and keep scope small:
 
