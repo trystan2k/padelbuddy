@@ -935,16 +935,13 @@ test('game screen controls call team-specific handlers for add and remove', asyn
   })
 })
 
-test('game back-home control navigates back', async () => {
+test('game back-home control navigates directly to home screen', async () => {
   const originalHmApp = globalThis.hmApp
   const navigationCalls = []
 
   globalThis.hmApp = {
-    goBack() {
-      navigationCalls.push('goBack')
-    },
-    gotoPage() {
-      navigationCalls.push('gotoPage')
+    gotoPage(options) {
+      navigationCalls.push({ method: 'gotoPage', url: options?.url })
     }
   }
 
@@ -958,7 +955,9 @@ test('game back-home control navigates back', async () => {
       backHomeButton.properties.click_func()
     })
 
-    assert.equal(navigationCalls.includes('goBack'), true)
+    const homeNavigation = navigationCalls.find(call => call.url === 'page/index')
+    assert.equal(homeNavigation !== undefined, true, 'Should navigate to page/index')
+    assert.equal(homeNavigation.method, 'gotoPage')
   } finally {
     if (typeof originalHmApp === 'undefined') {
       delete globalThis.hmApp
@@ -968,7 +967,7 @@ test('game back-home control navigates back', async () => {
   }
 })
 
-test('game back-home control falls back to home route when goBack is unavailable', async () => {
+test('game back-home control navigates to home screen when gotoPage is available', async () => {
   const originalHmApp = globalThis.hmApp
   const navigationCalls = []
 
@@ -980,9 +979,6 @@ test('game back-home control falls back to home route when goBack is unavailable
 
   try {
     await runWithRenderedGamePage(390, 450, ({ createdWidgets, page }) => {
-      // Simulate no goBack available
-      delete globalThis.hmApp.goBack
-      
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
       const backHomeButton = buttons[4]
 
@@ -1119,8 +1115,8 @@ test('game scoring debounce does not block immediate back-home navigation', asyn
   const navigationCalls = []
 
   globalThis.hmApp = {
-    goBack() {
-      navigationCalls.push('goBack')
+    gotoPage(options) {
+      navigationCalls.push({ method: 'gotoPage', url: options?.url })
     }
   }
 
@@ -1137,7 +1133,9 @@ test('game scoring debounce does not block immediate back-home navigation', asyn
       backHomeButton.properties.click_func()
     })
 
-    assert.equal(navigationCalls.includes('goBack'), true)
+    const homeNavigation = navigationCalls.find(call => call.url === 'page/index')
+    assert.equal(homeNavigation !== undefined, true, 'Should navigate to page/index')
+    assert.equal(homeNavigation.method, 'gotoPage')
   } finally {
     if (typeof originalHmApp === 'undefined') {
       delete globalThis.hmApp
@@ -1427,4 +1425,172 @@ test('game access guard does not re-check session when already in flight', async
     const result = page.validateSessionAccess()
     assert.equal(result, false)
   })
+})
+
+// ============================================================================
+// Gesture Event Handler Tests
+// ============================================================================
+
+test('game registerGestureHandler is called during build', async () => {
+  const originalHmApp = globalThis.hmApp
+  const registerCalls = []
+
+  globalThis.hmApp = {
+    gotoPage() {},
+    gesture: { RIGHT: 'right' },
+    registerGestureEvent(callback) {
+      registerCalls.push({ callback: typeof callback })
+    },
+    unregisterGestureEvent() {}
+  }
+
+  try {
+    await runWithRenderedGamePage(390, 450, () => {
+      assert.equal(registerCalls.length, 1, 'registerGestureEvent should be called once')
+      assert.equal(registerCalls[0].callback, 'function', 'registerGestureEvent should receive a callback function')
+    })
+  } finally {
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('game gesture handler returns true for RIGHT gesture and navigates to home', async () => {
+  const originalHmApp = globalThis.hmApp
+  let gestureCallback = null
+  const navigationCalls = []
+  const saveCalls = []
+
+  globalThis.hmApp = {
+    gotoPage(options) {
+      navigationCalls.push(options?.url)
+    },
+    gesture: { RIGHT: 'right', LEFT: 'left' },
+    registerGestureEvent(callback) {
+      gestureCallback = callback
+    },
+    unregisterGestureEvent() {}
+  }
+
+  try {
+    await runWithRenderedGamePage(390, 450, ({ page }) => {
+      // Override saveCurrentRuntimeState to track calls
+      const originalSave = page.saveCurrentRuntimeState.bind(page)
+      page.saveCurrentRuntimeState = (options) => {
+        saveCalls.push(options)
+        return originalSave(options)
+      }
+
+      assert.equal(typeof gestureCallback, 'function', 'gesture callback should be registered')
+
+      const result = gestureCallback('right')
+
+      assert.equal(result, true, 'RIGHT gesture should return true to skip default back behavior')
+      assert.equal(saveCalls.length, 1, 'saveCurrentRuntimeState should be called once')
+      assert.deepEqual(saveCalls[0], { force: true }, 'saveCurrentRuntimeState should be called with force: true')
+      assert.equal(navigationCalls.includes('page/index'), true, 'Should navigate to page/index')
+    })
+  } finally {
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('game gesture handler returns false for non-RIGHT gestures', async () => {
+  const originalHmApp = globalThis.hmApp
+  let gestureCallback = null
+  const navigationCalls = []
+
+  globalThis.hmApp = {
+    gotoPage(options) {
+      navigationCalls.push(options?.url)
+    },
+    gesture: { RIGHT: 'right', LEFT: 'left', UP: 'up', DOWN: 'down' },
+    registerGestureEvent(callback) {
+      gestureCallback = callback
+    },
+    unregisterGestureEvent() {}
+  }
+
+  try {
+    await runWithRenderedGamePage(390, 450, () => {
+      assert.equal(typeof gestureCallback, 'function', 'gesture callback should be registered')
+
+      // Clear any navigation from onInit's validateSessionAccess (e.g., page/setup)
+      navigationCalls.length = 0
+
+      const leftResult = gestureCallback('left')
+      const upResult = gestureCallback('up')
+      const downResult = gestureCallback('down')
+
+      assert.equal(leftResult, false, 'LEFT gesture should return false for default behavior')
+      assert.equal(upResult, false, 'UP gesture should return false for default behavior')
+      assert.equal(downResult, false, 'DOWN gesture should return false for default behavior')
+
+      // Check that no HOME navigation occurred for non-RIGHT gestures
+      const homeNavigations = navigationCalls.filter(url => url === 'page/index')
+      assert.equal(homeNavigations.length, 0, 'Should not navigate to home for non-RIGHT gestures')
+    })
+  } finally {
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('game unregisterGestureHandler is called during onDestroy', async () => {
+  const originalHmApp = globalThis.hmApp
+  const unregisterCalls = []
+
+  globalThis.hmApp = {
+    gotoPage() {},
+    gesture: { RIGHT: 'right' },
+    registerGestureEvent() {},
+    unregisterGestureEvent() {
+      unregisterCalls.push(true)
+    }
+  }
+
+  try {
+    await runWithRenderedGamePage(390, 450, ({ page }) => {
+      page.onDestroy()
+      assert.equal(unregisterCalls.length, 1, 'unregisterGestureEvent should be called once in onDestroy')
+    })
+  } finally {
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('game gesture handler does not throw when hmApp is unavailable', async () => {
+  const originalHmApp = globalThis.hmApp
+
+  delete globalThis.hmApp
+
+  try {
+    // Should not throw
+    await runWithRenderedGamePage(390, 450, ({ page }) => {
+      // registerGestureHandler should not throw
+      page.registerGestureHandler()
+      // unregisterGestureHandler should not throw
+      page.unregisterGestureHandler()
+    })
+  } finally {
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
 })

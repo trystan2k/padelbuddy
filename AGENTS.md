@@ -2,13 +2,25 @@
 
 ## Project context
 
-We are developing a **padel buddy app** for **Amazfit watches** running **Zepp OS** (v1.0+).
+We are developing a **padel buddy app** for **Amazfit watches** running **Zepp OS** (v1.0).
 The app will allow users to track the score of a padel match directly from their wrist.
 
-Key references:
+## API Version Requirement
 
-- **Official Documentation**: [Zepp OS Developers Documentation](https://docs.zepp.com/docs/intro/)
-- **Zepp App Tooling**: [Zepp App Developer Mode](https://docs.zepp.com/docs/guides/tools/zepp-app/)
+This app is developed for **Zepp OS v1.0 API version**.
+
+Documentation: [Zepp OS v1.0 Developers Documentation](https://docs.zepp.com/docs/1.0/intro/)
+
+Any implementation done in this project MUST:
+
+- Strictly adhere to the v1.0 API specification
+- Reference the v1.0 documentation when planning and implementing features
+- Not use features or APIs from later versions unless explicitly required
+
+## Key references
+
+- **Official Documentation**: [Zepp OS Developers Documentation](https://docs.zepp.com/docs/1.0/intro/)
+- **Zepp App Tooling**: [Zepp App Developer Mode](https://docs.zepp.com/docs/1.0/guides/tools/zepp-app/)
 
 ## QA Gate Commands
 
