@@ -38,6 +38,11 @@ App({
 
   onCreate(options) {
     console.log('app on create invoke')
+    // Ensure that if the screen turns off while the app is active,
+    // the watch re-launches this app instead of returning to the watchface.
+    if (typeof hmApp !== 'undefined' && typeof hmApp.setScreenKeep === 'function') {
+      hmApp.setScreenKeep(true)
+    }
   },
 
   onDestroy(options) {

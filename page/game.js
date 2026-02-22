@@ -588,13 +588,36 @@ Page({
       return
     }
 
+    this.keepScreenOn()
     this.ensureRuntimeState()
     this.renderGameScreen()
   },
 
   onDestroy() {
+    this.releaseScreenOn()
     this.handleLifecycleAutoSave()
     this.clearWidgets()
+  },
+
+  keepScreenOn() {
+    try {
+      // v1 API: set bright screen time to maximum (seconds). Cancel must be called on destroy.
+      if (typeof hmSetting !== 'undefined' && typeof hmSetting.setBrightScreen === 'function') {
+        hmSetting.setBrightScreen(2147483)
+      }
+    } catch {
+      // Non-fatal: may be unavailable in simulator.
+    }
+  },
+
+  releaseScreenOn() {
+    try {
+      if (typeof hmSetting !== 'undefined' && typeof hmSetting.setBrightScreenCancel === 'function') {
+        hmSetting.setBrightScreenCancel()
+      }
+    } catch {
+      // Non-fatal.
+    }
   },
 
   handleLifecycleAutoSave() {
