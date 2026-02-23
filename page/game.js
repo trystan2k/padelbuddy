@@ -1376,7 +1376,7 @@ Page({
       persistedMatchState: this.persistedSessionState
     })
     const isMatchFinished = viewModel.status === 'finished'
-    const leadingTeamId = getLeadingTeamId(viewModel)
+    const _leadingTeamId = getLeadingTeamId(viewModel)
     const { width, height } = this.getScreenMetrics()
     const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
 

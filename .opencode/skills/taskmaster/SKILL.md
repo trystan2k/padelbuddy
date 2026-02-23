@@ -58,6 +58,7 @@ Procedure:
    - `task-master`
    - `taskmaster`
    - `npx -y task-master-ai`
+   Try to run the first one and if it fails, try the next one, but if one of them succeeds, continue with that one.
 5. Verify availability with `--version`. If missing and `allow_install` is false, fail with install guidance.
 6. Set repository context and validate whether `.taskmaster/` exists.
 7. Build a version-specific command map:
@@ -93,10 +94,10 @@ PRD and planning:
 Task inspection:
 - `task-master list`
 - `task-master list --status=<status>`
-- `task-master list --with-subtasks`
+- `task-master list --with-subtasks` // Shows all tasks with their subtasks
 - `task-master list --status=<status> --with-subtasks`
 - `task-master next`
-- `task-master show <id>`
+- `task-master show <id>` // Shows the task defailt, with the subtasks
 - `task-master show --id=<id>`
 - `task-master show 1,3,5`
 - `task-master show 1.2`
@@ -271,3 +272,4 @@ Notes:
 - If `.taskmaster/` is missing for non-bootstrap actions, fail with actionable init guidance.
 - When status value is unsupported in the installed version, return supported statuses from help output.
 - Do not execute source-code changes, git writes, or unrelated shell commands in this skill.
+- **NEVER** manipulate the tasks.json file directly or using any other tool except the task-master CLI. Use the provided commands to manage tasks.

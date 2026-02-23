@@ -82,7 +82,7 @@ App({
     return applyNextState(this, restoredState)
   },
 
-  onCreate(options) {
+  onCreate(_options) {
     console.log('app on create invoke')
     // Ensure that if the screen turns off while the app is active,
     // the watch re-launches this app instead of returning to the watchface.
@@ -94,7 +94,7 @@ App({
     }
   },
 
-  onDestroy(options) {
+  onDestroy(_options) {
     console.log('app on destroy invoke')
     // Safety-net: persist current match state in case page.onDestroy was skipped
     // (e.g. OS hard-kill). If page.onDestroy already ran, this is a no-op because

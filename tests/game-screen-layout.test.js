@@ -6,9 +6,7 @@ import { createScoreViewModel } from '../page/score-view-model.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
-import { matchStorage, ZeppOsStorageAdapter } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
-import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
 import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
 
 let gamePageImportCounter = 0
@@ -197,7 +195,7 @@ function getRoundHorizontalBounds(width, height, yPosition) {
   }
 }
 
-function assertWidgetWithinRoundScreen(widget, width, height) {
+function _assertWidgetWithinRoundScreen(widget, width, height) {
   const { x, y, w, h } = getWidgetRect(widget)
   const yPositions = [y, y + h / 2, y + h]
 
@@ -315,7 +313,7 @@ function parseSetsWonCounterValue(textValue) {
   return null
 }
 
-function getPersistenceWritesByKey(writes, storageKey) {
+function _getPersistenceWritesByKey(writes, storageKey) {
   return writes
     .filter((entry) => entry.key === storageKey)
     .map((entry) => entry.value)
@@ -397,7 +395,7 @@ function getRenderedSetsWonTextValues(createdWidgets) {
   }
 }
 
-function assertRenderedScoresMatchState(createdWidgets, matchState) {
+function _assertRenderedScoresMatchState(createdWidgets, matchState) {
   const viewModel = createScoreViewModel(matchState)
   const renderedScores = getRenderedScoreTextValues(createdWidgets)
 
@@ -415,7 +413,7 @@ function assertRenderedScoresMatchState(createdWidgets, matchState) {
 
 test('game screen keeps set, points, and controls in top-to-bottom layout order', async () => {
   const { createdWidgets } = await renderGameScreenForDimensions(390, 450)
-  const fillRects = getVisibleWidgets(createdWidgets, 'FILL_RECT')
+  const _fillRects = getVisibleWidgets(createdWidgets, 'FILL_RECT')
   const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
   const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT')
 
@@ -468,10 +466,7 @@ test('game controls keep key visible widgets in bounds for square and round scre
 })
 
 test('game top and middle sections stay inside round-screen horizontal safe area', async () => {
-  const { createdWidgets, width, height } = await renderGameScreenForDimensions(
-    454,
-    454
-  )
+  const { createdWidgets } = await renderGameScreenForDimensions(454, 454)
   const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
 
   // Verify buttons are present and within screen bounds
@@ -636,7 +631,7 @@ test('game runtime state hydrates set metadata from persisted active session', a
 })
 
 test('game runtime state hydrates regular-game persisted points with Ad/Game conversion', async () => {
-  await runWithRenderedGamePage(390, 450, ({ app, createdWidgets, page }) => {
+  await runWithRenderedGamePage(390, 450, ({ app, page }) => {
     page.persistedSessionState = {
       status: 'active',
       setsToPlay: 3,
@@ -679,7 +674,7 @@ test('game runtime state hydrates regular-game persisted points with Ad/Game con
 })
 
 test('game runtime state keeps tie-break persisted points as numeric values', async () => {
-  await runWithRenderedGamePage(390, 450, ({ app, createdWidgets, page }) => {
+  await runWithRenderedGamePage(390, 450, ({ app, page }) => {
     page.persistedSessionState = {
       status: 'active',
       setsToPlay: 3,
@@ -716,7 +711,7 @@ test('game runtime state keeps tie-break persisted points as numeric values', as
 })
 
 test('game screen renders resumed manager team labels and score context', async () => {
-  await runWithRenderedGamePage(390, 450, ({ app, createdWidgets, page }) => {
+  await runWithRenderedGamePage(390, 450, ({ app, page }) => {
     app.globalData.matchState = {
       ...createInitialMatchState(1700000003),
       teams: {
@@ -1066,7 +1061,7 @@ test('game back-home control navigates to home screen when gotoPage is available
   }
 
   try {
-    await runWithRenderedGamePage(390, 450, ({ createdWidgets, page }) => {
+    await runWithRenderedGamePage(390, 450, ({ createdWidgets }) => {
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
       const backHomeButton = buttons[4]
 

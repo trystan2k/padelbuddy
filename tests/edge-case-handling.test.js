@@ -4,10 +4,7 @@ import test from 'node:test'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { initializeMatchState } from '../utils/match-session-init.js'
 import { createInitialMatchState } from '../utils/match-state.js'
-import {
-  STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY,
-  isMatchState
-} from '../utils/match-state-schema.js'
+import { isMatchState } from '../utils/match-state-schema.js'
 import { MatchStorage, matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
 

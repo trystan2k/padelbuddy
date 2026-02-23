@@ -5,7 +5,6 @@ import { createInitialMatchState } from '../utils/match-state.js'
 import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
 import { matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
-import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
 
 let summaryPageImportCounter = 0
 

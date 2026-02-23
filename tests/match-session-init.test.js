@@ -202,7 +202,7 @@ test('initializeMatchState throws TypeError for undefined input', () => {
   })
 })
 
-test('initializeMatchState produces schema-valid match state for all supported set counts', async (t) => {
+test('initializeMatchState produces schema-valid match state for all supported set counts', async (_t) => {
   const { isMatchState } = await import('../utils/match-state-schema.js')
 
   for (const setsToPlay of SUPPORTED_SETS_TO_PLAY) {

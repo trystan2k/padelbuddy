@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import {
-  createMatchHistoryEntry,
-  MATCH_HISTORY_SCHEMA_VERSION
-} from '../utils/match-history-types.js'
+import { createMatchHistoryEntry } from '../utils/match-history-types.js'
 
 // Mock hmFS before importing storage module
 const mockFiles = {}

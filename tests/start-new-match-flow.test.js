@@ -1,13 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createHistoryStack } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
-import {
-  ACTIVE_MATCH_SESSION_STORAGE_KEY,
-  matchStorage,
-  ZeppOsStorageAdapter
-} from '../utils/match-storage.js'
+import { ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-storage.js'
 import {
   clearActiveMatchSession,
   resetMatchStateManager,
