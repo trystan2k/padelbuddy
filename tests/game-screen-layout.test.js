@@ -1338,12 +1338,15 @@ async function runSessionGuardTest(storageValue, runAssertions) {
       return { width: 390, height: 450 }
     }
   }
-  // Set up getApp without a valid handoff state for storage failure tests
-  // consumeSessionHandoff() reads from pendingPersistedMatchState, not matchState
+  // Set up getApp without a valid handoff state for storage failure tests.
+  // consumeSessionHandoff() reads from pendingPersistedMatchState specifically,
+  // so we must explicitly set it to null to prevent cross-test contamination
+  // when test files run in parallel (node --test runs files concurrently).
   globalThis.getApp = () => ({
     globalData: {
       matchState: null,
-      matchHistory: createHistoryStack()
+      matchHistory: createHistoryStack(),
+      pendingPersistedMatchState: null
     }
   })
 
