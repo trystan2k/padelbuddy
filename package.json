@@ -6,7 +6,7 @@
   "main": "app.js",
   "scripts": {
     "prepare": "husky",
-    "test": "node --test",
+    "test": "node --test --test-isolation=process",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
