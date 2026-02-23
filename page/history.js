@@ -39,22 +39,44 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-function formatDate(timestamp) {
-  if (!Number.isFinite(timestamp)) {
+function formatDate(entry) {
+  if (!entry) {
     return ''
   }
 
-  const date = new Date(timestamp)
-  const day = date.getDate()
-  const month = date.getMonth() + 1
-  const year = date.getFullYear()
-  const hours = date.getHours()
-  const minutes = date.getMinutes()
-
   const pad = (n) => (n < 10 ? `0${n}` : String(n))
 
-  // Format: DD/MM/YYYY HH:MM
-  return `${pad(day)}/${pad(month)}/${year} ${pad(hours)}:${pad(minutes)}`
+  if (entry.localTime && typeof entry.localTime === 'object') {
+    const lt = entry.localTime
+    const day = lt.day
+    const month = lt.month
+    const year = lt.year
+    const hours = lt.hour
+    const minutes = lt.minute
+
+    if (
+      Number.isFinite(day) &&
+      Number.isFinite(month) &&
+      Number.isFinite(year) &&
+      Number.isFinite(hours) &&
+      Number.isFinite(minutes)
+    ) {
+      return `${pad(day)}/${pad(month)}/${year} ${pad(hours)}:${pad(minutes)}`
+    }
+  }
+
+  if (Number.isFinite(entry.completedAt)) {
+    const date = new Date(entry.completedAt)
+    const day = date.getDate()
+    const month = date.getMonth() + 1
+    const year = date.getFullYear()
+    const hours = date.getHours()
+    const minutes = date.getMinutes()
+
+    return `${pad(day)}/${pad(month)}/${year} ${pad(hours)}:${pad(minutes)}`
+  }
+
+  return ''
 }
 
 function calculateRoundSafeSideInset(
@@ -297,7 +319,7 @@ Page({
 
       // Build data for SCROLL_LIST with separate date and score
       const scrollDataArray = this.historyEntries.map((entry) => {
-        const dateStr = formatDate(entry.completedAt)
+        const dateStr = formatDate(entry)
         const scoreStr = `${entry.setsWonTeamA}-${entry.setsWonTeamB}`
 
         return {

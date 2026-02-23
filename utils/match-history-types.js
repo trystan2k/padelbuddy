@@ -11,7 +11,8 @@
 /**
  * @typedef {Object} MatchHistoryEntry
  * @property {string} id - Unique identifier (timestamp-based)
- * @property {number} completedAt - Unix timestamp when match was completed
+ * @property {number} completedAt - Unix timestamp when match was completed (fallback)
+ * @property {{year: number, month: number, day: number, hour: number, minute: number}|null} localTime - Local time from watch sensor
  * @property {string} teamALabel - Team A display label
  * @property {string} teamBLabel - Team B display label
  * @property {number} setsWonTeamA - Number of sets won by Team A
@@ -49,11 +50,46 @@ export function createMatchHistoryEntry(matchState) {
     winnerTeam = 'teamB'
   }
 
-  const completedAt = matchState.completedAt ?? Date.now()
+  const timestamp = Date.now()
+
+  let localTime = null
+  // Try hmSensor.id.TIME for local time (correct Zepp OS v1.0 API)
+  if (typeof hmSensor !== 'undefined' && hmSensor.createSensor && hmSensor.id) {
+    try {
+      const timeSensor = hmSensor.createSensor(hmSensor.id.TIME)
+      if (timeSensor) {
+        localTime = {
+          year: timeSensor.year,
+          month: timeSensor.month,
+          day: timeSensor.day,
+          hour: timeSensor.hour,
+          minute: timeSensor.minute
+        }
+      }
+    } catch {
+      localTime = null
+    }
+  }
+  // Fallback to UTC (Date methods have broken timezone handling in Zepp OS)
+  if (!localTime) {
+    try {
+      const now = new Date(timestamp)
+      localTime = {
+        year: now.getUTCFullYear(),
+        month: now.getUTCMonth() + 1,
+        day: now.getUTCDate(),
+        hour: now.getUTCHours(),
+        minute: now.getUTCMinutes()
+      }
+    } catch {
+      localTime = null
+    }
+  }
 
   return {
-    id: String(completedAt),
-    completedAt,
+    id: String(timestamp),
+    completedAt: timestamp,
+    localTime,
     teamALabel: matchState.teams?.teamA?.label ?? 'Team A',
     teamBLabel: matchState.teams?.teamB?.label ?? 'Team B',
     setsWonTeamA,
