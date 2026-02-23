@@ -11,6 +11,8 @@ This app is developed for **Zepp OS v1.0 API version**.
 
 Documentation: [Zepp OS v1.0 Developers Documentation](https://docs.zepp.com/docs/1.0/intro/)
 
+> ⚠️ **IMPORTANT**: See [CONTEXT.md](./CONTEXT.md) for v1.0-specific constraints including page lifecycle methods.
+
 Any implementation done in this project MUST:
 
 - Strictly adhere to the v1.0 API specification

@@ -491,6 +491,7 @@ test('home screen shows Resume when storage contains a 0-point active state', as
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
         'home.resumeGame',
+        'home.previousMatches',
         'home.clearData'
       ])
     }
@@ -517,7 +518,7 @@ test('home screen hides Resume for partial state missing schemaVersion', async (
       matchStorageLoadResponses: [partialState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
     }
   )
 })
@@ -540,7 +541,7 @@ test('home screen hides Resume for state missing setHistory', async () => {
       matchStorageLoadResponses: [partialState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
     }
   )
 })
@@ -563,7 +564,7 @@ test('home screen hides Resume for state with currentSet.number equal to 0', asy
       matchStorageLoadResponses: [invalidState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
     }
   )
 })
