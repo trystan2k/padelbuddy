@@ -3,12 +3,12 @@ import test from 'node:test'
 
 import {
   CURRENT_SCHEMA_VERSION,
-  MATCH_STATUS,
-  SETS_NEEDED_TO_WIN,
-  SETS_TO_PLAY,
   createDefaultMatchState,
   deserializeMatchState,
+  MATCH_STATUS,
   migrateMatchState,
+  SETS_NEEDED_TO_WIN,
+  SETS_TO_PLAY,
   serializeMatchState
 } from '../utils/match-state-schema.js'
 
@@ -45,9 +45,15 @@ test('createDefaultMatchState returns independent nested objects on every call',
   assert.notStrictEqual(firstState, secondState)
   assert.notStrictEqual(firstState.setsWon, secondState.setsWon)
   assert.notStrictEqual(firstState.currentSet, secondState.currentSet)
-  assert.notStrictEqual(firstState.currentSet.games, secondState.currentSet.games)
+  assert.notStrictEqual(
+    firstState.currentSet.games,
+    secondState.currentSet.games
+  )
   assert.notStrictEqual(firstState.currentGame, secondState.currentGame)
-  assert.notStrictEqual(firstState.currentGame.points, secondState.currentGame.points)
+  assert.notStrictEqual(
+    firstState.currentGame.points,
+    secondState.currentGame.points
+  )
   assert.notStrictEqual(firstState.setHistory, secondState.setHistory)
 
   firstState.setsWon.teamA = 1

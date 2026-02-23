@@ -1,7 +1,7 @@
 import {
-  STORAGE_KEY as SCHEMA_STORAGE_KEY,
   deserializeMatchState,
   isMatchState,
+  STORAGE_KEY as SCHEMA_STORAGE_KEY,
   serializeMatchState
 } from './match-state-schema.js'
 
@@ -77,7 +77,10 @@ function decodeUtf8(bytes) {
       code = ((byte & 0x1f) << 6) | (bytes[i + 1] & 0x3f)
       i += 2
     } else if ((byte & 0xf0) === 0xe0) {
-      code = ((byte & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)
+      code =
+        ((byte & 0x0f) << 12) |
+        ((bytes[i + 1] & 0x3f) << 6) |
+        (bytes[i + 2] & 0x3f)
       i += 3
     } else {
       code =
@@ -90,7 +93,10 @@ function decodeUtf8(bytes) {
 
     if (code >= 0x10000) {
       const offset = code - 0x10000
-      str += String.fromCharCode(0xd800 + (offset >> 10), 0xdc00 + (offset & 0x3ff))
+      str += String.fromCharCode(
+        0xd800 + (offset >> 10),
+        0xdc00 + (offset & 0x3ff)
+      )
     } else {
       str += String.fromCharCode(code)
     }
@@ -104,8 +110,8 @@ function decodeUtf8(bytes) {
 // ---------------------------------------------------------------------------
 const O_RDONLY = 0
 const O_WRONLY = 1
-const O_CREAT = 64   // 0x40
-const O_TRUNC = 512  // 0x200
+const O_CREAT = 64 // 0x40
+const O_TRUNC = 512 // 0x200
 
 // ---------------------------------------------------------------------------
 // Persistent file storage backed by hmFS /data directory
@@ -146,7 +152,8 @@ function resolveRuntimeStorage() {
           const filename = keyToFilename(key)
           const encoded = encodeUtf8(value)
           // O_WRONLY | O_CREAT | O_TRUNC : create if not exists, truncate to 0
-          const writeFlags = (typeof hmFS.O_WRONLY === 'number' ? hmFS.O_WRONLY : O_WRONLY) |
+          const writeFlags =
+            (typeof hmFS.O_WRONLY === 'number' ? hmFS.O_WRONLY : O_WRONLY) |
             (typeof hmFS.O_CREAT === 'number' ? hmFS.O_CREAT : O_CREAT) |
             (typeof hmFS.O_TRUNC === 'number' ? hmFS.O_TRUNC : O_TRUNC)
           fileId = hmFS.open(filename, writeFlags)
@@ -184,7 +191,8 @@ function resolveRuntimeStorage() {
           }
 
           const size = statInfo.size
-          const readFlag = typeof hmFS.O_RDONLY === 'number' ? hmFS.O_RDONLY : O_RDONLY
+          const readFlag =
+            typeof hmFS.O_RDONLY === 'number' ? hmFS.O_RDONLY : O_RDONLY
           fileId = hmFS.open(filename, readFlag)
 
           if (fileId < 0) {
@@ -332,7 +340,9 @@ export class MatchStorage {
    */
   loadMatchState() {
     try {
-      const serializedState = this.adapter.load(ACTIVE_MATCH_SESSION_STORAGE_KEY)
+      const serializedState = this.adapter.load(
+        ACTIVE_MATCH_SESSION_STORAGE_KEY
+      )
 
       if (typeof serializedState !== 'string' || serializedState.length === 0) {
         return null

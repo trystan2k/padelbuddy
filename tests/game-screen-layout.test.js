@@ -3,10 +3,10 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import { createScoreViewModel } from '../page/score-view-model.js'
-import { createInitialMatchState } from '../utils/match-state.js'
-import { matchStorage, ZeppOsStorageAdapter } from '../utils/match-storage.js'
-import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
 import { createHistoryStack } from '../utils/history-stack.js'
+import { createInitialMatchState } from '../utils/match-state.js'
+import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
+import { matchStorage, ZeppOsStorageAdapter } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
 import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
@@ -55,27 +55,57 @@ function createPageInstance(definition) {
 
 async function loadGamePageDefinition() {
   const sourceUrl = new URL('../page/game.js', import.meta.url)
-  const scoreViewModelUrl = new URL('../page/score-view-model.js', import.meta.url)
+  const scoreViewModelUrl = new URL(
+    '../page/score-view-model.js',
+    import.meta.url
+  )
   const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
   const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
-  const scoringConstantsUrl = new URL('../utils/scoring-constants.js', import.meta.url)
-  const scoringEngineUrl = new URL('../utils/scoring-engine.js', import.meta.url)
+  const scoringConstantsUrl = new URL(
+    '../utils/scoring-constants.js',
+    import.meta.url
+  )
+  const scoringEngineUrl = new URL(
+    '../utils/scoring-engine.js',
+    import.meta.url
+  )
   const storageUrl = new URL('../utils/storage.js', import.meta.url)
   const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL('../utils/match-state-schema.js', import.meta.url)
+  const matchStateSchemaUrl = new URL(
+    '../utils/match-state-schema.js',
+    import.meta.url
+  )
 
   let source = await readFile(sourceUrl, 'utf8')
 
   source = source
-    .replace("import { gettext } from 'i18n'\n", 'const gettext = (key) => key\n')
+    .replace(
+      "import { gettext } from 'i18n'\n",
+      'const gettext = (key) => key\n'
+    )
     .replace("from './score-view-model.js'", `from '${scoreViewModelUrl.href}'`)
-    .replace("from '../utils/history-stack.js'", `from '${historyStackUrl.href}'`)
+    .replace(
+      "from '../utils/history-stack.js'",
+      `from '${historyStackUrl.href}'`
+    )
     .replace("from '../utils/match-state.js'", `from '${matchStateUrl.href}'`)
-    .replace("from '../utils/scoring-constants.js'", `from '${scoringConstantsUrl.href}'`)
-    .replace("from '../utils/scoring-engine.js'", `from '${scoringEngineUrl.href}'`)
+    .replace(
+      "from '../utils/scoring-constants.js'",
+      `from '${scoringConstantsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/scoring-engine.js'",
+      `from '${scoringEngineUrl.href}'`
+    )
     .replace("from '../utils/storage.js'", `from '${storageUrl.href}'`)
-    .replace("from '../utils/match-storage.js'", `from '${matchStorageUrl.href}'`)
-    .replace("from '../utils/match-state-schema.js'", `from '${matchStateSchemaUrl.href}'`)
+    .replace(
+      "from '../utils/match-storage.js'",
+      `from '${matchStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-state-schema.js'",
+      `from '${matchStateSchemaUrl.href}'`
+    )
 
   const moduleUrl =
     'data:text/javascript;charset=utf-8,' +
@@ -109,7 +139,9 @@ async function loadGamePageDefinition() {
 }
 
 function getVisibleWidgets(createdWidgets, type) {
-  return createdWidgets.filter((widget) => widget.type === type && !widget.deleted)
+  return createdWidgets.filter(
+    (widget) => widget.type === type && !widget.deleted
+  )
 }
 
 function getWidgetRect(widget) {
@@ -155,7 +187,9 @@ function getRoundHorizontalBounds(width, height, yPosition) {
   const centerY = height / 2
   const boundedY = Math.min(Math.max(yPosition, 0), height)
   const distanceFromCenter = Math.abs(boundedY - centerY)
-  const halfChord = Math.sqrt(Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter))
+  const halfChord = Math.sqrt(
+    Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter)
+  )
 
   return {
     left: centerX - halfChord,
@@ -315,15 +349,23 @@ function createAcceptedInteractionTimeSource(
 }
 
 function getRenderedScoreTextValues(createdWidgets) {
-  const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT').filter(hasVisibleRect)
-  const setScoreCandidates = textWidgets.filter((widget) => isNumericText(widget.properties.text))
-  const maxSetScoreRowY = Math.max(...setScoreCandidates.map((widget) => widget.properties.y))
+  const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT').filter(
+    hasVisibleRect
+  )
+  const setScoreCandidates = textWidgets.filter((widget) =>
+    isNumericText(widget.properties.text)
+  )
+  const maxSetScoreRowY = Math.max(
+    ...setScoreCandidates.map((widget) => widget.properties.y)
+  )
   const setScoreWidgets = setScoreCandidates
     .filter((widget) => widget.properties.y === maxSetScoreRowY)
     .sort((left, right) => left.properties.x - right.properties.x)
 
   const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-  const scoreButtons = buttons.filter(b => b.properties.text !== '−' && b.properties.text !== 'game.backHome')
+  const scoreButtons = buttons.filter(
+    (b) => b.properties.text !== '−' && b.properties.text !== 'game.backHome'
+  )
 
   assert.equal(setScoreWidgets.length >= 2, true)
   assert.equal(scoreButtons.length >= 2, true)
@@ -337,9 +379,13 @@ function getRenderedScoreTextValues(createdWidgets) {
 }
 
 function getRenderedSetsWonTextValues(createdWidgets) {
-  const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT').filter(hasVisibleRect)
+  const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT').filter(
+    hasVisibleRect
+  )
   const setCounterWidgets = textWidgets
-    .filter((widget) => parseSetsWonCounterValue(widget.properties.text) !== null)
+    .filter(
+      (widget) => parseSetsWonCounterValue(widget.properties.text) !== null
+    )
     .sort((left, right) => left.properties.x - right.properties.x)
 
   assert.equal(setCounterWidgets.length >= 2, true)
@@ -355,8 +401,14 @@ function assertRenderedScoresMatchState(createdWidgets, matchState) {
   const viewModel = createScoreViewModel(matchState)
   const renderedScores = getRenderedScoreTextValues(createdWidgets)
 
-  assert.equal(renderedScores.teamASetGames, String(viewModel.currentSetGames.teamA))
-  assert.equal(renderedScores.teamBSetGames, String(viewModel.currentSetGames.teamB))
+  assert.equal(
+    renderedScores.teamASetGames,
+    String(viewModel.currentSetGames.teamA)
+  )
+  assert.equal(
+    renderedScores.teamBSetGames,
+    String(viewModel.currentSetGames.teamB)
+  )
   assert.equal(renderedScores.teamAPoints, String(viewModel.teamA.points))
   assert.equal(renderedScores.teamBPoints, String(viewModel.teamB.points))
 }
@@ -373,7 +425,7 @@ test('game screen keeps set, points, and controls in top-to-bottom layout order'
   const textYs = textWidgets.map((text) => text.properties.y)
 
   const controlsTop = Math.min(...buttonYs)
-  const headerBottom = Math.min(...textYs.filter(y => y > 0))
+  const headerBottom = Math.min(...textYs.filter((y) => y > 0))
 
   assert.equal(headerBottom < controlsTop, true)
 })
@@ -386,14 +438,18 @@ test('game controls keep key visible widgets in bounds for square and round scre
   ]
 
   for (const scenario of screenScenarios) {
-    const { createdWidgets, width, height } = await renderGameScreenForDimensions(
-      scenario.width,
-      scenario.height
-    )
+    const { createdWidgets, width, height } =
+      await renderGameScreenForDimensions(scenario.width, scenario.height)
     const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const visibleTextWidgets = getVisibleWidgets(createdWidgets, 'TEXT').filter(hasVisibleRect)
-    const visibleForegroundFillRects = getVisibleWidgets(createdWidgets, 'FILL_RECT').filter(
-      (widget) => hasVisibleRect(widget) && !isBackgroundFillRect(widget, width, height)
+    const visibleTextWidgets = getVisibleWidgets(createdWidgets, 'TEXT').filter(
+      hasVisibleRect
+    )
+    const visibleForegroundFillRects = getVisibleWidgets(
+      createdWidgets,
+      'FILL_RECT'
+    ).filter(
+      (widget) =>
+        hasVisibleRect(widget) && !isBackgroundFillRect(widget, width, height)
     )
     const widgetsWithBoundsChecks = [
       ...buttons,
@@ -412,9 +468,12 @@ test('game controls keep key visible widgets in bounds for square and round scre
 })
 
 test('game top and middle sections stay inside round-screen horizontal safe area', async () => {
-  const { createdWidgets, width, height } = await renderGameScreenForDimensions(454, 454)
+  const { createdWidgets, width, height } = await renderGameScreenForDimensions(
+    454,
+    454
+  )
   const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-  
+
   // Verify buttons are present and within screen bounds
   assert.equal(buttons.length >= 1, true)
   buttons.forEach((button) => {
@@ -428,13 +487,7 @@ test('game screen renders expected bottom control button labels', async () => {
   const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
   const labels = buttons.map((button) => button.properties.text)
 
-  assert.deepEqual(labels, [
-    '0',
-    '0',
-    '−',
-    '−',
-    'game.backHome'
-  ])
+  assert.deepEqual(labels, ['0', '0', '−', '−', 'game.backHome'])
 })
 
 test('game screen renders sets-won counters with default 0-0 values', async () => {
@@ -746,68 +799,76 @@ test('game screen renders resumed manager team labels and score context', async 
 })
 
 test('game match completion updates match state', async () => {
-  await runWithRenderedGamePage(390, 450, async ({ app, createdWidgets, page }) => {
-    page.getCurrentTimeMs = createAcceptedInteractionTimeSource()
+  await runWithRenderedGamePage(
+    390,
+    450,
+    async ({ app, createdWidgets, page }) => {
+      page.getCurrentTimeMs = createAcceptedInteractionTimeSource()
 
-    app.globalData.matchState.setsNeededToWin = 1
-    app.globalData.matchState.setsWon = {
-      teamA: 0,
-      teamB: 0
+      app.globalData.matchState.setsNeededToWin = 1
+      app.globalData.matchState.setsWon = {
+        teamA: 0,
+        teamB: 0
+      }
+      app.globalData.matchState.setHistory = []
+      app.globalData.matchState.currentSetStatus.number = 1
+      app.globalData.matchState.currentSet = 1
+      app.globalData.matchState.currentSetStatus.teamAGames = 5
+      app.globalData.matchState.currentSetStatus.teamBGames = 0
+      app.globalData.matchState.teamA.games = 5
+      app.globalData.matchState.teamB.games = 0
+      app.globalData.matchState.teamA.points = SCORE_POINTS.FORTY
+      app.globalData.matchState.teamB.points = SCORE_POINTS.LOVE
+
+      page.renderGameScreen()
+
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      const addTeamAButton = buttons[0]
+
+      addTeamAButton.properties.click_func()
+
+      assert.equal(app.globalData.matchState.status, 'finished')
+      assert.equal(app.globalData.matchState.winnerTeam, 'teamA')
     }
-    app.globalData.matchState.setHistory = []
-    app.globalData.matchState.currentSetStatus.number = 1
-    app.globalData.matchState.currentSet = 1
-    app.globalData.matchState.currentSetStatus.teamAGames = 5
-    app.globalData.matchState.currentSetStatus.teamBGames = 0
-    app.globalData.matchState.teamA.games = 5
-    app.globalData.matchState.teamB.games = 0
-    app.globalData.matchState.teamA.points = SCORE_POINTS.FORTY
-    app.globalData.matchState.teamB.points = SCORE_POINTS.LOVE
-
-    page.renderGameScreen()
-
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const addTeamAButton = buttons[0]
-
-    addTeamAButton.properties.click_func()
-
-    assert.equal(app.globalData.matchState.status, 'finished')
-    assert.equal(app.globalData.matchState.winnerTeam, 'teamA')
-  })
+  )
 })
 
 test('game summary navigation resets after undo from finished match state', async () => {
-  await runWithRenderedGamePage(390, 450, async ({ app, createdWidgets, page }) => {
-    page.getCurrentTimeMs = createAcceptedInteractionTimeSource()
+  await runWithRenderedGamePage(
+    390,
+    450,
+    async ({ app, createdWidgets, page }) => {
+      page.getCurrentTimeMs = createAcceptedInteractionTimeSource()
 
-    app.globalData.matchState.setsNeededToWin = 1
-    app.globalData.matchState.setsWon = {
-      teamA: 0,
-      teamB: 0
+      app.globalData.matchState.setsNeededToWin = 1
+      app.globalData.matchState.setsWon = {
+        teamA: 0,
+        teamB: 0
+      }
+      app.globalData.matchState.setHistory = []
+      app.globalData.matchState.currentSetStatus.number = 1
+      app.globalData.matchState.currentSet = 1
+      app.globalData.matchState.currentSetStatus.teamAGames = 5
+      app.globalData.matchState.currentSetStatus.teamBGames = 0
+      app.globalData.matchState.teamA.games = 5
+      app.globalData.matchState.teamB.games = 0
+      app.globalData.matchState.teamA.points = SCORE_POINTS.FORTY
+      app.globalData.matchState.teamB.points = SCORE_POINTS.LOVE
+
+      page.renderGameScreen()
+
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      const addTeamAButton = buttons[0]
+
+      addTeamAButton.properties.click_func()
+
+      assert.equal(app.globalData.matchState.status, 'finished')
+
+      page.handleRemovePointForTeam('teamA')
+
+      assert.equal(app.globalData.matchState.status, 'active')
     }
-    app.globalData.matchState.setHistory = []
-    app.globalData.matchState.currentSetStatus.number = 1
-    app.globalData.matchState.currentSet = 1
-    app.globalData.matchState.currentSetStatus.teamAGames = 5
-    app.globalData.matchState.currentSetStatus.teamBGames = 0
-    app.globalData.matchState.teamA.games = 5
-    app.globalData.matchState.teamB.games = 0
-    app.globalData.matchState.teamA.points = SCORE_POINTS.FORTY
-    app.globalData.matchState.teamB.points = SCORE_POINTS.LOVE
-
-    page.renderGameScreen()
-
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const addTeamAButton = buttons[0]
-
-    addTeamAButton.properties.click_func()
-
-    assert.equal(app.globalData.matchState.status, 'finished')
-
-    page.handleRemovePointForTeam('teamA')
-
-    assert.equal(app.globalData.matchState.status, 'active')
-  })
+  )
 })
 
 test('game controls keep minimum 48x48 touch targets in active and finished states', async () => {
@@ -818,27 +879,31 @@ test('game controls keep minimum 48x48 touch targets in active and finished stat
   ]
 
   for (const scenario of screenScenarios) {
-    await runWithRenderedGamePage(scenario.width, scenario.height, ({ app, createdWidgets, page }) => {
-      const activeButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
+    await runWithRenderedGamePage(
+      scenario.width,
+      scenario.height,
+      ({ app, createdWidgets, page }) => {
+        const activeButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
 
-      assert.equal(activeButtons.length, 5)
-      activeButtons.forEach((button) => {
-        assert.equal(button.properties.w >= 48, true)
-        assert.equal(button.properties.h >= 48, true)
-      })
+        assert.equal(activeButtons.length, 5)
+        activeButtons.forEach((button) => {
+          assert.equal(button.properties.w >= 48, true)
+          assert.equal(button.properties.h >= 48, true)
+        })
 
-      app.globalData.matchState.status = 'finished'
-      app.globalData.matchState.currentSetStatus.teamAGames = 0
-      app.globalData.matchState.currentSetStatus.teamBGames = 6
+        app.globalData.matchState.status = 'finished'
+        app.globalData.matchState.currentSetStatus.teamAGames = 0
+        app.globalData.matchState.currentSetStatus.teamBGames = 6
 
-      page.renderGameScreen()
+        page.renderGameScreen()
 
-      const finishedButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
+        const finishedButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
 
-      assert.equal(finishedButtons.length, 1)
-      assert.equal(finishedButtons[0].properties.w >= 48, true)
-      assert.equal(finishedButtons[0].properties.h >= 48, true)
-    })
+        assert.equal(finishedButtons.length, 1)
+        assert.equal(finishedButtons[0].properties.w >= 48, true)
+        assert.equal(finishedButtons[0].properties.h >= 48, true)
+      }
+    )
   }
 })
 
@@ -876,7 +941,10 @@ test('game finished state renders winner message and home-only navigation contro
 
     const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
     const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT')
-    const finishedLabel = findTextByExactContent(textWidgets, 'game.finishedLabel')
+    const finishedLabel = findTextByExactContent(
+      textWidgets,
+      'game.finishedLabel'
+    )
     const winnerText = textWidgets.find(
       (widget) =>
         typeof widget.properties.text === 'string' &&
@@ -886,10 +954,22 @@ test('game finished state renders winner message and home-only navigation contro
 
     assert.equal(buttons.length, 1)
     assert.equal(buttons[0].properties.text, 'game.home')
-    assert.equal(Boolean(findButtonByText(buttons, 'game.teamAAddPoint')), false)
-    assert.equal(Boolean(findButtonByText(buttons, 'game.teamBAddPoint')), false)
-    assert.equal(Boolean(findButtonByText(buttons, 'game.teamARemovePoint')), false)
-    assert.equal(Boolean(findButtonByText(buttons, 'game.teamBRemovePoint')), false)
+    assert.equal(
+      Boolean(findButtonByText(buttons, 'game.teamAAddPoint')),
+      false
+    )
+    assert.equal(
+      Boolean(findButtonByText(buttons, 'game.teamBAddPoint')),
+      false
+    )
+    assert.equal(
+      Boolean(findButtonByText(buttons, 'game.teamARemovePoint')),
+      false
+    )
+    assert.equal(
+      Boolean(findButtonByText(buttons, 'game.teamBRemovePoint')),
+      false
+    )
     assert.equal(Boolean(finishedLabel), true)
     assert.equal(Boolean(winnerText), true)
     assert.equal(winnerText?.properties.color, 0x1eb98c)
@@ -927,7 +1007,13 @@ test('game screen controls call team-specific handlers for add and remove', asyn
     buttons[3].properties.click_func()
     backHomeButton.properties.click_func()
 
-    assert.deepEqual(calls, ['add:teamA', 'add:teamB', 'remove:teamA', 'remove:teamB', 'home:back'])
+    assert.deepEqual(calls, [
+      'add:teamA',
+      'add:teamB',
+      'remove:teamA',
+      'remove:teamB',
+      'home:back'
+    ])
   })
 })
 
@@ -951,8 +1037,14 @@ test('game back-home control navigates directly to home screen', async () => {
       backHomeButton.properties.click_func()
     })
 
-    const homeNavigation = navigationCalls.find(call => call.url === 'page/index')
-    assert.equal(homeNavigation !== undefined, true, 'Should navigate to page/index')
+    const homeNavigation = navigationCalls.find(
+      (call) => call.url === 'page/index'
+    )
+    assert.equal(
+      homeNavigation !== undefined,
+      true,
+      'Should navigate to page/index'
+    )
     assert.equal(homeNavigation.method, 'gotoPage')
   } finally {
     if (typeof originalHmApp === 'undefined') {
@@ -1129,8 +1221,14 @@ test('game scoring debounce does not block immediate back-home navigation', asyn
       backHomeButton.properties.click_func()
     })
 
-    const homeNavigation = navigationCalls.find(call => call.url === 'page/index')
-    assert.equal(homeNavigation !== undefined, true, 'Should navigate to page/index')
+    const homeNavigation = navigationCalls.find(
+      (call) => call.url === 'page/index'
+    )
+    assert.equal(
+      homeNavigation !== undefined,
+      true,
+      'Should navigate to page/index'
+    )
     assert.equal(homeNavigation.method, 'gotoPage')
   } finally {
     if (typeof originalHmApp === 'undefined') {
@@ -1178,7 +1276,10 @@ test('game interaction performance metrics flag over-budget high-history team re
 
     removeTeamAButton.properties.click_func()
 
-    assert.equal(app.globalData.matchHistory.size(), historyDepthBeforeRemove - 1)
+    assert.equal(
+      app.globalData.matchHistory.size(),
+      historyDepthBeforeRemove - 1
+    )
   })
 })
 
@@ -1222,7 +1323,8 @@ async function runSessionGuardTest(storageValue, runAssertions) {
   // so the file-based storage layer (hmFS) returns it for the session guard check.
   const initialFiles = {}
   if (storageValue !== null && storageValue !== undefined) {
-    initialFiles[storageKeyToFilename(ACTIVE_MATCH_SESSION_STORAGE_KEY)] = storageValue
+    initialFiles[storageKeyToFilename(ACTIVE_MATCH_SESSION_STORAGE_KEY)] =
+      storageValue
   }
   globalThis.hmFS = createHmFsMock(initialFiles).mock
 
@@ -1314,72 +1416,78 @@ test('game access guard redirects to setup when persisted session is empty strin
 })
 
 test('game access guard redirects to setup when persisted session is invalid JSON', async () => {
-  await runSessionGuardTest('not-valid-json{{{', async ({ page, navigationCalls }) => {
-    const result = await page.validateSessionAccess()
+  await runSessionGuardTest(
+    'not-valid-json{{{',
+    async ({ page, navigationCalls }) => {
+      const result = await page.validateSessionAccess()
 
-    assert.equal(result, false)
-    assert.equal(page.isSessionAccessGranted, false)
-    assert.equal(navigationCalls.length, 1)
-    assert.deepEqual(navigationCalls[0], { url: 'page/setup' })
-  })
+      assert.equal(result, false)
+      assert.equal(page.isSessionAccessGranted, false)
+      assert.equal(navigationCalls.length, 1)
+      assert.deepEqual(navigationCalls[0], { url: 'page/setup' })
+    }
+  )
 })
 
 test('game access guard redirects to setup when persisted session has invalid schema', async () => {
-  await runSessionGuardTest(JSON.stringify({ invalid: 'structure' }), async ({ page, navigationCalls }) => {
-    const result = await page.validateSessionAccess()
+  await runSessionGuardTest(
+    JSON.stringify({ invalid: 'structure' }),
+    async ({ page, navigationCalls }) => {
+      const result = await page.validateSessionAccess()
 
-    assert.equal(result, false)
-    assert.equal(page.isSessionAccessGranted, false)
-    assert.equal(navigationCalls.length, 1)
-    assert.deepEqual(navigationCalls[0], { url: 'page/setup' })
-  })
+      assert.equal(result, false)
+      assert.equal(page.isSessionAccessGranted, false)
+      assert.equal(navigationCalls.length, 1)
+      assert.deepEqual(navigationCalls[0], { url: 'page/setup' })
+    }
+  )
 })
 
 test('game access guard redirects to setup when persisted session is finished', async () => {
   const finishedState = createSerializedMatchState({ status: 'finished' })
 
-  await runSessionGuardTest(finishedState, async ({ page, navigationCalls }) => {
-    const result = await page.validateSessionAccess()
+  await runSessionGuardTest(
+    finishedState,
+    async ({ page, navigationCalls }) => {
+      const result = await page.validateSessionAccess()
 
-    assert.equal(result, false)
-    assert.equal(page.isSessionAccessGranted, false)
-    assert.equal(navigationCalls.length, 1)
-    assert.deepEqual(navigationCalls[0], { url: 'page/setup' })
-  })
+      assert.equal(result, false)
+      assert.equal(page.isSessionAccessGranted, false)
+      assert.equal(navigationCalls.length, 1)
+      assert.deepEqual(navigationCalls[0], { url: 'page/setup' })
+    }
+  )
 })
 
 test('game access guard allows render when persisted session is valid and active', async () => {
   const activeState = createSerializedMatchState({ status: 'active' })
 
-  await runSessionGuardTest(activeState, async ({ page, navigationCalls, createdWidgets, getVisibleWidgets }) => {
-    // Initialize page state like onInit does
-    page.widgets = []
-    page.isSessionAccessCheckInFlight = false
-    page.isSessionAccessGranted = false
+  await runSessionGuardTest(
+    activeState,
+    async ({ page, navigationCalls, createdWidgets, getVisibleWidgets }) => {
+      // Initialize page state like onInit does
+      page.widgets = []
+      page.isSessionAccessCheckInFlight = false
+      page.isSessionAccessGranted = false
 
-    // Mock the hasValidActiveSession to return true for valid active session
-    page.hasValidActiveSession = async () => true
+      // Mock the hasValidActiveSession to return true for valid active session
+      page.hasValidActiveSession = async () => true
 
-    const result = await page.validateSessionAccess()
+      const result = await page.validateSessionAccess()
 
-    assert.equal(result, true)
-    assert.equal(page.isSessionAccessGranted, true)
-    assert.equal(navigationCalls.length, 0)
+      assert.equal(result, true)
+      assert.equal(page.isSessionAccessGranted, true)
+      assert.equal(navigationCalls.length, 0)
 
-    page.build()
+      page.build()
 
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    assert.equal(buttons.length, 5)
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      assert.equal(buttons.length, 5)
 
-    const labels = buttons.map((button) => button.properties.text)
-    assert.deepEqual(labels, [
-    '0',
-    '0',
-    '−',
-    '−',
-    'game.backHome'
-  ])
-  })
+      const labels = buttons.map((button) => button.properties.text)
+      assert.deepEqual(labels, ['0', '0', '−', '−', 'game.backHome'])
+    }
+  )
 })
 
 test('game access guard caches session access after successful validation', async () => {
@@ -1405,19 +1513,22 @@ test('game access guard caches session access after successful validation', asyn
 })
 
 test('game access guard build is no-op when session not yet validated', async () => {
-  await runSessionGuardTest(null, async ({ page, createdWidgets, getVisibleWidgets }) => {
-    page.isSessionAccessGranted = false
-    page.build()
+  await runSessionGuardTest(
+    null,
+    async ({ page, createdWidgets, getVisibleWidgets }) => {
+      page.isSessionAccessGranted = false
+      page.build()
 
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    assert.equal(buttons.length, 0)
-  })
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      assert.equal(buttons.length, 0)
+    }
+  )
 })
 
 test('game access guard does not re-check session when already in flight', async () => {
   await runSessionGuardTest(null, async ({ page }) => {
     page.isSessionAccessCheckInFlight = true
-    
+
     // When already in flight, return false immediately
     const result = page.validateSessionAccess()
     assert.equal(result, false)
@@ -1443,8 +1554,16 @@ test('game registerGestureHandler is called during build', async () => {
 
   try {
     await runWithRenderedGamePage(390, 450, () => {
-      assert.equal(registerCalls.length, 1, 'registerGestureEvent should be called once')
-      assert.equal(registerCalls[0].callback, 'function', 'registerGestureEvent should receive a callback function')
+      assert.equal(
+        registerCalls.length,
+        1,
+        'registerGestureEvent should be called once'
+      )
+      assert.equal(
+        registerCalls[0].callback,
+        'function',
+        'registerGestureEvent should receive a callback function'
+      )
     })
   } finally {
     if (typeof originalHmApp === 'undefined') {
@@ -1481,14 +1600,34 @@ test('game gesture handler returns true for RIGHT gesture and navigates to home'
         return originalSave(options)
       }
 
-      assert.equal(typeof gestureCallback, 'function', 'gesture callback should be registered')
+      assert.equal(
+        typeof gestureCallback,
+        'function',
+        'gesture callback should be registered'
+      )
 
       const result = gestureCallback('right')
 
-      assert.equal(result, true, 'RIGHT gesture should return true to skip default back behavior')
-      assert.equal(saveCalls.length, 1, 'saveCurrentRuntimeState should be called once')
-      assert.deepEqual(saveCalls[0], { force: true }, 'saveCurrentRuntimeState should be called with force: true')
-      assert.equal(navigationCalls.includes('page/index'), true, 'Should navigate to page/index')
+      assert.equal(
+        result,
+        true,
+        'RIGHT gesture should return true to skip default back behavior'
+      )
+      assert.equal(
+        saveCalls.length,
+        1,
+        'saveCurrentRuntimeState should be called once'
+      )
+      assert.deepEqual(
+        saveCalls[0],
+        { force: true },
+        'saveCurrentRuntimeState should be called with force: true'
+      )
+      assert.equal(
+        navigationCalls.includes('page/index'),
+        true,
+        'Should navigate to page/index'
+      )
     })
   } finally {
     if (typeof originalHmApp === 'undefined') {
@@ -1517,7 +1656,11 @@ test('game gesture handler returns false for non-RIGHT gestures', async () => {
 
   try {
     await runWithRenderedGamePage(390, 450, () => {
-      assert.equal(typeof gestureCallback, 'function', 'gesture callback should be registered')
+      assert.equal(
+        typeof gestureCallback,
+        'function',
+        'gesture callback should be registered'
+      )
 
       // Clear any navigation from onInit's validateSessionAccess (e.g., page/setup)
       navigationCalls.length = 0
@@ -1526,13 +1669,31 @@ test('game gesture handler returns false for non-RIGHT gestures', async () => {
       const upResult = gestureCallback('up')
       const downResult = gestureCallback('down')
 
-      assert.equal(leftResult, false, 'LEFT gesture should return false for default behavior')
-      assert.equal(upResult, false, 'UP gesture should return false for default behavior')
-      assert.equal(downResult, false, 'DOWN gesture should return false for default behavior')
+      assert.equal(
+        leftResult,
+        false,
+        'LEFT gesture should return false for default behavior'
+      )
+      assert.equal(
+        upResult,
+        false,
+        'UP gesture should return false for default behavior'
+      )
+      assert.equal(
+        downResult,
+        false,
+        'DOWN gesture should return false for default behavior'
+      )
 
       // Check that no HOME navigation occurred for non-RIGHT gestures
-      const homeNavigations = navigationCalls.filter(url => url === 'page/index')
-      assert.equal(homeNavigations.length, 0, 'Should not navigate to home for non-RIGHT gestures')
+      const homeNavigations = navigationCalls.filter(
+        (url) => url === 'page/index'
+      )
+      assert.equal(
+        homeNavigations.length,
+        0,
+        'Should not navigate to home for non-RIGHT gestures'
+      )
     })
   } finally {
     if (typeof originalHmApp === 'undefined') {
@@ -1559,7 +1720,11 @@ test('game unregisterGestureHandler is called during onDestroy', async () => {
   try {
     await runWithRenderedGamePage(390, 450, ({ page }) => {
       page.onDestroy()
-      assert.equal(unregisterCalls.length, 1, 'unregisterGestureEvent should be called once in onDestroy')
+      assert.equal(
+        unregisterCalls.length,
+        1,
+        'unregisterGestureEvent should be called once in onDestroy'
+      )
     })
   } finally {
     if (typeof originalHmApp === 'undefined') {

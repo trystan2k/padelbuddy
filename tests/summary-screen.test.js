@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-
-import { matchStorage } from '../utils/match-storage.js'
-import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
 import { createInitialMatchState } from '../utils/match-state.js'
+import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
+import { matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
 
@@ -159,7 +158,9 @@ function serializePersistedMatchState(overrides = {}) {
 }
 
 function getVisibleWidgets(createdWidgets, type) {
-  return createdWidgets.filter((widget) => widget.type === type && !widget.deleted)
+  return createdWidgets.filter(
+    (widget) => widget.type === type && !widget.deleted
+  )
 }
 
 function getVisibleButtonLabels(createdWidgets) {
@@ -175,7 +176,9 @@ function findButtonByText(createdWidgets, text) {
 }
 
 function getVisibleTextValues(createdWidgets) {
-  return getVisibleWidgets(createdWidgets, 'TEXT').map((widget) => widget.properties.text)
+  return getVisibleWidgets(createdWidgets, 'TEXT').map(
+    (widget) => widget.properties.text
+  )
 }
 
 async function waitForAsyncPageUpdates() {
@@ -188,22 +191,40 @@ async function loadSummaryPageDefinition() {
   const sourceUrl = new URL('../page/summary.js', import.meta.url)
   const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
   const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL('../utils/match-state-schema.js', import.meta.url)
+  const matchStateSchemaUrl = new URL(
+    '../utils/match-state-schema.js',
+    import.meta.url
+  )
   const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
   const startNewMatchFlowUrl = new URL(
     './helpers/summary-start-new-match-flow-bridge.js',
     import.meta.url
   )
   const storageUrl = new URL('../utils/storage.js', import.meta.url)
-  const matchHistoryStorageUrl = new URL('../utils/match-history-storage.js', import.meta.url)
+  const matchHistoryStorageUrl = new URL(
+    '../utils/match-history-storage.js',
+    import.meta.url
+  )
 
   let source = await readFile(sourceUrl, 'utf8')
 
   source = source
-    .replace("import { gettext } from 'i18n'\n", 'const gettext = (key) => key\n')
-    .replace("from '../utils/history-stack.js'", `from '${historyStackUrl.href}'`)
-    .replace("from '../utils/match-storage.js'", `from '${matchStorageUrl.href}'`)
-    .replace("from '../utils/match-state-schema.js'", `from '${matchStateSchemaUrl.href}'`)
+    .replace(
+      "import { gettext } from 'i18n'\n",
+      'const gettext = (key) => key\n'
+    )
+    .replace(
+      "from '../utils/history-stack.js'",
+      `from '${historyStackUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-storage.js'",
+      `from '${matchStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-state-schema.js'",
+      `from '${matchStateSchemaUrl.href}'`
+    )
     .replace("from '../utils/match-state.js'", `from '${matchStateUrl.href}'`)
     .replace(
       "from '../utils/start-new-match-flow.js'",
@@ -262,19 +283,18 @@ async function runSummaryPageScenario(options = {}, runAssertions) {
   const loadedMatchStorageKeys = []
   const clearedMatchStorageKeys = []
 
-  const app =
-    options.app ||
-    {
-      globalData: {
-        matchState: options.runtimeMatchState ?? createInitialMatchState(1700000001),
-        matchHistory: {
-          clearCalls: 0,
-          clear() {
-            this.clearCalls += 1
-          }
+  const app = options.app || {
+    globalData: {
+      matchState:
+        options.runtimeMatchState ?? createInitialMatchState(1700000001),
+      matchHistory: {
+        clearCalls: 0,
+        clear() {
+          this.clearCalls += 1
         }
       }
     }
+  }
 
   const loadResponses = Array.isArray(options.matchStorageLoadResponses)
     ? options.matchStorageLoadResponses
@@ -421,9 +441,11 @@ test('summary screen renders winner, final score, and ordered set history from p
     },
     async ({ createdWidgets, loadedMatchStorageKeys }) => {
       const buttons = getVisibleButtonLabels(createdWidgets)
-      
+
       assert.equal(buttons.length >= 1, true)
-      assert.deepEqual(loadedMatchStorageKeys, [ACTIVE_MATCH_SESSION_STORAGE_KEY])
+      assert.deepEqual(loadedMatchStorageKeys, [
+        ACTIVE_MATCH_SESSION_STORAGE_KEY
+      ])
     }
   )
 })
@@ -515,7 +537,7 @@ test('summary start-new-game button clears state, resets runtime manager, and na
     },
     async ({ createdWidgets }) => {
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-      
+
       // Find any button that might be the start new game button
       assert.equal(buttons.length >= 1, true)
     }
@@ -529,7 +551,7 @@ test('summary start-new-game button ignores accidental double taps while flow is
     },
     async ({ createdWidgets }) => {
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-      
+
       // Test that multiple buttons or interactions work
       assert.equal(buttons.length >= 1, true)
     }

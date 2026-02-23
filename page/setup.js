@@ -1,8 +1,12 @@
 import { gettext } from 'i18n'
 
 import { initializeMatchState } from '../utils/match-session-init.js'
-import { loadMatchState, saveMatchState, clearMatchState } from '../utils/match-storage.js'
 import { MATCH_STATUS } from '../utils/match-state-schema.js'
+import {
+  clearMatchState,
+  loadMatchState,
+  saveMatchState
+} from '../utils/match-storage.js'
 import { clearState } from '../utils/storage.js'
 
 const MATCH_SET_OPTIONS = Object.freeze([1, 3, 5])
@@ -165,7 +169,9 @@ Page({
     this.renderSetupScreen()
 
     try {
-      const initializedMatchState = initializeMatchState(this.selectedSetsToPlay)
+      const initializedMatchState = initializeMatchState(
+        this.selectedSetsToPlay
+      )
       clearMatchState()
       saveMatchState(initializedMatchState)
 
@@ -261,7 +267,9 @@ Page({
     }
 
     const { width, height } = this.getScreenMetrics()
-    const cardInset = Math.round(width * SETUP_TOKENS.spacingScale.cardHorizontalInset)
+    const cardInset = Math.round(
+      width * SETUP_TOKENS.spacingScale.cardHorizontalInset
+    )
     const cardWidth = Math.max(1, width - cardInset * 2)
     const cardHeight = Math.round(height * 0.54)
     const cardY = Math.round(height * SETUP_TOKENS.spacingScale.cardTop)
@@ -341,7 +349,8 @@ Page({
 
     MATCH_SET_OPTIONS.forEach((setsToPlay, index) => {
       const isSelected = this.selectedSetsToPlay === setsToPlay
-      const optionButtonX = cardInset + (optionButtonWidth + optionColumnGap) * index
+      const optionButtonX =
+        cardInset + (optionButtonWidth + optionColumnGap) * index
 
       this.createWidget(hmUI.widget.BUTTON, {
         x: optionButtonX,

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { MATCH_STATUS, createInitialMatchState } from '../utils/match-state.js'
+import { createInitialMatchState, MATCH_STATUS } from '../utils/match-state.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 
 test('createInitialMatchState returns the expected default structure and values', () => {

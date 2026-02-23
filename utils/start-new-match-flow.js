@@ -1,6 +1,6 @@
-import { clearMatchState } from './match-storage.js'
 import { createHistoryStack } from './history-stack.js'
 import { createInitialMatchState } from './match-state.js'
+import { clearMatchState } from './match-storage.js'
 import { clearState } from './storage.js'
 
 /**
@@ -123,7 +123,12 @@ function navigateToMatchSetupPage() {
 export function startNewMatchFlow() {
   const result = {
     clearSession: { clearedSchema: false, clearedLegacy: false },
-    resetStateManager: { didReset: false, resetMatchState: false, clearedMatchHistory: false, rehydratedMatchHistory: false },
+    resetStateManager: {
+      didReset: false,
+      resetMatchState: false,
+      clearedMatchHistory: false,
+      rehydratedMatchHistory: false
+    },
     navigatedToSetup: false,
     didEncounterError: false
   }

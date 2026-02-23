@@ -6,7 +6,11 @@ import {
   isSupportedSetsToPlay,
   SUPPORTED_SETS_TO_PLAY
 } from '../utils/match-session-init.js'
-import { MATCH_STATUS, SETS_TO_PLAY, SETS_NEEDED_TO_WIN } from '../utils/match-state-schema.js'
+import {
+  MATCH_STATUS,
+  SETS_NEEDED_TO_WIN,
+  SETS_TO_PLAY
+} from '../utils/match-state-schema.js'
 
 test('SUPPORTED_SETS_TO_PLAY contains canonical 1, 3, 5 set options', () => {
   assert.deepEqual(SUPPORTED_SETS_TO_PLAY, [1, 3, 5])
@@ -45,7 +49,10 @@ test('initializeMatchState creates active match state for 1-set match', () => {
     assert.equal(state.setsToPlay, 1)
     assert.equal(state.setsNeededToWin, 1)
     assert.deepEqual(state.setsWon, { teamA: 0, teamB: 0 })
-    assert.deepEqual(state.currentSet, { number: 1, games: { teamA: 0, teamB: 0 } })
+    assert.deepEqual(state.currentSet, {
+      number: 1,
+      games: { teamA: 0, teamB: 0 }
+    })
     assert.deepEqual(state.currentGame, { points: { teamA: 0, teamB: 0 } })
     assert.deepEqual(state.setHistory, [])
     assert.equal(state.updatedAt, fixedTimestamp)
@@ -68,7 +75,10 @@ test('initializeMatchState creates active match state for 3-set match', () => {
     assert.equal(state.setsToPlay, 3)
     assert.equal(state.setsNeededToWin, 2)
     assert.deepEqual(state.setsWon, { teamA: 0, teamB: 0 })
-    assert.deepEqual(state.currentSet, { number: 1, games: { teamA: 0, teamB: 0 } })
+    assert.deepEqual(state.currentSet, {
+      number: 1,
+      games: { teamA: 0, teamB: 0 }
+    })
     assert.deepEqual(state.currentGame, { points: { teamA: 0, teamB: 0 } })
     assert.deepEqual(state.setHistory, [])
     assert.equal(state.updatedAt, fixedTimestamp)
@@ -91,7 +101,10 @@ test('initializeMatchState creates active match state for 5-set match', () => {
     assert.equal(state.setsToPlay, 5)
     assert.equal(state.setsNeededToWin, 3)
     assert.deepEqual(state.setsWon, { teamA: 0, teamB: 0 })
-    assert.deepEqual(state.currentSet, { number: 1, games: { teamA: 0, teamB: 0 } })
+    assert.deepEqual(state.currentSet, {
+      number: 1,
+      games: { teamA: 0, teamB: 0 }
+    })
     assert.deepEqual(state.currentGame, { points: { teamA: 0, teamB: 0 } })
     assert.deepEqual(state.setHistory, [])
     assert.equal(state.updatedAt, fixedTimestamp)
@@ -131,7 +144,23 @@ test('initializeMatchState returns independent state objects for each call', () 
 })
 
 test('initializeMatchState throws TypeError for invalid setsToPlay values', () => {
-  const invalidValues = [0, 2, 4, 6, -1, 1.5, 3.5, null, undefined, '1', '3', {}, [], true, false]
+  const invalidValues = [
+    0,
+    2,
+    4,
+    6,
+    -1,
+    1.5,
+    3.5,
+    null,
+    undefined,
+    '1',
+    '3',
+    {},
+    [],
+    true,
+    false
+  ]
 
   for (const invalidValue of invalidValues) {
     assert.throws(
@@ -146,43 +175,31 @@ test('initializeMatchState throws TypeError for invalid setsToPlay values', () =
 })
 
 test('initializeMatchState throws TypeError with descriptive message for non-integer input', () => {
-  assert.throws(
-    () => initializeMatchState(2),
-    {
-      name: 'TypeError',
-      message: 'setsToPlay must be one of: 1, 3, 5'
-    }
-  )
+  assert.throws(() => initializeMatchState(2), {
+    name: 'TypeError',
+    message: 'setsToPlay must be one of: 1, 3, 5'
+  })
 })
 
 test('initializeMatchState throws TypeError for string input even if numeric', () => {
-  assert.throws(
-    () => initializeMatchState('3'),
-    {
-      name: 'TypeError',
-      message: 'setsToPlay must be one of: 1, 3, 5'
-    }
-  )
+  assert.throws(() => initializeMatchState('3'), {
+    name: 'TypeError',
+    message: 'setsToPlay must be one of: 1, 3, 5'
+  })
 })
 
 test('initializeMatchState throws TypeError for null input', () => {
-  assert.throws(
-    () => initializeMatchState(null),
-    {
-      name: 'TypeError',
-      message: 'setsToPlay must be one of: 1, 3, 5'
-    }
-  )
+  assert.throws(() => initializeMatchState(null), {
+    name: 'TypeError',
+    message: 'setsToPlay must be one of: 1, 3, 5'
+  })
 })
 
 test('initializeMatchState throws TypeError for undefined input', () => {
-  assert.throws(
-    () => initializeMatchState(undefined),
-    {
-      name: 'TypeError',
-      message: 'setsToPlay must be one of: 1, 3, 5'
-    }
-  )
+  assert.throws(() => initializeMatchState(undefined), {
+    name: 'TypeError',
+    message: 'setsToPlay must be one of: 1, 3, 5'
+  })
 })
 
 test('initializeMatchState produces schema-valid match state for all supported set counts', async (t) => {

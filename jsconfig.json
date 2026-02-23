@@ -6,9 +6,17 @@
   },
   "exclude": [
     "node_modules",
-    "**/node_modules/*"
+    "**/node_modules/*",
+    "tests/**/*",
+    "**/tests/**/*",
+    "dist/**/*",
+    "**/dist/**/*",
+    ".opencode/**/*",
+    ".husky/**/*",
+    ".serena/**/*",
+    ".taskmaster/**/*",
+    "docs/**/*",
+    "**/*.test.js"
   ],
-  "files": [
-    "node_modules/@zeppos/device-types/index.d.ts"
-  ]
+  "files": ["node_modules/@zeppos/device-types/index.d.ts"]
 }

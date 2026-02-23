@@ -1,9 +1,12 @@
-import { createInitialMatchState } from './utils/match-state.js'
 import { createHistoryStack } from './utils/history-stack.js'
+import { createInitialMatchState } from './utils/match-state.js'
+import {
+  isMatchState as isPersistedMatchState,
+  MATCH_STATUS as PERSISTED_MATCH_STATUS
+} from './utils/match-state-schema.js'
+import { saveMatchState } from './utils/match-storage.js'
 import { addPoint, removePoint as undoPoint } from './utils/scoring-engine.js'
 import { saveState } from './utils/storage.js'
-import { saveMatchState } from './utils/match-storage.js'
-import { isMatchState as isPersistedMatchState, MATCH_STATUS as PERSISTED_MATCH_STATUS } from './utils/match-state-schema.js'
 
 /**
  * @param {Record<string, unknown>} appInstance
@@ -43,8 +46,11 @@ function emergencyPersistMatchState(globalData) {
     // createPersistedMatchStateSnapshot here.
     const schemaSnapshot = globalData?._lastPersistedSchemaState
 
-    if (isRecord(schemaSnapshot) && isPersistedMatchState(schemaSnapshot) &&
-        schemaSnapshot.status === PERSISTED_MATCH_STATUS.ACTIVE) {
+    if (
+      isRecord(schemaSnapshot) &&
+      isPersistedMatchState(schemaSnapshot) &&
+      schemaSnapshot.status === PERSISTED_MATCH_STATUS.ACTIVE
+    ) {
       saveMatchState(schemaSnapshot)
     }
   } catch {
@@ -80,7 +86,10 @@ App({
     console.log('app on create invoke')
     // Ensure that if the screen turns off while the app is active,
     // the watch re-launches this app instead of returning to the watchface.
-    if (typeof hmApp !== 'undefined' && typeof hmApp.setScreenKeep === 'function') {
+    if (
+      typeof hmApp !== 'undefined' &&
+      typeof hmApp.setScreenKeep === 'function'
+    ) {
       hmApp.setScreenKeep(true)
     }
   },

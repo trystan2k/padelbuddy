@@ -274,7 +274,7 @@ function resolveSchemaVersion(rawData) {
     return null
   }
 
-  if (!Object.prototype.hasOwnProperty.call(rawData, 'schemaVersion')) {
+  if (!Object.hasOwn(rawData, 'schemaVersion')) {
     return isMatchStateV0(rawData) ? 0 : null
   }
 
@@ -415,7 +415,9 @@ function isCurrentGamePoints(value) {
  * @returns {value is SetHistoryEntry[]}
  */
 function isSetHistory(value) {
-  return Array.isArray(value) && value.every((entry) => isSetHistoryEntry(entry))
+  return (
+    Array.isArray(value) && value.every((entry) => isSetHistoryEntry(entry))
+  )
 }
 
 /**

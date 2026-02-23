@@ -57,7 +57,9 @@ function assertJsonCloneCompatible(value, path, seen) {
 
   if (valueType === 'number') {
     if (!isFinite(value)) {
-      throw new TypeError('State snapshot has non-finite number at ' + path + '.')
+      throw new TypeError(
+        'State snapshot has non-finite number at ' + path + '.'
+      )
     }
 
     return
@@ -84,7 +86,9 @@ function assertJsonCloneCompatible(value, path, seen) {
   }
 
   if (seen.indexOf(value) !== -1) {
-    throw new TypeError('State snapshot cannot contain circular references at ' + path + '.')
+    throw new TypeError(
+      'State snapshot cannot contain circular references at ' + path + '.'
+    )
   }
 
   seen.push(/** @type {object} */ (value))
@@ -99,7 +103,11 @@ function assertJsonCloneCompatible(value, path, seen) {
   }
 
   if (!isPlainObject(value)) {
-    throw new TypeError('State snapshot only supports plain objects and arrays. Invalid value at ' + path + '.')
+    throw new TypeError(
+      'State snapshot only supports plain objects and arrays. Invalid value at ' +
+        path +
+        '.'
+    )
   }
 
   const keys = Object.keys(value)

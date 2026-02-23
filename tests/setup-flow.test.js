@@ -49,18 +49,36 @@ function createPageInstance(definition) {
 
 async function loadSetupPageDefinition() {
   const sourceUrl = new URL('../page/setup.js', import.meta.url)
-  const matchSessionInitUrl = new URL('../utils/match-session-init.js', import.meta.url)
+  const matchSessionInitUrl = new URL(
+    '../utils/match-session-init.js',
+    import.meta.url
+  )
   const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL('../utils/match-state-schema.js', import.meta.url)
+  const matchStateSchemaUrl = new URL(
+    '../utils/match-state-schema.js',
+    import.meta.url
+  )
   const storageUrl = new URL('../utils/storage.js', import.meta.url)
 
   let source = await readFile(sourceUrl, 'utf8')
 
   source = source
-    .replace("import { gettext } from 'i18n'\n", 'const gettext = (key) => key\n')
-    .replace("from '../utils/match-session-init.js'", `from '${matchSessionInitUrl.href}'`)
-    .replace("from '../utils/match-storage.js'", `from '${matchStorageUrl.href}'`)
-    .replace("from '../utils/match-state-schema.js'", `from '${matchStateSchemaUrl.href}'`)
+    .replace(
+      "import { gettext } from 'i18n'\n",
+      'const gettext = (key) => key\n'
+    )
+    .replace(
+      "from '../utils/match-session-init.js'",
+      `from '${matchSessionInitUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-storage.js'",
+      `from '${matchStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-state-schema.js'",
+      `from '${matchStateSchemaUrl.href}'`
+    )
     .replace("from '../utils/storage.js'", `from '${storageUrl.href}'`)
 
   const moduleUrl =
@@ -95,7 +113,9 @@ async function loadSetupPageDefinition() {
 }
 
 function getVisibleWidgets(createdWidgets, type) {
-  return createdWidgets.filter((widget) => widget.type === type && !widget.deleted)
+  return createdWidgets.filter(
+    (widget) => widget.type === type && !widget.deleted
+  )
 }
 
 function findButtonByText(buttons, text) {
@@ -279,7 +299,10 @@ test('setup page selection updates option button visual state', async () => {
     oneSetButton.properties.click_func()
 
     const updatedButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const updatedOneSetButton = findButtonByText(updatedButtons, 'setup.option.oneSet')
+    const updatedOneSetButton = findButtonByText(
+      updatedButtons,
+      'setup.option.oneSet'
+    )
 
     assert.equal(updatedOneSetButton.properties.normal_color, 0x1eb98c)
     assert.equal(updatedOneSetButton.properties.color, 0x000000)
@@ -368,26 +391,33 @@ test('setup page start match initializes state with selected sets', async () => 
 test('setup page initializes state with correct setsNeededToWin for each option', async () => {
   const expectedConfigs = [
     { setsToPlay: 1, setsNeededToWin: 1, buttonLabel: 'setup.option.oneSet' },
-    { setsToPlay: 3, setsNeededToWin: 2, buttonLabel: 'setup.option.threeSets' },
+    {
+      setsToPlay: 3,
+      setsNeededToWin: 2,
+      buttonLabel: 'setup.option.threeSets'
+    },
     { setsToPlay: 5, setsNeededToWin: 3, buttonLabel: 'setup.option.fiveSets' }
   ]
 
   for (const config of expectedConfigs) {
-    await runWithSetupPage({}, async ({ page, createdWidgets, mockAdapter }) => {
-      page.onInit()
-      page.build()
+    await runWithSetupPage(
+      {},
+      async ({ page, createdWidgets, mockAdapter }) => {
+        page.onInit()
+        page.build()
 
-      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-      const optionButton = findButtonByText(buttons, config.buttonLabel)
+        const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+        const optionButton = findButtonByText(buttons, config.buttonLabel)
 
-      optionButton.properties.click_func()
-      await page.handleStartMatch()
+        optionButton.properties.click_func()
+        await page.handleStartMatch()
 
-      const savedState = JSON.parse(mockAdapter.savedPayloads[0].value)
+        const savedState = JSON.parse(mockAdapter.savedPayloads[0].value)
 
-      assert.equal(savedState.setsToPlay, config.setsToPlay)
-      assert.equal(savedState.setsNeededToWin, config.setsNeededToWin)
-    })
+        assert.equal(savedState.setsToPlay, config.setsToPlay)
+        assert.equal(savedState.setsNeededToWin, config.setsNeededToWin)
+      }
+    )
   }
 })
 
@@ -425,25 +455,33 @@ test('setup page persists state before navigating to game', async () => {
     }
   )
 
-  assert.deepEqual(eventOrder, ['before-start', 'save', 'navigate', 'after-start'])
+  assert.deepEqual(eventOrder, [
+    'before-start',
+    'save',
+    'navigate',
+    'after-start'
+  ])
 })
 
 test('setup page navigates to game after successful save', async () => {
-  await runWithSetupPage({}, async ({ page, createdWidgets, navigationCalls }) => {
-    page.onInit()
-    page.build()
+  await runWithSetupPage(
+    {},
+    async ({ page, createdWidgets, navigationCalls }) => {
+      page.onInit()
+      page.build()
 
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const fiveSetsButton = findButtonByText(buttons, 'setup.option.fiveSets')
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      const fiveSetsButton = findButtonByText(buttons, 'setup.option.fiveSets')
 
-    fiveSetsButton.properties.click_func()
+      fiveSetsButton.properties.click_func()
 
-    const result = await page.handleStartMatch()
+      const result = await page.handleStartMatch()
 
-    assert.equal(result, true)
-    assert.equal(navigationCalls.length, 1)
-    assert.deepEqual(navigationCalls[0], { url: 'page/game' })
-  })
+      assert.equal(result, true)
+      assert.equal(navigationCalls.length, 1)
+      assert.deepEqual(navigationCalls[0], { url: 'page/game' })
+    }
+  )
 })
 
 test('setup page does not navigate when start button clicked without selection', async () => {
@@ -458,20 +496,26 @@ test('setup page does not navigate when start button clicked without selection',
 })
 
 test('setup page shows error and does not navigate when save fails', async () => {
-  await runWithSetupPage({ saveFails: true }, async ({ page, createdWidgets, navigationCalls }) => {
-    page.onInit()
-    page.build()
+  await runWithSetupPage(
+    { saveFails: true },
+    async ({ page, createdWidgets, navigationCalls }) => {
+      page.onInit()
+      page.build()
 
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const threeSetsButton = findButtonByText(buttons, 'setup.option.threeSets')
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      const threeSetsButton = findButtonByText(
+        buttons,
+        'setup.option.threeSets'
+      )
 
-    threeSetsButton.properties.click_func()
+      threeSetsButton.properties.click_func()
 
-    await page.handleStartMatch()
+      await page.handleStartMatch()
 
-    // Navigation still happens (current production behavior)
-    assert.equal(navigationCalls.length >= 0, true)
-  })
+      // Navigation still happens (current production behavior)
+      assert.equal(navigationCalls.length >= 0, true)
+    }
+  )
 })
 
 test('setup page does not navigate when persisted session verification fails', async () => {
@@ -482,7 +526,10 @@ test('setup page does not navigate when persisted session verification fails', a
       page.build()
 
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-      const threeSetsButton = findButtonByText(buttons, 'setup.option.threeSets')
+      const threeSetsButton = findButtonByText(
+        buttons,
+        'setup.option.threeSets'
+      )
 
       threeSetsButton.properties.click_func()
 
@@ -495,23 +542,26 @@ test('setup page does not navigate when persisted session verification fails', a
 })
 
 test('setup page shows error when navigation fails after successful save', async () => {
-  await runWithSetupPage({ navigationFails: true }, async ({ page, createdWidgets, navigationCalls, mockAdapter }) => {
-    page.onInit()
-    page.build()
+  await runWithSetupPage(
+    { navigationFails: true },
+    async ({ page, createdWidgets, navigationCalls, mockAdapter }) => {
+      page.onInit()
+      page.build()
 
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const oneSetButton = findButtonByText(buttons, 'setup.option.oneSet')
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      const oneSetButton = findButtonByText(buttons, 'setup.option.oneSet')
 
-    oneSetButton.properties.click_func()
+      oneSetButton.properties.click_func()
 
-    const result = await page.handleStartMatch()
+      const result = await page.handleStartMatch()
 
-    assert.equal(result, false)
-    assert.equal(mockAdapter.savedPayloads.length, 1)
-    assert.equal(navigationCalls.length, 1)
-    assert.equal(page.startErrorMessage, 'setup.saveFailed')
-    assert.equal(page.isNavigatingToGame, false)
-  })
+      assert.equal(result, false)
+      assert.equal(mockAdapter.savedPayloads.length, 1)
+      assert.equal(navigationCalls.length, 1)
+      assert.equal(page.startErrorMessage, 'setup.saveFailed')
+      assert.equal(page.isNavigatingToGame, false)
+    }
+  )
 })
 
 test('setup page start button click handler returns early when disabled', async () => {
@@ -566,19 +616,25 @@ test('setup page resets error message when user changes selection', async () => 
 })
 
 test('setup page clears error message on successful start after previous failure', async () => {
-  await runWithSetupPage({}, async ({ page, createdWidgets, navigationCalls }) => {
-    page.onInit()
-    page.build()
+  await runWithSetupPage(
+    {},
+    async ({ page, createdWidgets, navigationCalls }) => {
+      page.onInit()
+      page.build()
 
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const threeSetsButton = findButtonByText(buttons, 'setup.option.threeSets')
+      const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
+      const threeSetsButton = findButtonByText(
+        buttons,
+        'setup.option.threeSets'
+      )
 
-    threeSetsButton.properties.click_func()
+      threeSetsButton.properties.click_func()
 
-    await page.handleStartMatch()
+      await page.handleStartMatch()
 
-    assert.equal(navigationCalls.length, 1)
-  })
+      assert.equal(navigationCalls.length, 1)
+    }
+  )
 })
 
 test('setup page invokes onStartMatch callback when provided', async () => {

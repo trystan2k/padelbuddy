@@ -1,9 +1,13 @@
 import { gettext } from 'i18n'
 import { createHistoryStack } from '../utils/history-stack.js'
-import { loadMatchState } from '../utils/match-storage.js'
-import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { createInitialMatchState } from '../utils/match-state.js'
-import { startNewMatchFlow, clearActiveMatchSession, resetMatchStateManager } from '../utils/start-new-match-flow.js'
+import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
+import { loadMatchState } from '../utils/match-storage.js'
+import {
+  clearActiveMatchSession,
+  resetMatchStateManager,
+  startNewMatchFlow
+} from '../utils/start-new-match-flow.js'
 
 const PERSISTED_ADVANTAGE_POINT_VALUE = 50
 const PERSISTED_GAME_POINT_VALUE = 60
@@ -33,7 +37,7 @@ const HOME_TOKENS = Object.freeze({
     title: 0.0825
   },
   spacingScale: {
-    contentTop: 0.10,
+    contentTop: 0.1,
     logoToTitle: 0.012,
     titleToPrimaryButton: 0.13,
     primaryToSecondaryButton: 0.05,
@@ -104,7 +108,9 @@ function isActivePersistedMatchState(matchState) {
 }
 
 function isTieBreakMode(teamAGames, teamBGames) {
-  return teamAGames === TIE_BREAK_ENTRY_GAMES && teamBGames === TIE_BREAK_ENTRY_GAMES
+  return (
+    teamAGames === TIE_BREAK_ENTRY_GAMES && teamBGames === TIE_BREAK_ENTRY_GAMES
+  )
 }
 
 function toRuntimePointValue(value, tieBreakMode) {
@@ -137,9 +143,18 @@ function normalizePersistedMatchStateForRuntime(persistedMatchState) {
   }
 
   const runtimeState = createInitialMatchState()
-  const currentSetNumber = toPositiveInteger(persistedMatchState?.currentSet?.number, 1)
-  const teamAGames = toNonNegativeInteger(persistedMatchState?.currentSet?.games?.teamA, 0)
-  const teamBGames = toNonNegativeInteger(persistedMatchState?.currentSet?.games?.teamB, 0)
+  const currentSetNumber = toPositiveInteger(
+    persistedMatchState?.currentSet?.number,
+    1
+  )
+  const teamAGames = toNonNegativeInteger(
+    persistedMatchState?.currentSet?.games?.teamA,
+    0
+  )
+  const teamBGames = toNonNegativeInteger(
+    persistedMatchState?.currentSet?.games?.teamB,
+    0
+  )
   const tieBreakMode = isTieBreakMode(teamAGames, teamBGames)
   const winnerTeam = resolveWinnerTeam(persistedMatchState)
 
@@ -161,7 +176,10 @@ function normalizePersistedMatchStateForRuntime(persistedMatchState) {
   runtimeState.updatedAt = Number.isFinite(persistedMatchState.updatedAt)
     ? persistedMatchState.updatedAt
     : Date.now()
-  runtimeState.setsNeededToWin = toPositiveInteger(persistedMatchState.setsNeededToWin, 2)
+  runtimeState.setsNeededToWin = toPositiveInteger(
+    persistedMatchState.setsNeededToWin,
+    2
+  )
   runtimeState.setsWon = {
     teamA: toNonNegativeInteger(persistedMatchState?.setsWon?.teamA, 0),
     teamB: toNonNegativeInteger(persistedMatchState?.setsWon?.teamB, 0)
@@ -280,7 +298,9 @@ Page({
     }
 
     const hasSavedGame = isActivePersistedMatchState(savedMatchState)
-    this.savedMatchState = hasSavedGame ? cloneMatchState(savedMatchState) : null
+    this.savedMatchState = hasSavedGame
+      ? cloneMatchState(savedMatchState)
+      : null
     this.hasSavedGame = hasSavedGame
     this.savedMatchStateFromHandoff = hasSavedGame && fromHandoff
     this.renderHomeScreen()
@@ -309,11 +329,10 @@ Page({
       titleY +
       titleHeight +
       Math.round(height * HOME_TOKENS.spacingScale.titleToPrimaryButton)
-    const secondaryButtonGap = Math.round(height * HOME_TOKENS.spacingScale.primaryToSecondaryButton)
-    const resumeButtonY =
-      startButtonY +
-      startButtonHeight +
-      secondaryButtonGap
+    const secondaryButtonGap = Math.round(
+      height * HOME_TOKENS.spacingScale.primaryToSecondaryButton
+    )
+    const resumeButtonY = startButtonY + startButtonHeight + secondaryButtonGap
     const startNewGameButtonText = gettext('home.startNewGame')
 
     this.clearWidgets()
@@ -382,7 +401,9 @@ Page({
 
     // Clear App Data button (danger, two-tap confirmation) — always visible
     const clearButtonBaseY = this.hasSavedGame ? resumeButtonY : startButtonY
-    const clearButtonBaseH = this.hasSavedGame ? secondaryButtonHeight : startButtonHeight
+    const clearButtonBaseH = this.hasSavedGame
+      ? secondaryButtonHeight
+      : startButtonHeight
 
     // Previous Matches button - always visible between game buttons and clear button
     const historyButtonHeight = Math.round(height * 0.09)
@@ -490,7 +511,8 @@ Page({
       }
     }
 
-    const restoredRuntimeMatchState = normalizePersistedMatchStateForRuntime(savedMatchState)
+    const restoredRuntimeMatchState =
+      normalizePersistedMatchStateForRuntime(savedMatchState)
 
     if (!restoredRuntimeMatchState) {
       this.savedMatchState = null
@@ -531,7 +553,8 @@ Page({
         app.globalData = {}
       }
 
-      app.globalData.pendingPersistedMatchState = cloneMatchState(persistedMatchState)
+      app.globalData.pendingPersistedMatchState =
+        cloneMatchState(persistedMatchState)
     } catch {
       // Non-fatal: handoff is best-effort.
     }

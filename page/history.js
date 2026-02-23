@@ -16,17 +16,17 @@ const HISTORY_TOKENS = Object.freeze({
     winner: 0x1eb98c
   },
   fontScale: {
-    button: 0.050,      // Larger button
+    button: 0.05, // Larger button
     empty: 0.052,
-    score: 0.095,       // Increased more
-    title: 0.052,       // Smaller title
-    date: 0.068         // Increased more
+    score: 0.095, // Increased more
+    title: 0.052, // Smaller title
+    date: 0.068 // Increased more
   },
   spacingScale: {
     bottomInset: 0.06,
-    roundSideInset: 0.06,  // Reduced for wider list
+    roundSideInset: 0.06, // Reduced for wider list
     sectionGap: 0.015,
-    sideInset: 0.04,       // Reduced for wider list
+    sideInset: 0.04, // Reduced for wider list
     topInset: 0.035
   }
 })
@@ -57,7 +57,12 @@ function formatDate(timestamp) {
   return `${pad(day)}/${pad(month)}/${year} ${pad(hours)}:${pad(minutes)}`
 }
 
-function calculateRoundSafeSideInset(width, height, yPosition, horizontalPadding) {
+function calculateRoundSafeSideInset(
+  width,
+  height,
+  yPosition,
+  horizontalPadding
+) {
   const radius = Math.min(width, height) / 2
   const centerX = width / 2
   const centerY = height / 2
@@ -78,7 +83,11 @@ function calculateRoundSafeSectionSideInset(
   horizontalPadding
 ) {
   const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(sectionTop + Math.max(sectionHeight, 0), 0, height)
+  const boundedBottom = clamp(
+    sectionTop + Math.max(sectionHeight, 0),
+    0,
+    height
+  )
   const middleY = (boundedTop + boundedBottom) / 2
 
   return Math.max(
@@ -92,7 +101,7 @@ Page({
   onInit(params) {
     this.widgets = []
     this.historyEntries = []
-    
+
     // Load history data during init (v1.0 compatible)
     try {
       this.historyEntries = loadMatchHistory()
@@ -167,7 +176,11 @@ Page({
   },
 
   navigateToHistoryDetail(matchId) {
-    if (!matchId || typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
+    if (
+      !matchId ||
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.gotoPage !== 'function'
+    ) {
       return
     }
 
@@ -197,35 +210,40 @@ Page({
     const { width, height } = this.getScreenMetrics()
     const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
     const topInset = Math.round(height * HISTORY_TOKENS.spacingScale.topInset)
-    const bottomInset = Math.round(height * HISTORY_TOKENS.spacingScale.bottomInset)
-    const sectionGap = Math.round(height * HISTORY_TOKENS.spacingScale.sectionGap)
+    const bottomInset = Math.round(
+      height * HISTORY_TOKENS.spacingScale.bottomInset
+    )
+    const sectionGap = Math.round(
+      height * HISTORY_TOKENS.spacingScale.sectionGap
+    )
     const baseSectionSideInset = Math.round(
       width *
         (isRoundScreen
           ? HISTORY_TOKENS.spacingScale.roundSideInset
           : HISTORY_TOKENS.spacingScale.sideInset)
     )
-    const buttonHeight = clamp(Math.round(height * 0.11), 50, 58)  // Bigger button
-    
+    const buttonHeight = clamp(Math.round(height * 0.11), 50, 58) // Bigger button
+
     // Title height - smaller to fit
     const titleHeight = clamp(Math.round(height * 0.07), 28, 36)
-    
+
     // Calculate available space for list
     const spaceForTitleAndButton = titleHeight + buttonHeight + sectionGap * 3
-    const listMaxHeight = height - topInset - bottomInset - spaceForTitleAndButton
-    
+    const listMaxHeight =
+      height - topInset - bottomInset - spaceForTitleAndButton
+
     // Force 2 items visible - tighter row height for bigger fonts
     const rowHeight = Math.floor(listMaxHeight / 2.35)
     const listHeight = rowHeight * 2 + Math.round(rowHeight * 0.1)
-    
+
     const listY = topInset + titleHeight + sectionGap
-    
+
     // Minimal side inset for wider list
     const sideInset = Math.max(baseSectionSideInset, Math.round(width * 0.02))
-    
+
     const listX = sideInset
     const listWidth = Math.max(1, width - sideInset * 2)
-    
+
     const actionsSectionY = height - bottomInset - buttonHeight
     const buttonWidth = Math.max(1, width - sideInset * 2)
 
@@ -281,7 +299,7 @@ Page({
       const scrollDataArray = this.historyEntries.map((entry) => {
         const dateStr = formatDate(entry.completedAt)
         const scoreStr = `${entry.setsWonTeamA}-${entry.setsWonTeamB}`
-        
+
         return {
           date: dateStr,
           score: scoreStr,
@@ -306,7 +324,11 @@ Page({
               // Date - left side, white
               {
                 x: Math.round(width * 0.02),
-                y: Math.round((rowHeight - Math.round(width * HISTORY_TOKENS.fontScale.date)) / 2),
+                y: Math.round(
+                  (rowHeight -
+                    Math.round(width * HISTORY_TOKENS.fontScale.date)) /
+                    2
+                ),
                 w: Math.round(listWidth * 0.6),
                 h: Math.round(width * HISTORY_TOKENS.fontScale.date),
                 key: 'date',
@@ -316,7 +338,11 @@ Page({
               // Score - right side, accent color
               {
                 x: Math.round(listWidth * 0.55),
-                y: Math.round((rowHeight - Math.round(width * HISTORY_TOKENS.fontScale.score)) / 2),
+                y: Math.round(
+                  (rowHeight -
+                    Math.round(width * HISTORY_TOKENS.fontScale.score)) /
+                    2
+                ),
                 w: Math.round(listWidth * 0.4),
                 h: Math.round(width * HISTORY_TOKENS.fontScale.score),
                 key: 'score',

@@ -14,19 +14,19 @@ const HISTORY_DETAIL_TOKENS = Object.freeze({
     text: 0xffffff
   },
   fontScale: {
-    body: 0.055,       // Increased more
-    button: 0.055,     // Increased more
-    label: 0.06,      // Increased more
-    score: 0.15,       // Increased significantly
-    subtitle: 0.07,   // Increased more
-    title: 0.075,      // Increased more
-    setHistory: 0.060  // Increased more
+    body: 0.055, // Increased more
+    button: 0.055, // Increased more
+    label: 0.06, // Increased more
+    score: 0.15, // Increased significantly
+    subtitle: 0.07, // Increased more
+    title: 0.075, // Increased more
+    setHistory: 0.06 // Increased more
   },
   spacingScale: {
     bottomInset: 0.05,
-    roundSideInset: 0.06,   // Reduced for wider content
+    roundSideInset: 0.06, // Reduced for wider content
     sectionGap: 0.015,
-    sideInset: 0.04,        // Reduced for wider content
+    sideInset: 0.04, // Reduced for wider content
     topInset: 0.03
   }
 })
@@ -56,7 +56,12 @@ function formatDate(timestamp) {
   return `${pad(day)}/${pad(month)}/${year} ${pad(hours)}:${pad(minutes)}`
 }
 
-function calculateRoundSafeSideInset(width, height, yPosition, horizontalPadding) {
+function calculateRoundSafeSideInset(
+  width,
+  height,
+  yPosition,
+  horizontalPadding
+) {
   const radius = Math.min(width, height) / 2
   const centerX = width / 2
   const centerY = height / 2
@@ -77,7 +82,11 @@ function calculateRoundSafeSectionSideInset(
   horizontalPadding
 ) {
   const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(sectionTop + Math.max(sectionHeight, 0), 0, height)
+  const boundedBottom = clamp(
+    sectionTop + Math.max(sectionHeight, 0),
+    0,
+    height
+  )
   const middleY = (boundedTop + boundedBottom) / 2
 
   return Math.max(
@@ -113,7 +122,10 @@ Page({
     let matchId = null
 
     // Check if params looks like a query string (contains '=' or '?')
-    if (typeof params === 'string' && (params.includes('=') || params.includes('?'))) {
+    if (
+      typeof params === 'string' &&
+      (params.includes('=') || params.includes('?'))
+    ) {
       // Parse query string format
       const queryString = params.split('?').pop() || params
       const pairs = queryString.split('&')
@@ -194,9 +206,15 @@ Page({
 
     const { width, height } = this.getScreenMetrics()
     const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
-    const topInset = Math.round(height * HISTORY_DETAIL_TOKENS.spacingScale.topInset)
-    const bottomInset = Math.round(height * HISTORY_DETAIL_TOKENS.spacingScale.bottomInset)
-    const sectionGap = Math.round(height * HISTORY_DETAIL_TOKENS.spacingScale.sectionGap)
+    const topInset = Math.round(
+      height * HISTORY_DETAIL_TOKENS.spacingScale.topInset
+    )
+    const bottomInset = Math.round(
+      height * HISTORY_DETAIL_TOKENS.spacingScale.bottomInset
+    )
+    const sectionGap = Math.round(
+      height * HISTORY_DETAIL_TOKENS.spacingScale.sectionGap
+    )
     const baseSectionSideInset = Math.round(
       width *
         (isRoundScreen
@@ -208,7 +226,7 @@ Page({
 
     // Calculate layout
     const titleHeight = clamp(Math.round(height * 0.1), 36, 52)
-    const scoreCardHeight = clamp(Math.round(height * 0.30), 150, 150)
+    const scoreCardHeight = clamp(Math.round(height * 0.3), 150, 150)
     const scoreCardY = topInset + titleHeight + sectionGap
 
     const resolveSectionSideInset = (sectionY, sectionHeight) => {
@@ -224,10 +242,17 @@ Page({
         Math.round(width * 0.01)
       )
 
-      return clamp(Math.max(baseSectionSideInset, roundSafeInset), 0, maxSectionInset)
+      return clamp(
+        Math.max(baseSectionSideInset, roundSafeInset),
+        0,
+        maxSectionInset
+      )
     }
 
-    const contentSideInset = resolveSectionSideInset(scoreCardY, scoreCardHeight)
+    const contentSideInset = resolveSectionSideInset(
+      scoreCardY,
+      scoreCardHeight
+    )
     const contentX = contentSideInset
     const contentWidth = Math.max(1, width - contentSideInset * 2)
 
@@ -297,15 +322,15 @@ Page({
         align_v: hmUI.align.CENTER_V
       })
 
-
       // Final score
       const scoreHeight = Math.round(scoreCardHeight * 0.4)
       const scoreY = scoreCardY + Math.round(scoreCardHeight * 0.25)
-      const winnerText = this.matchEntry.winnerTeam === 'teamA'
-        ? `${this.matchEntry.teamALabel} ${gettext('history.detail.wins')}`
-        : this.matchEntry.winnerTeam === 'teamB'
-          ? `${this.matchEntry.teamBLabel} ${gettext('history.detail.wins')}`
-          : gettext('history.detail.draw')
+      const winnerText =
+        this.matchEntry.winnerTeam === 'teamA'
+          ? `${this.matchEntry.teamALabel} ${gettext('history.detail.wins')}`
+          : this.matchEntry.winnerTeam === 'teamB'
+            ? `${this.matchEntry.teamBLabel} ${gettext('history.detail.wins')}`
+            : gettext('history.detail.draw')
 
       this.createWidget(hmUI.widget.TEXT, {
         x: contentX,
@@ -368,9 +393,11 @@ Page({
         })
 
         // Build data for SCROLL_LIST
-        const setsBodyY = setsCardY + setsTitleHeight + Math.round(height * 0.01)
-        const setsBodyHeight = setsCardHeight - setsTitleHeight - Math.round(height * 0.02)
-        const setRowHeight = Math.round(height * 0.07)  // Height for each set row
+        const setsBodyY =
+          setsCardY + setsTitleHeight + Math.round(height * 0.01)
+        const setsBodyHeight =
+          setsCardHeight - setsTitleHeight - Math.round(height * 0.02)
+        const setRowHeight = Math.round(height * 0.07) // Height for each set row
 
         // Build data array for scroll list
         const setsDataArray = this.matchEntry.setHistory.map((set) => ({
@@ -393,12 +420,22 @@ Page({
               text_view: [
                 {
                   x: Math.round(width * 0.02),
-                  y: Math.round((setRowHeight - Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.setHistory)) / 2),
+                  y: Math.round(
+                    (setRowHeight -
+                      Math.round(
+                        width * HISTORY_DETAIL_TOKENS.fontScale.setHistory
+                      )) /
+                      2
+                  ),
                   w: Math.round(setsWidth * 0.9),
-                  h: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.setHistory),
+                  h: Math.round(
+                    width * HISTORY_DETAIL_TOKENS.fontScale.setHistory
+                  ),
                   key: 'setInfo',
                   color: HISTORY_DETAIL_TOKENS.colors.text,
-                  text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.setHistory)
+                  text_size: Math.round(
+                    width * HISTORY_DETAIL_TOKENS.fontScale.setHistory
+                  )
                 }
               ],
               text_view_count: 1

@@ -1,8 +1,10 @@
 import { gettext } from 'i18n'
-
-import { loadMatchState } from '../utils/match-storage.js'
+import {
+  loadMatchHistory,
+  saveMatchToHistory
+} from '../utils/match-history-storage.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
-import { loadMatchHistory, saveMatchToHistory } from '../utils/match-history-storage.js'
+import { loadMatchState } from '../utils/match-storage.js'
 
 const SUMMARY_TOKENS = Object.freeze({
   colors: {
@@ -89,7 +91,8 @@ function normalizeSetHistory(setHistory) {
 
 function isFinishedMatchState(matchState) {
   return (
-    isRecord(matchState) && matchState.status === PERSISTED_MATCH_STATUS.FINISHED
+    isRecord(matchState) &&
+    matchState.status === PERSISTED_MATCH_STATUS.FINISHED
   )
 }
 
@@ -129,7 +132,8 @@ function createSummaryViewModel(matchState) {
   const historyLines =
     normalizedSetHistory.length > 0
       ? normalizedSetHistory.map(
-          (setEntry) => `Set ${setEntry.setNumber}: ${setEntry.teamAGames}-${setEntry.teamBGames}`
+          (setEntry) =>
+            `Set ${setEntry.setNumber}: ${setEntry.teamAGames}-${setEntry.teamBGames}`
         )
       : [gettext('summary.noSetHistory')]
 
@@ -140,7 +144,12 @@ function createSummaryViewModel(matchState) {
   }
 }
 
-function calculateRoundSafeSideInset(width, height, yPosition, horizontalPadding) {
+function calculateRoundSafeSideInset(
+  width,
+  height,
+  yPosition,
+  horizontalPadding
+) {
   const radius = Math.min(width, height) / 2
   const centerX = width / 2
   const centerY = height / 2
@@ -161,7 +170,11 @@ function calculateRoundSafeSectionSideInset(
   horizontalPadding
 ) {
   const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(sectionTop + Math.max(sectionHeight, 0), 0, height)
+  const boundedBottom = clamp(
+    sectionTop + Math.max(sectionHeight, 0),
+    0,
+    height
+  )
   const middleY = (boundedTop + boundedBottom) / 2
 
   return Math.max(
@@ -189,7 +202,10 @@ Page({
   },
 
   registerGestureHandler() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.registerGestureEvent !== 'function') {
+    if (
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.registerGestureEvent !== 'function'
+    ) {
       return
     }
 
@@ -210,7 +226,10 @@ Page({
   },
 
   unregisterGestureHandler() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.unregisterGestureEvent !== 'function') {
+    if (
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.unregisterGestureEvent !== 'function'
+    ) {
       return
     }
 
@@ -298,10 +317,15 @@ Page({
     }
 
     // Save match to history if it's a finished match (with duplicate prevention)
-    if (this.finishedMatchState && this.finishedMatchState.status === PERSISTED_MATCH_STATUS.FINISHED) {
+    if (
+      this.finishedMatchState &&
+      this.finishedMatchState.status === PERSISTED_MATCH_STATUS.FINISHED
+    ) {
       try {
-        const teamALabel = this.finishedMatchState.teams?.teamA?.label ?? 'Team A'
-        const teamBLabel = this.finishedMatchState.teams?.teamB?.label ?? 'Team B'
+        const teamALabel =
+          this.finishedMatchState.teams?.teamA?.label ?? 'Team A'
+        const teamBLabel =
+          this.finishedMatchState.teams?.teamB?.label ?? 'Team B'
         const completedAt = this.finishedMatchState.completedAt ?? Date.now()
 
         // Check by comparing timestamp + if match already saved teams
@@ -353,8 +377,12 @@ Page({
     const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
     const viewModel = createSummaryViewModel(this.finishedMatchState)
     const topInset = Math.round(height * SUMMARY_TOKENS.spacingScale.topInset)
-    const bottomInset = Math.round(height * SUMMARY_TOKENS.spacingScale.bottomInset)
-    const sectionGap = Math.round(height * SUMMARY_TOKENS.spacingScale.sectionGap)
+    const bottomInset = Math.round(
+      height * SUMMARY_TOKENS.spacingScale.bottomInset
+    )
+    const sectionGap = Math.round(
+      height * SUMMARY_TOKENS.spacingScale.sectionGap
+    )
     const baseSectionSideInset = Math.round(
       width *
         (isRoundScreen
@@ -390,12 +418,19 @@ Page({
         Math.round(width * 0.01)
       )
 
-      return clamp(Math.max(baseSectionSideInset, roundSafeInset), 0, maxSectionInset)
+      return clamp(
+        Math.max(baseSectionSideInset, roundSafeInset),
+        0,
+        maxSectionInset
+      )
     }
 
     const headerSideInset = resolveSectionSideInset(headerY, headerHeight)
     const historySideInset = resolveSectionSideInset(historyY, historyHeight)
-    const actionsSideInset = resolveSectionSideInset(actionsSectionY, actionsSectionHeight)
+    const actionsSideInset = resolveSectionSideInset(
+      actionsSectionY,
+      actionsSectionHeight
+    )
     const headerX = headerSideInset
     const headerWidth = Math.max(1, width - headerSideInset * 2)
     const historyX = historySideInset
@@ -406,7 +441,10 @@ Page({
     const winnerHeight = clamp(Math.round(headerHeight * 0.36), 28, 44)
     const scoreLabelHeight = clamp(Math.round(headerHeight * 0.18), 16, 24)
     const scoreValueY = headerY + titleHeight + winnerHeight + scoreLabelHeight
-    const scoreValueHeight = Math.max(1, headerHeight - titleHeight - winnerHeight - scoreLabelHeight)
+    const scoreValueHeight = Math.max(
+      1,
+      headerHeight - titleHeight - winnerHeight - scoreLabelHeight
+    )
 
     // History scroll list: each row height based on doubled font size
     const historyTitleHeight = clamp(Math.round(historyHeight * 0.24), 24, 32)
