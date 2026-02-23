@@ -3,8 +3,14 @@
  * @param {{ persistedMatchState?: { setsWon?: { teamA?: number, teamB?: number }, winnerTeam?: 'teamA' | 'teamB', winner?: { team?: 'teamA' | 'teamB' } } | null }} [options]
  */
 export function createScoreViewModel(matchState, options = {}) {
-  const resolvedSetsWon = resolveSetsWon(matchState, options.persistedMatchState)
-  const resolvedWinnerTeam = resolveWinnerTeam(matchState, options.persistedMatchState)
+  const resolvedSetsWon = resolveSetsWon(
+    matchState,
+    options.persistedMatchState
+  )
+  const resolvedWinnerTeam = resolveWinnerTeam(
+    matchState,
+    options.persistedMatchState
+  )
 
   return {
     teamA: {

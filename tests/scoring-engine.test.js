@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
-import { createInitialMatchState } from '../utils/match-state.js'
-import { addPoint, removePoint } from '../utils/scoring-engine.js'
-import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { createHistoryStack } from '../utils/history-stack.js'
+import { createInitialMatchState } from '../utils/match-state.js'
+import { SCORE_POINTS } from '../utils/scoring-constants.js'
+import { addPoint, removePoint } from '../utils/scoring-engine.js'
 
 const VALID_REGULAR_POINTS = new Set([
   SCORE_POINTS.LOVE,
@@ -27,18 +26,33 @@ function assertValidUndoState(state) {
     )
   })
 
-  assert.equal(Number.isInteger(state.teamA.games) && state.teamA.games >= 0, true)
-  assert.equal(Number.isInteger(state.teamB.games) && state.teamB.games >= 0, true)
   assert.equal(
-    Number.isInteger(state.currentSetStatus.teamAGames) && state.currentSetStatus.teamAGames >= 0,
+    Number.isInteger(state.teamA.games) && state.teamA.games >= 0,
     true
   )
   assert.equal(
-    Number.isInteger(state.currentSetStatus.teamBGames) && state.currentSetStatus.teamBGames >= 0,
+    Number.isInteger(state.teamB.games) && state.teamB.games >= 0,
     true
   )
-  assert.equal(Number.isInteger(state.currentSetStatus.number) && state.currentSetStatus.number >= 1, true)
-  assert.equal(Number.isInteger(state.currentSet) && state.currentSet >= 1, true)
+  assert.equal(
+    Number.isInteger(state.currentSetStatus.teamAGames) &&
+      state.currentSetStatus.teamAGames >= 0,
+    true
+  )
+  assert.equal(
+    Number.isInteger(state.currentSetStatus.teamBGames) &&
+      state.currentSetStatus.teamBGames >= 0,
+    true
+  )
+  assert.equal(
+    Number.isInteger(state.currentSetStatus.number) &&
+      state.currentSetStatus.number >= 1,
+    true
+  )
+  assert.equal(
+    Number.isInteger(state.currentSet) && state.currentSet >= 1,
+    true
+  )
 }
 
 function createStateWithTeamAGamePoint(teamAGames, teamBGames) {
@@ -568,7 +582,11 @@ test('removePoint restores tie-break point progression snapshot', () => {
   const history = createHistoryStack()
   const preTieBreakPointState = createTieBreakState(3, 2)
 
-  const afterTieBreakPointState = addPoint(preTieBreakPointState, 'teamA', history)
+  const afterTieBreakPointState = addPoint(
+    preTieBreakPointState,
+    'teamA',
+    history
+  )
   const restoredState = removePoint(afterTieBreakPointState, history)
 
   assert.equal(afterTieBreakPointState.teamA.points, 4)
@@ -580,7 +598,11 @@ test('removePoint restores pre-tie-break-set-win snapshot', () => {
   const history = createHistoryStack()
   const preTieBreakSetWinState = createTieBreakState(6, 5)
 
-  const afterTieBreakSetWinState = addPoint(preTieBreakSetWinState, 'teamA', history)
+  const afterTieBreakSetWinState = addPoint(
+    preTieBreakSetWinState,
+    'teamA',
+    history
+  )
   const restoredState = removePoint(afterTieBreakSetWinState, history)
 
   assert.equal(afterTieBreakSetWinState.currentSetStatus.number, 2)

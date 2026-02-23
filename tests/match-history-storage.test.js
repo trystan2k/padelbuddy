@@ -88,13 +88,13 @@ globalThis.hmFS = {
 
 // Import storage module AFTER mock is set up
 import {
-  HISTORY_STORAGE_KEY,
-  MAX_HISTORY_ENTRIES,
-  saveMatchToHistory,
-  loadMatchHistory,
-  loadMatchById,
   clearMatchHistory,
-  getMatchHistoryCount
+  getMatchHistoryCount,
+  HISTORY_STORAGE_KEY,
+  loadMatchById,
+  loadMatchHistory,
+  MAX_HISTORY_ENTRIES,
+  saveMatchToHistory
 } from '../utils/match-history-storage.js'
 
 function resetFileSystem() {
@@ -162,7 +162,9 @@ test('loadMatchHistory returns empty array for corrupted file', () => {
 
   // Write corrupted JSON directly to mock files
   const corruptedData = '{ bad json'
-  mockFiles['padel-buddy_match-history.json'] = new TextEncoder().encode(corruptedData)
+  mockFiles['padel-buddy_match-history.json'] = new TextEncoder().encode(
+    corruptedData
+  )
 
   const history = loadMatchHistory()
   assert.deepEqual(history, [])
@@ -172,7 +174,9 @@ test('loadMatchHistory returns empty array for invalid structure (missing matche
   resetFileSystem()
 
   const invalidData = JSON.stringify({ schemaVersion: 1 })
-  mockFiles['padel-buddy_match-history.json'] = new TextEncoder().encode(invalidData)
+  mockFiles['padel-buddy_match-history.json'] = new TextEncoder().encode(
+    invalidData
+  )
 
   const history = loadMatchHistory()
   assert.deepEqual(history, [])
@@ -291,9 +295,7 @@ test('createMatchHistoryEntry includes setsWonTeamB in returned object', () => {
       teamA: 2,
       teamB: 1
     },
-    setHistory: [
-      { setNumber: 1, teamAGames: 6, teamBGames: 3 }
-    ],
+    setHistory: [{ setNumber: 1, teamAGames: 6, teamBGames: 3 }],
     completedAt: 1700000001000
   }
 

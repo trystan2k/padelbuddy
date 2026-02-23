@@ -1,0 +1,4 @@
+{
+  "*.{js,ts}": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true",
+  "*.json": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true"
+}

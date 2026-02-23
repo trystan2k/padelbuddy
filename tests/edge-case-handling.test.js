@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-
-import { isMatchState, STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
-import { matchStorage, MatchStorage } from '../utils/match-storage.js'
+import { createHistoryStack } from '../utils/history-stack.js'
 import { initializeMatchState } from '../utils/match-session-init.js'
 import { createInitialMatchState } from '../utils/match-state.js'
+import {
+  STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY,
+  isMatchState
+} from '../utils/match-state-schema.js'
+import { MatchStorage, matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
-import { createHistoryStack } from '../utils/history-stack.js'
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -60,11 +62,15 @@ async function waitForAsyncPageUpdates() {
 }
 
 function getVisibleButtons(createdWidgets) {
-  return createdWidgets.filter((widget) => widget.type === 'BUTTON' && !widget.deleted)
+  return createdWidgets.filter(
+    (widget) => widget.type === 'BUTTON' && !widget.deleted
+  )
 }
 
 function getVisibleButtonLabels(createdWidgets) {
-  return getVisibleButtons(createdWidgets).map((widget) => widget.properties.text)
+  return getVisibleButtons(createdWidgets).map(
+    (widget) => widget.properties.text
+  )
 }
 
 // ─── Home page loader ─────────────────────────────────────────────────────────
@@ -75,7 +81,10 @@ async function loadHomePageDefinition() {
   const sourceUrl = new URL('../page/index.js', import.meta.url)
   const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
   const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL('../utils/match-state-schema.js', import.meta.url)
+  const matchStateSchemaUrl = new URL(
+    '../utils/match-state-schema.js',
+    import.meta.url
+  )
   const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
   const startNewMatchFlowUrl = new URL(
     './helpers/home-start-new-match-flow-bridge.js',
@@ -86,10 +95,22 @@ async function loadHomePageDefinition() {
   let source = await readFile(sourceUrl, 'utf8')
 
   source = source
-    .replace("import { gettext } from 'i18n'\n", 'const gettext = (key) => key\n')
-    .replace("from '../utils/history-stack.js'", `from '${historyStackUrl.href}'`)
-    .replace("from '../utils/match-storage.js'", `from '${matchStorageUrl.href}'`)
-    .replace("from '../utils/match-state-schema.js'", `from '${matchStateSchemaUrl.href}'`)
+    .replace(
+      "import { gettext } from 'i18n'\n",
+      'const gettext = (key) => key\n'
+    )
+    .replace(
+      "from '../utils/history-stack.js'",
+      `from '${historyStackUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-storage.js'",
+      `from '${matchStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-state-schema.js'",
+      `from '${matchStateSchemaUrl.href}'`
+    )
     .replace("from '../utils/match-state.js'", `from '${matchStateUrl.href}'`)
     .replace(
       "from '../utils/start-new-match-flow.js'",
@@ -134,27 +155,57 @@ let gamePageImportCounter = 0
 
 async function loadGamePageDefinition() {
   const sourceUrl = new URL('../page/game.js', import.meta.url)
-  const scoreViewModelUrl = new URL('../page/score-view-model.js', import.meta.url)
+  const scoreViewModelUrl = new URL(
+    '../page/score-view-model.js',
+    import.meta.url
+  )
   const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
   const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
-  const scoringConstantsUrl = new URL('../utils/scoring-constants.js', import.meta.url)
-  const scoringEngineUrl = new URL('../utils/scoring-engine.js', import.meta.url)
+  const scoringConstantsUrl = new URL(
+    '../utils/scoring-constants.js',
+    import.meta.url
+  )
+  const scoringEngineUrl = new URL(
+    '../utils/scoring-engine.js',
+    import.meta.url
+  )
   const storageUrl = new URL('../utils/storage.js', import.meta.url)
   const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL('../utils/match-state-schema.js', import.meta.url)
+  const matchStateSchemaUrl = new URL(
+    '../utils/match-state-schema.js',
+    import.meta.url
+  )
 
   let source = await readFile(sourceUrl, 'utf8')
 
   source = source
-    .replace("import { gettext } from 'i18n'\n", 'const gettext = (key) => key\n')
+    .replace(
+      "import { gettext } from 'i18n'\n",
+      'const gettext = (key) => key\n'
+    )
     .replace("from './score-view-model.js'", `from '${scoreViewModelUrl.href}'`)
-    .replace("from '../utils/history-stack.js'", `from '${historyStackUrl.href}'`)
+    .replace(
+      "from '../utils/history-stack.js'",
+      `from '${historyStackUrl.href}'`
+    )
     .replace("from '../utils/match-state.js'", `from '${matchStateUrl.href}'`)
-    .replace("from '../utils/scoring-constants.js'", `from '${scoringConstantsUrl.href}'`)
-    .replace("from '../utils/scoring-engine.js'", `from '${scoringEngineUrl.href}'`)
+    .replace(
+      "from '../utils/scoring-constants.js'",
+      `from '${scoringConstantsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/scoring-engine.js'",
+      `from '${scoringEngineUrl.href}'`
+    )
     .replace("from '../utils/storage.js'", `from '${storageUrl.href}'`)
-    .replace("from '../utils/match-storage.js'", `from '${matchStorageUrl.href}'`)
-    .replace("from '../utils/match-state-schema.js'", `from '${matchStateSchemaUrl.href}'`)
+    .replace(
+      "from '../utils/match-storage.js'",
+      `from '${matchStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-state-schema.js'",
+      `from '${matchStateSchemaUrl.href}'`
+    )
 
   const moduleUrl =
     'data:text/javascript;charset=utf-8,' +
@@ -197,26 +248,27 @@ async function runHomePageScenario(options = {}, runAssertions) {
   const originalSettingsStorage = globalThis.settingsStorage
   const originalSetTimeout = globalThis.setTimeout
   const originalClearTimeout = globalThis.clearTimeout
-  const originalStartNewMatchFlowBridge = globalThis.__homeScreenStartNewMatchFlow
-  const originalClearActiveMatchSessionBridge = globalThis.__homeScreenClearActiveMatchSession
-  const originalResetMatchStateManagerBridge = globalThis.__homeScreenResetMatchStateManager
+  const originalStartNewMatchFlowBridge =
+    globalThis.__homeScreenStartNewMatchFlow
+  const originalClearActiveMatchSessionBridge =
+    globalThis.__homeScreenClearActiveMatchSession
+  const originalResetMatchStateManagerBridge =
+    globalThis.__homeScreenResetMatchStateManager
   const originalMatchStorageAdapter = matchStorage.adapter
 
   const { hmUI, createdWidgets } = createHmUiRecorder()
   const navigationCalls = []
-  const app =
-    options.app ||
-    {
-      globalData: {
-        matchState: createInitialMatchState(1700000000),
-        matchHistory: {
-          clearCalls: 0,
-          clear() {
-            this.clearCalls += 1
-          }
+  const app = options.app || {
+    globalData: {
+      matchState: createInitialMatchState(1700000000),
+      matchHistory: {
+        clearCalls: 0,
+        clear() {
+          this.clearCalls += 1
         }
       }
     }
+  }
 
   let loadCallCount = 0
   const loadResponses = Array.isArray(options.matchStorageLoadResponses)
@@ -248,9 +300,13 @@ async function runHomePageScenario(options = {}, runAssertions) {
       ? options.resetMatchStateManager
       : () => {}
   globalThis.setTimeout =
-    typeof options.setTimeoutFn === 'function' ? options.setTimeoutFn : originalSetTimeout
+    typeof options.setTimeoutFn === 'function'
+      ? options.setTimeoutFn
+      : originalSetTimeout
   globalThis.clearTimeout =
-    typeof options.clearTimeoutFn === 'function' ? options.clearTimeoutFn : originalClearTimeout
+    typeof options.clearTimeoutFn === 'function'
+      ? options.clearTimeoutFn
+      : originalClearTimeout
   globalThis.settingsStorage = {
     getItem() {
       return options.legacyRuntimeState ?? null
@@ -342,13 +398,15 @@ async function runHomePageScenario(options = {}, runAssertions) {
     if (typeof originalClearActiveMatchSessionBridge === 'undefined') {
       delete globalThis.__homeScreenClearActiveMatchSession
     } else {
-      globalThis.__homeScreenClearActiveMatchSession = originalClearActiveMatchSessionBridge
+      globalThis.__homeScreenClearActiveMatchSession =
+        originalClearActiveMatchSessionBridge
     }
 
     if (typeof originalResetMatchStateManagerBridge === 'undefined') {
       delete globalThis.__homeScreenResetMatchStateManager
     } else {
-      globalThis.__homeScreenResetMatchStateManager = originalResetMatchStateManagerBridge
+      globalThis.__homeScreenResetMatchStateManager =
+        originalResetMatchStateManagerBridge
     }
 
     matchStorage.adapter = originalMatchStorageAdapter
@@ -518,7 +576,11 @@ test('home screen hides Resume for partial state missing schemaVersion', async (
       matchStorageLoadResponses: [partialState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
+        'home.startNewGame',
+        'home.previousMatches',
+        'home.clearData'
+      ])
     }
   )
 })
@@ -541,7 +603,11 @@ test('home screen hides Resume for state missing setHistory', async () => {
       matchStorageLoadResponses: [partialState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
+        'home.startNewGame',
+        'home.previousMatches',
+        'home.clearData'
+      ])
     }
   )
 })
@@ -564,7 +630,11 @@ test('home screen hides Resume for state with currentSet.number equal to 0', asy
       matchStorageLoadResponses: [invalidState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
+        'home.startNewGame',
+        'home.previousMatches',
+        'home.clearData'
+      ])
     }
   )
 })

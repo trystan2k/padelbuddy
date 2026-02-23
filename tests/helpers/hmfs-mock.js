@@ -141,12 +141,18 @@ function decodeString(bytes) {
   let i = 0
   while (i < bytes.length) {
     const b = bytes[i]
-    if (b < 0x80) { str += String.fromCharCode(b); i++ }
-    else if ((b & 0xe0) === 0xc0) {
+    if (b < 0x80) {
+      str += String.fromCharCode(b)
+      i++
+    } else if ((b & 0xe0) === 0xc0) {
       str += String.fromCharCode(((b & 0x1f) << 6) | (bytes[i + 1] & 0x3f))
       i += 2
     } else {
-      str += String.fromCharCode(((b & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f))
+      str += String.fromCharCode(
+        ((b & 0x0f) << 12) |
+          ((bytes[i + 1] & 0x3f) << 6) |
+          (bytes[i + 2] & 0x3f)
+      )
       i += 3
     }
   }

@@ -79,6 +79,9 @@ This repository uses the following tools:
 ### Skills
 
 - Use `zepp-os` skill when working with Zepp OS specific features.
+- Use `biome` skill when configuring, running, or troubleshooting Biome (linter/formatter).
+- Use `husky` skill when setting up or modifying git hooks with Husky.
+- Use `lint-staged` skill when configuring lint-staged for pre-commit file filtering.
 
 ### Runtime & Framework
 

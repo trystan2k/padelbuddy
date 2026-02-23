@@ -5,7 +5,11 @@
   "type": "module",
   "main": "app.js",
   "scripts": {
-    "test": "node --test"
+    "prepare": "husky",
+    "test": "node --test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
   },
   "keywords": [
     "padel",
@@ -20,6 +24,11 @@
   "author": "Thiago Mendonca <trystan2k@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@zeppos/device-types": "^1.0.0"
+    "@biomejs/biome": "~2.4.4",
+    "@commitlint/cli": "~20.4.2",
+    "@commitlint/config-conventional": "~20.4.2",
+    "@zeppos/device-types": "~1.0.0",
+    "husky": "~9.1.7",
+    "lint-staged": "~16.2.7"
   }
 }

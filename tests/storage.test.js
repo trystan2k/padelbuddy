@@ -3,12 +3,16 @@ import test from 'node:test'
 
 import { createInitialMatchState } from '../utils/match-state.js'
 import {
-  MATCH_STATE_STORAGE_KEY,
   clearState,
   loadState,
+  MATCH_STATE_STORAGE_KEY,
   saveState
 } from '../utils/storage.js'
-import { createHmFsMock, storageKeyToFilename, readFileStoreKey } from './helpers/hmfs-mock.js'
+import {
+  createHmFsMock,
+  readFileStoreKey,
+  storageKeyToFilename
+} from './helpers/hmfs-mock.js'
 
 const MATCH_STATE_FILENAME = storageKeyToFilename(MATCH_STATE_STORAGE_KEY)
 

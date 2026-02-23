@@ -6,8 +6,8 @@ import { SCORE_POINT_SEQUENCE } from './scoring-constants.js'
 // ---------------------------------------------------------------------------
 const FS_O_RDONLY = 0
 const FS_O_WRONLY = 1
-const FS_O_CREAT = 64   // 0x40
-const FS_O_TRUNC = 512  // 0x200
+const FS_O_CREAT = 64 // 0x40
+const FS_O_TRUNC = 512 // 0x200
 
 export const MATCH_STATE_STORAGE_KEY = 'padel-buddy.match-state'
 
@@ -127,7 +127,10 @@ function decodeUtf8(bytes) {
       code = ((byte & 0x1f) << 6) | (bytes[i + 1] & 0x3f)
       i += 2
     } else if ((byte & 0xf0) === 0xe0) {
-      code = ((byte & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)
+      code =
+        ((byte & 0x0f) << 12) |
+        ((bytes[i + 1] & 0x3f) << 6) |
+        (bytes[i + 2] & 0x3f)
       i += 3
     } else {
       code =
@@ -140,7 +143,10 @@ function decodeUtf8(bytes) {
 
     if (code >= 0x10000) {
       const offset = code - 0x10000
-      str += String.fromCharCode(0xd800 + (offset >> 10), 0xdc00 + (offset & 0x3ff))
+      str += String.fromCharCode(
+        0xd800 + (offset >> 10),
+        0xdc00 + (offset & 0x3ff)
+      )
     } else {
       str += String.fromCharCode(code)
     }
@@ -191,7 +197,8 @@ function createHmFsFileStorageAdapter() {
       try {
         const filename = keyToFilename(key)
         const encoded = encodeUtf8(value)
-        const writeFlags = (typeof hmFS.O_WRONLY === 'number' ? hmFS.O_WRONLY : FS_O_WRONLY) |
+        const writeFlags =
+          (typeof hmFS.O_WRONLY === 'number' ? hmFS.O_WRONLY : FS_O_WRONLY) |
           (typeof hmFS.O_CREAT === 'number' ? hmFS.O_CREAT : FS_O_CREAT) |
           (typeof hmFS.O_TRUNC === 'number' ? hmFS.O_TRUNC : FS_O_TRUNC)
         fileId = hmFS.open(filename, writeFlags)
@@ -227,7 +234,8 @@ function createHmFsFileStorageAdapter() {
         }
 
         const size = statInfo.size
-        const readFlag = typeof hmFS.O_RDONLY === 'number' ? hmFS.O_RDONLY : FS_O_RDONLY
+        const readFlag =
+          typeof hmFS.O_RDONLY === 'number' ? hmFS.O_RDONLY : FS_O_RDONLY
         fileId = hmFS.open(filename, readFlag)
 
         if (fileId < 0) {

@@ -1,18 +1,17 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-
 import {
-  ACTIVE_MATCH_SESSION_STORAGE_KEY,
-  MatchStorage,
-  ZeppOsStorageAdapter,
-  clearMatchState as clearStoredMatchState,
-  matchStorage
-} from '../utils/match-storage.js'
-import {
-  STORAGE_KEY,
   createDefaultMatchState,
+  STORAGE_KEY,
   serializeMatchState
 } from '../utils/match-state-schema.js'
+import {
+  ACTIVE_MATCH_SESSION_STORAGE_KEY,
+  clearMatchState as clearStoredMatchState,
+  MatchStorage,
+  matchStorage,
+  ZeppOsStorageAdapter
+} from '../utils/match-storage.js'
 
 test('persistence module exports canonical storage key and initialized service', () => {
   assert.equal(ACTIVE_MATCH_SESSION_STORAGE_KEY, STORAGE_KEY)

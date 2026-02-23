@@ -218,8 +218,14 @@ function handleGameWin(state, team, options = {}) {
   }
 
   const completedSetNumber = toPositiveInteger(state.currentSetStatus.number, 1)
-  const completedSetTeamAGames = toNonNegativeInteger(state.currentSetStatus.teamAGames, 0)
-  const completedSetTeamBGames = toNonNegativeInteger(state.currentSetStatus.teamBGames, 0)
+  const completedSetTeamAGames = toNonNegativeInteger(
+    state.currentSetStatus.teamAGames,
+    0
+  )
+  const completedSetTeamBGames = toNonNegativeInteger(
+    state.currentSetStatus.teamBGames,
+    0
+  )
 
   state.setsWon[team] += 1
   state.setHistory.push({
@@ -269,7 +275,9 @@ function finalizeGameWin(state, team) {
  */
 function assertValidHistoryStack(historyStack) {
   if (!historyStack || typeof historyStack.push !== 'function') {
-    throw new TypeError('addPoint historyStack must expose a push(state) method.')
+    throw new TypeError(
+      'addPoint historyStack must expose a push(state) method.'
+    )
   }
 }
 
@@ -286,7 +294,9 @@ function assertValidUndoHistoryStack(historyStack) {
     typeof historyStack.pop !== 'function' ||
     typeof historyStack.isEmpty !== 'function'
   ) {
-    throw new TypeError('removePoint historyStack must expose pop() and isEmpty() methods.')
+    throw new TypeError(
+      'removePoint historyStack must expose pop() and isEmpty() methods.'
+    )
   }
 }
 
@@ -365,7 +375,9 @@ function isValidRestorableMatchState(state) {
  */
 function assertRestorableMatchState(state) {
   if (!isValidRestorableMatchState(state)) {
-    throw new TypeError('removePoint can only restore a valid match snapshot state.')
+    throw new TypeError(
+      'removePoint can only restore a valid match snapshot state.'
+    )
   }
 }
 
@@ -428,7 +440,9 @@ export function addPoint(state, team, historyStack) {
   const scoringTeamPoints = nextState[team].points
   const opponentTeamPoints = nextState[opponentTeam].points
   const scoringTeamPointIndex = getRegularPointIndex(nextState[team].points)
-  const opponentPointIndex = getRegularPointIndex(nextState[opponentTeam].points)
+  const opponentPointIndex = getRegularPointIndex(
+    nextState[opponentTeam].points
+  )
 
   if (scoringTeamPoints === SCORE_POINTS.ADVANTAGE) {
     finalizeGameWin(nextState, team)

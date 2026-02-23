@@ -2,12 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { createHistoryStack } from '../utils/history-stack.js'
+import { createInitialMatchState } from '../utils/match-state.js'
 import {
   ACTIVE_MATCH_SESSION_STORAGE_KEY,
-  ZeppOsStorageAdapter,
-  matchStorage
+  matchStorage,
+  ZeppOsStorageAdapter
 } from '../utils/match-storage.js'
-import { createInitialMatchState } from '../utils/match-state.js'
 import {
   clearActiveMatchSession,
   resetMatchStateManager,
@@ -254,7 +254,9 @@ test('startNewMatchFlow keeps flow order and fails safe when cleanup throws', ()
 
   // Provide a mock where remove throws — clearState/clearMatchState should swallow it
   const { mock } = createHmFsMock()
-  mock.remove = () => { throw new Error('remove failed') }
+  mock.remove = () => {
+    throw new Error('remove failed')
+  }
 
   globalThis.hmFS = mock
   globalThis.getApp = () => ({

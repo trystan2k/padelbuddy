@@ -5,9 +5,7 @@ AppSideService({
     console.log(gettext('example'))
   },
 
-  onRun() {
-  },
+  onRun() {},
 
-  onDestroy() {
-  }
+  onDestroy() {}
 })

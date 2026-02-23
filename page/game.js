@@ -1,17 +1,16 @@
 import { gettext } from 'i18n'
-
-import { createScoreViewModel } from './score-view-model.js'
 import { createHistoryStack, deepCopyState } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
+import {
+  createDefaultMatchState as createDefaultPersistedMatchState,
+  isMatchState as isPersistedMatchState,
+  MATCH_STATUS as PERSISTED_MATCH_STATUS
+} from '../utils/match-state-schema.js'
+import { loadMatchState, saveMatchState } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { addPoint, removePoint } from '../utils/scoring-engine.js'
-import { loadMatchState, saveMatchState } from '../utils/match-storage.js'
-import {
-  MATCH_STATUS as PERSISTED_MATCH_STATUS,
-  createDefaultMatchState as createDefaultPersistedMatchState,
-  isMatchState as isPersistedMatchState
-} from '../utils/match-state-schema.js'
 import { loadState, saveState } from '../utils/storage.js'
+import { createScoreViewModel } from './score-view-model.js'
 
 const GAME_TOKENS = Object.freeze({
   colors: {
@@ -75,7 +74,12 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-function calculateRoundSafeSideInset(width, height, yPosition, horizontalPadding) {
+function calculateRoundSafeSideInset(
+  width,
+  height,
+  yPosition,
+  horizontalPadding
+) {
   const radius = Math.min(width, height) / 2
   const centerX = width / 2
   const centerY = height / 2
@@ -96,7 +100,11 @@ function calculateRoundSafeSectionSideInset(
   horizontalPadding
 ) {
   const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(sectionTop + Math.max(sectionHeight, 0), 0, height)
+  const boundedBottom = clamp(
+    sectionTop + Math.max(sectionHeight, 0),
+    0,
+    height
+  )
   const middleY = (boundedTop + boundedBottom) / 2
 
   return Math.max(
@@ -112,8 +120,7 @@ function isRecord(value) {
 
 function isPersistedMatchStateActive(matchState) {
   return (
-    isRecord(matchState) &&
-    matchState.status === PERSISTED_MATCH_STATUS.ACTIVE
+    isRecord(matchState) && matchState.status === PERSISTED_MATCH_STATUS.ACTIVE
   )
 }
 
@@ -162,10 +169,16 @@ function toPersistedPointValue(value) {
 }
 
 function isTieBreakMode(teamAGames, teamBGames) {
-  return teamAGames === TIE_BREAK_ENTRY_GAMES && teamBGames === TIE_BREAK_ENTRY_GAMES
+  return (
+    teamAGames === TIE_BREAK_ENTRY_GAMES && teamBGames === TIE_BREAK_ENTRY_GAMES
+  )
 }
 
-function toRuntimePointValue(value, tieBreakMode, fallback = SCORE_POINTS.LOVE) {
+function toRuntimePointValue(
+  value,
+  tieBreakMode,
+  fallback = SCORE_POINTS.LOVE
+) {
   if (!Number.isInteger(value) || value < 0) {
     return fallback
   }
@@ -248,7 +261,10 @@ function applyWinnerMetadata(matchState, winnerTeam) {
   matchState.winner.team = winnerTeam
 }
 
-function mergeRuntimeStateWithPersistedSession(runtimeMatchState, persistedMatchState) {
+function mergeRuntimeStateWithPersistedSession(
+  runtimeMatchState,
+  persistedMatchState
+) {
   if (!isValidRuntimeMatchState(runtimeMatchState)) {
     return createInitialMatchState()
   }
@@ -321,7 +337,10 @@ function mergeRuntimeStateWithPersistedSession(runtimeMatchState, persistedMatch
   return mergedState
 }
 
-function createPersistedMatchStateSnapshot(runtimeMatchState, basePersistedMatchState) {
+function createPersistedMatchStateSnapshot(
+  runtimeMatchState,
+  basePersistedMatchState
+) {
   if (!isValidRuntimeMatchState(runtimeMatchState)) {
     return null
   }
@@ -335,7 +354,10 @@ function createPersistedMatchStateSnapshot(runtimeMatchState, basePersistedMatch
     toPositiveInteger(baseState?.setsNeededToWin, 2)
   )
   const baseSetsToPlay = toSupportedSetsToPlay(baseState?.setsToPlay)
-  const setsToPlay = isSupportedSetConfiguration(baseSetsToPlay, setsNeededToWin)
+  const setsToPlay = isSupportedSetConfiguration(
+    baseSetsToPlay,
+    setsNeededToWin
+  )
     ? baseSetsToPlay
     : resolveSetsToPlayFromSetsNeededToWin(setsNeededToWin)
   const winnerTeam = resolveWinnerTeam(runtimeMatchState)
@@ -361,8 +383,14 @@ function createPersistedMatchStateSnapshot(runtimeMatchState, basePersistedMatch
     currentSet: {
       number: toPositiveInteger(runtimeMatchState.currentSetStatus.number, 1),
       games: {
-        teamA: toNonNegativeInteger(runtimeMatchState.currentSetStatus.teamAGames, 0),
-        teamB: toNonNegativeInteger(runtimeMatchState.currentSetStatus.teamBGames, 0)
+        teamA: toNonNegativeInteger(
+          runtimeMatchState.currentSetStatus.teamAGames,
+          0
+        ),
+        teamB: toNonNegativeInteger(
+          runtimeMatchState.currentSetStatus.teamBGames,
+          0
+        )
       }
     },
     currentGame: {
@@ -563,7 +591,8 @@ Page({
     if (!this.isSessionAccessGranted) {
       if (typeof hmUI !== 'undefined') {
         hmUI.createWidget(hmUI.widget.FILL_RECT, {
-          x: 0, y: 0,
+          x: 0,
+          y: 0,
           w: this.getScreenMetrics().width,
           h: this.getScreenMetrics().height,
           color: GAME_TOKENS.colors.background
@@ -586,7 +615,10 @@ Page({
   },
 
   registerGestureHandler() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.registerGestureEvent !== 'function') {
+    if (
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.registerGestureEvent !== 'function'
+    ) {
       return
     }
 
@@ -610,7 +642,10 @@ Page({
   },
 
   unregisterGestureHandler() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.unregisterGestureEvent !== 'function') {
+    if (
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.unregisterGestureEvent !== 'function'
+    ) {
       return
     }
 
@@ -624,7 +659,10 @@ Page({
   keepScreenOn() {
     try {
       // v1 API: set bright screen time to maximum (seconds). Cancel must be called on destroy.
-      if (typeof hmSetting !== 'undefined' && typeof hmSetting.setBrightScreen === 'function') {
+      if (
+        typeof hmSetting !== 'undefined' &&
+        typeof hmSetting.setBrightScreen === 'function'
+      ) {
         hmSetting.setBrightScreen(2147483)
       }
     } catch {
@@ -634,7 +672,10 @@ Page({
 
   releaseScreenOn() {
     try {
-      if (typeof hmSetting !== 'undefined' && typeof hmSetting.setBrightScreenCancel === 'function') {
+      if (
+        typeof hmSetting !== 'undefined' &&
+        typeof hmSetting.setBrightScreenCancel === 'function'
+      ) {
         hmSetting.setBrightScreenCancel()
       }
     } catch {
@@ -665,7 +706,8 @@ Page({
         persistedMatchState = this.consumeSessionHandoff()
       }
 
-      const hasValidActiveSession = isPersistedMatchStateActive(persistedMatchState)
+      const hasValidActiveSession =
+        isPersistedMatchStateActive(persistedMatchState)
 
       this.isSessionAccessGranted = hasValidActiveSession
       this.persistedSessionState = hasValidActiveSession
@@ -921,7 +963,8 @@ Page({
 
         if (
           nextPersistenceTask.signature.length > 0 &&
-          nextPersistenceTask.signature === this.lastPersistedRuntimeStateSignature
+          nextPersistenceTask.signature ===
+            this.lastPersistedRuntimeStateSignature
         ) {
           continue
         }
@@ -955,7 +998,9 @@ Page({
     if (persistedMatchStateSnapshot !== null) {
       try {
         saveMatchState(persistedMatchStateSnapshot)
-        this.persistedSessionState = cloneMatchState(persistedMatchStateSnapshot)
+        this.persistedSessionState = cloneMatchState(
+          persistedMatchStateSnapshot
+        )
 
         // Cache the last written schema snapshot in globalData so app.onDestroy
         // can flush it as a safety net if page.onDestroy is skipped.
@@ -969,7 +1014,9 @@ Page({
     }
 
     this.lastPersistedRuntimeStateSignature =
-      signature.length > 0 ? signature : serializeMatchStateForComparison(runtimeState)
+      signature.length > 0
+        ? signature
+        : serializeMatchStateForComparison(runtimeState)
   },
 
   navigateToSummaryPage() {
@@ -1011,7 +1058,10 @@ Page({
 
       const snapshot = this.persistedSessionState
 
-      if (isPersistedMatchState(snapshot) && isPersistedMatchStateActive(snapshot)) {
+      if (
+        isPersistedMatchState(snapshot) &&
+        isPersistedMatchStateActive(snapshot)
+      ) {
         app.globalData.pendingHomeMatchState = cloneMatchState(snapshot)
       }
     } catch {
@@ -1069,7 +1119,11 @@ Page({
     }
   },
 
-  measureInteractionPerformance(interactionStartedAt, renderStartedAt, uiUpdatedAt) {
+  measureInteractionPerformance(
+    interactionStartedAt,
+    renderStartedAt,
+    uiUpdatedAt
+  ) {
     if (
       !Number.isFinite(interactionStartedAt) ||
       !Number.isFinite(renderStartedAt) ||
@@ -1078,14 +1132,21 @@ Page({
       return
     }
 
-    const interactionLatencyMs = Math.max(0, Math.round(uiUpdatedAt - interactionStartedAt))
-    const renderLatencyMs = Math.max(0, Math.round(uiUpdatedAt - renderStartedAt))
+    const interactionLatencyMs = Math.max(
+      0,
+      Math.round(uiUpdatedAt - interactionStartedAt)
+    )
+    const renderLatencyMs = Math.max(
+      0,
+      Math.round(uiUpdatedAt - renderStartedAt)
+    )
 
     this.emitInteractionPerformanceMetrics({
       interactionLatencyMs,
       renderLatencyMs,
       latencyBudgetMs: INTERACTION_LATENCY_TARGET_MS,
-      exceededLatencyBudget: interactionLatencyMs >= INTERACTION_LATENCY_TARGET_MS
+      exceededLatencyBudget:
+        interactionLatencyMs >= INTERACTION_LATENCY_TARGET_MS
     })
   },
 
@@ -1100,7 +1161,11 @@ Page({
       return app.addPointForTeam(team)
     }
 
-    const nextState = addPoint(app.globalData.matchState, team, app.globalData.matchHistory)
+    const nextState = addPoint(
+      app.globalData.matchState,
+      team,
+      app.globalData.matchHistory
+    )
     app.globalData.matchState = nextState
     return nextState
   },
@@ -1116,7 +1181,10 @@ Page({
       return app.removePoint()
     }
 
-    const nextState = removePoint(app.globalData.matchState, app.globalData.matchHistory)
+    const nextState = removePoint(
+      app.globalData.matchState,
+      app.globalData.matchHistory
+    )
     app.globalData.matchState = nextState
     return nextState
   },
@@ -1139,8 +1207,13 @@ Page({
       return null
     }
 
-    const historySnapshots = popHistorySnapshotsInOrder(app.globalData.matchHistory)
-    const stateTimeline = [...historySnapshots, deepCopyState(app.globalData.matchState)]
+    const historySnapshots = popHistorySnapshotsInOrder(
+      app.globalData.matchHistory
+    )
+    const stateTimeline = [
+      ...historySnapshots,
+      deepCopyState(app.globalData.matchState)
+    ]
     const scoringTeams = []
 
     for (let index = 1; index < stateTimeline.length; index += 1) {
@@ -1198,9 +1271,14 @@ Page({
     this.renderGameScreen()
     const uiUpdatedAt = this.getCurrentTimeMs()
 
-    this.measureInteractionPerformance(interactionStartedAt, renderStartedAt, uiUpdatedAt)
+    this.measureInteractionPerformance(
+      interactionStartedAt,
+      renderStartedAt,
+      uiUpdatedAt
+    )
 
-    const shouldForcePersistence = isRecord(options) && options.forcePersistence === true
+    const shouldForcePersistence =
+      isRecord(options) && options.forcePersistence === true
     this.saveCurrentRuntimeState({ force: shouldForcePersistence })
   },
 
@@ -1212,7 +1290,8 @@ Page({
       return false
     }
 
-    const elapsedMs = interactionStartedAt - this.lastAcceptedScoringInteractionAt
+    const elapsedMs =
+      interactionStartedAt - this.lastAcceptedScoringInteractionAt
 
     return elapsedMs >= 0 && elapsedMs < SCORING_DEBOUNCE_WINDOW_MS
   },
@@ -1226,14 +1305,20 @@ Page({
       isRecord(options) && options.debounceScoringInput === true
     const interactionStartedAt = this.getCurrentTimeMs()
 
-    if (shouldDebounceScoringInput && this.isScoringInteractionDebounced(interactionStartedAt)) {
+    if (
+      shouldDebounceScoringInput &&
+      this.isScoringInteractionDebounced(interactionStartedAt)
+    ) {
       return
     }
 
     const previousState = cloneMatchState(this.getRuntimeMatchState())
     const nextState = action()
 
-    if (!isValidRuntimeMatchState(nextState) || isSameMatchState(previousState, nextState)) {
+    if (
+      !isValidRuntimeMatchState(nextState) ||
+      isSameMatchState(previousState, nextState)
+    ) {
       return
     }
 
@@ -1245,7 +1330,10 @@ Page({
       this.hasAttemptedSummaryNavigation = false
     }
 
-    const didFinishMatch = didMatchTransitionToFinished(previousState, nextState)
+    const didFinishMatch = didMatchTransitionToFinished(
+      previousState,
+      nextState
+    )
 
     this.persistAndRender(nextState, interactionStartedAt, {
       forcePersistence: didFinishMatch
@@ -1301,7 +1389,11 @@ Page({
     let headerWidth = Math.max(1, width - headerSideInset * 2)
     if (isRoundScreen) {
       const safeInset = calculateRoundSafeSectionSideInset(
-        width, height, headerTop, headerHeight, Math.round(width * 0.01)
+        width,
+        height,
+        headerTop,
+        headerHeight,
+        Math.round(width * 0.01)
       )
       headerX = Math.max(headerX, safeInset)
       headerWidth = Math.max(1, width - headerX * 2)
@@ -1311,17 +1403,25 @@ Page({
 
     // ── Bottom: back-home button ───────────────────────────────────────────
     const backHomeButtonHeight = clamp(Math.round(height * 0.15), 48, 68)
-    const backHomeButtonWidth = clamp(Math.round(width * 0.40), 120, 180)
-    const baseBottomInset = Math.round(height * GAME_TOKENS.spacingScale.bottomInset)
+    const backHomeButtonWidth = clamp(Math.round(width * 0.4), 120, 180)
+    const baseBottomInset = Math.round(
+      height * GAME_TOKENS.spacingScale.bottomInset
+    )
     const bottomInset = isRoundScreen
-      ? Math.max(baseBottomInset, Math.round(height * GAME_TOKENS.spacingScale.bottomInsetRound))
+      ? Math.max(
+          baseBottomInset,
+          Math.round(height * GAME_TOKENS.spacingScale.bottomInsetRound)
+        )
       : baseBottomInset
     const backHomeButtonY = height - bottomInset - backHomeButtonHeight
     const backHomeButtonX = Math.round((width - backHomeButtonWidth) / 2)
 
     // ── Score area: fills space between header and back button ─────────────
     const sectionGap = Math.round(height * GAME_TOKENS.spacingScale.sectionGap)
-    const scoreAreaTop = headerTop + headerHeight + Math.round(height * GAME_TOKENS.spacingScale.headerToScore)
+    const scoreAreaTop =
+      headerTop +
+      headerHeight +
+      Math.round(height * GAME_TOKENS.spacingScale.headerToScore)
     const scoreAreaBottom = backHomeButtonY - sectionGap
     const scoreAreaHeight = Math.max(0, scoreAreaBottom - scoreAreaTop)
 
@@ -1336,7 +1436,8 @@ Page({
     // Minus button: small, below score
     const minusButtonHeight = clamp(Math.round(height * 0.11), 50, 70)
     const minusButtonWidth = clamp(Math.round(width * 0.18), 54, 88)
-    const minusButtonY = scoreY + scoreHeight + Math.round(scoreAreaHeight * 0.08)
+    const minusButtonY =
+      scoreY + scoreHeight + Math.round(scoreAreaHeight * 0.08)
 
     // Half-widths for left (teamA) and right (teamB) columns
     const halfWidth = Math.round(width / 2)
@@ -1358,7 +1459,10 @@ Page({
 
     // Background
     this.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0, y: 0, w: width, h: height,
+      x: 0,
+      y: 0,
+      w: width,
+      h: height,
       color: GAME_TOKENS.colors.background
     })
 
@@ -1369,12 +1473,16 @@ Page({
     const headerLabelWidth = Math.round(headerWidth * 0.42)
     const headerValueWidth = Math.round(headerWidth * 0.52)
     const headerPairWidth = headerLabelWidth + headerValueWidth
-    const headerPairX = headerX + Math.round((headerWidth - headerPairWidth) / 2)
+    const headerPairX =
+      headerX + Math.round((headerWidth - headerPairWidth) / 2)
     const headerValueX = headerPairX + headerLabelWidth
 
     // SETS row
     this.createWidget(hmUI.widget.TEXT, {
-      x: headerPairX, y: setsRowY, w: headerLabelWidth, h: headerRowHeight,
+      x: headerPairX,
+      y: setsRowY,
+      w: headerLabelWidth,
+      h: headerRowHeight,
       color: GAME_TOKENS.colors.mutedText,
       text: gettext('game.setsLabel'),
       text_size: headerTextSize,
@@ -1382,7 +1490,10 @@ Page({
       align_v: hmUI.align.CENTER_V
     })
     this.createWidget(hmUI.widget.TEXT, {
-      x: headerValueX, y: setsRowY, w: headerValueWidth, h: headerRowHeight,
+      x: headerValueX,
+      y: setsRowY,
+      w: headerValueWidth,
+      h: headerRowHeight,
       color: GAME_TOKENS.colors.accent,
       text: `  ${viewModel.setsWon.teamA} – ${viewModel.setsWon.teamB}`,
       text_size: headerTextSize,
@@ -1392,7 +1503,10 @@ Page({
 
     // GAMES row
     this.createWidget(hmUI.widget.TEXT, {
-      x: headerPairX, y: gamesRowY, w: headerLabelWidth, h: headerRowHeight,
+      x: headerPairX,
+      y: gamesRowY,
+      w: headerLabelWidth,
+      h: headerRowHeight,
       color: GAME_TOKENS.colors.mutedText,
       text: gettext('game.gamesLabel'),
       text_size: headerTextSize,
@@ -1400,7 +1514,10 @@ Page({
       align_v: hmUI.align.CENTER_V
     })
     this.createWidget(hmUI.widget.TEXT, {
-      x: headerValueX, y: gamesRowY, w: headerValueWidth, h: headerRowHeight,
+      x: headerValueX,
+      y: gamesRowY,
+      w: headerValueWidth,
+      h: headerRowHeight,
       color: GAME_TOKENS.colors.accent,
       text: `  ${viewModel.currentSetGames.teamA} – ${viewModel.currentSetGames.teamB}`,
       text_size: headerTextSize,
@@ -1414,7 +1531,10 @@ Page({
       const finishedValueHeight = scoreAreaHeight - finishedLabelHeight
 
       this.createWidget(hmUI.widget.TEXT, {
-        x: 0, y: scoreAreaTop, w: width, h: finishedLabelHeight,
+        x: 0,
+        y: scoreAreaTop,
+        w: width,
+        h: finishedLabelHeight,
         color: GAME_TOKENS.colors.mutedText,
         text: gettext('game.finishedLabel'),
         text_size: Math.round(width * GAME_TOKENS.fontScale.headerLabel),
@@ -1423,7 +1543,10 @@ Page({
       })
 
       this.createWidget(hmUI.widget.TEXT, {
-        x: 0, y: scoreAreaTop + finishedLabelHeight, w: width, h: finishedValueHeight,
+        x: 0,
+        y: scoreAreaTop + finishedLabelHeight,
+        w: width,
+        h: finishedValueHeight,
         color: GAME_TOKENS.colors.accent,
         text: getFinishedMessage(viewModel),
         text_size: pointsValueTextSize,
@@ -1435,7 +1558,10 @@ Page({
 
       // Team A label
       this.createWidget(hmUI.widget.TEXT, {
-        x: leftColX, y: teamLabelY, w: halfWidth, h: teamLabelHeight,
+        x: leftColX,
+        y: teamLabelY,
+        w: halfWidth,
+        h: teamLabelHeight,
         color: GAME_TOKENS.colors.mutedText,
         text: 'A',
         text_size: Math.round(width * GAME_TOKENS.fontScale.teamLabel),
@@ -1445,7 +1571,10 @@ Page({
 
       // Team B label
       this.createWidget(hmUI.widget.TEXT, {
-        x: rightColX, y: teamLabelY, w: halfWidth, h: teamLabelHeight,
+        x: rightColX,
+        y: teamLabelY,
+        w: halfWidth,
+        h: teamLabelHeight,
         color: GAME_TOKENS.colors.mutedText,
         text: 'B',
         text_size: Math.round(width * GAME_TOKENS.fontScale.teamLabel),
@@ -1455,7 +1584,10 @@ Page({
 
       // Team A score (tappable — adds point)
       this.createWidget(hmUI.widget.BUTTON, {
-        x: leftColX, y: scoreY, w: halfWidth, h: scoreHeight,
+        x: leftColX,
+        y: scoreY,
+        w: halfWidth,
+        h: scoreHeight,
         radius: 0,
         normal_color: GAME_TOKENS.colors.background,
         press_color: GAME_TOKENS.colors.cardBackground,
@@ -1467,7 +1599,10 @@ Page({
 
       // Team B score (tappable — adds point)
       this.createWidget(hmUI.widget.BUTTON, {
-        x: rightColX, y: scoreY, w: halfWidth, h: scoreHeight,
+        x: rightColX,
+        y: scoreY,
+        w: halfWidth,
+        h: scoreHeight,
         radius: 0,
         normal_color: GAME_TOKENS.colors.background,
         press_color: GAME_TOKENS.colors.cardBackground,
@@ -1479,14 +1614,20 @@ Page({
 
       // Vertical divider
       this.createWidget(hmUI.widget.FILL_RECT, {
-        x: dividerX, y: dividerTop, w: 1, h: dividerHeight,
+        x: dividerX,
+        y: dividerTop,
+        w: 1,
+        h: dividerHeight,
         color: GAME_TOKENS.colors.divider
       })
 
       // Team A minus button
       const minusAX = Math.round(leftColX + (halfWidth - minusButtonWidth) / 2)
       this.createWidget(hmUI.widget.BUTTON, {
-        x: minusAX, y: minusButtonY, w: minusButtonWidth, h: minusButtonHeight,
+        x: minusAX,
+        y: minusButtonY,
+        w: minusButtonWidth,
+        h: minusButtonHeight,
         radius: Math.round(minusButtonHeight / 2),
         normal_color: GAME_TOKENS.colors.buttonSecondary,
         press_color: GAME_TOKENS.colors.buttonSecondaryPressed,
@@ -1499,7 +1640,10 @@ Page({
       // Team B minus button
       const minusBX = Math.round(rightColX + (halfWidth - minusButtonWidth) / 2)
       this.createWidget(hmUI.widget.BUTTON, {
-        x: minusBX, y: minusButtonY, w: minusButtonWidth, h: minusButtonHeight,
+        x: minusBX,
+        y: minusButtonY,
+        w: minusButtonWidth,
+        h: minusButtonHeight,
         radius: Math.round(minusButtonHeight / 2),
         normal_color: GAME_TOKENS.colors.buttonSecondary,
         press_color: GAME_TOKENS.colors.buttonSecondaryPressed,
@@ -1512,8 +1656,10 @@ Page({
 
     // ── Back-home button (always shown at bottom centre) ──────────────────
     this.createWidget(hmUI.widget.BUTTON, {
-      x: backHomeButtonX, y: backHomeButtonY,
-      w: backHomeButtonWidth, h: backHomeButtonHeight,
+      x: backHomeButtonX,
+      y: backHomeButtonY,
+      w: backHomeButtonWidth,
+      h: backHomeButtonHeight,
       radius: Math.round(backHomeButtonHeight / 2),
       normal_color: GAME_TOKENS.colors.buttonSecondary,
       press_color: GAME_TOKENS.colors.buttonSecondaryPressed,

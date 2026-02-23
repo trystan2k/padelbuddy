@@ -1,7 +1,7 @@
 import {
+  createDefaultMatchState,
   MATCH_STATUS,
-  SETS_TO_PLAY,
-  createDefaultMatchState
+  SETS_TO_PLAY
 } from './match-state-schema.js'
 
 export const SUPPORTED_SETS_TO_PLAY = Object.freeze([
