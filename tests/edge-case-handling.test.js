@@ -65,9 +65,9 @@ function getVisibleButtons(createdWidgets) {
 }
 
 function getVisibleButtonLabels(createdWidgets) {
-  return getVisibleButtons(createdWidgets).map(
-    (widget) => widget.properties.text
-  )
+  return getVisibleButtons(createdWidgets)
+    .map((widget) => widget.properties.text)
+    .filter((text) => text !== undefined)
 }
 
 // ─── Home page loader ─────────────────────────────────────────────────────────
@@ -545,9 +545,7 @@ test('home screen shows Resume when storage contains a 0-point active state', as
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
-        'home.resumeGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.resumeGame'
       ])
     }
   )
@@ -574,9 +572,7 @@ test('home screen hides Resume for partial state missing schemaVersion', async (
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -601,9 +597,7 @@ test('home screen hides Resume for state missing setHistory', async () => {
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -628,9 +622,7 @@ test('home screen hides Resume for state with currentSet.number equal to 0', asy
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )

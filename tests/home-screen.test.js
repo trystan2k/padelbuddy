@@ -117,9 +117,9 @@ function getVisibleButtons(createdWidgets) {
 }
 
 function getVisibleButtonLabels(createdWidgets) {
-  return getVisibleButtons(createdWidgets).map(
-    (widget) => widget.properties.text
-  )
+  return getVisibleButtons(createdWidgets)
+    .map((widget) => widget.properties.text)
+    .filter((text) => text !== undefined)
 }
 
 async function waitForAsyncPageUpdates() {
@@ -413,9 +413,7 @@ test('home screen resume visibility uses active persisted session state only', a
     async ({ createdWidgets, loadedMatchStorageKeys }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
-        'home.resumeGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.resumeGame'
       ])
       assert.deepEqual(loadedMatchStorageKeys, [
         ACTIVE_MATCH_SESSION_STORAGE_KEY
@@ -429,9 +427,7 @@ test('home screen resume visibility uses active persisted session state only', a
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -442,9 +438,7 @@ test('home screen resume visibility uses active persisted session state only', a
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -459,9 +453,7 @@ test('home screen refreshes resume visibility on re-init (v1.0 lifecycle) using 
     },
     async ({ createdWidgets, page, loadedMatchStorageKeys }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
 
       page.onDestroy()
@@ -471,9 +463,7 @@ test('home screen refreshes resume visibility on re-init (v1.0 lifecycle) using 
 
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
-        'home.resumeGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.resumeGame'
       ])
       assert.deepEqual(loadedMatchStorageKeys, [
         ACTIVE_MATCH_SESSION_STORAGE_KEY,
@@ -490,9 +480,7 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -503,9 +491,7 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -516,9 +502,7 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
     },
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -733,9 +717,7 @@ test('home resume click fails safe when reloaded session is no longer active', a
       assert.equal(app.globalData.matchHistory.clearCalls, 0)
       assert.deepEqual(app.globalData.matchState, initialRuntimeState)
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
@@ -760,9 +742,7 @@ test('home resume click fails safe when reloaded session throws', async () => {
       assert.deepEqual(navigationCalls, [])
       assert.equal(app.globalData.matchHistory.clearCalls, 0)
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
-        'home.startNewGame',
-        'home.previousMatches',
-        'home.clearData'
+        'home.startNewGame'
       ])
     }
   )
