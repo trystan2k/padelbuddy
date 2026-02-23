@@ -14,26 +14,19 @@ import {
   startNewMatchFlow
 } from '../utils/start-new-match-flow.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
+import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
+
+const SCHEMA_FILENAME = storageKeyToFilename(ACTIVE_MATCH_SESSION_STORAGE_KEY)
+const RUNTIME_FILENAME = storageKeyToFilename(MATCH_STATE_STORAGE_KEY)
 
 test('clearActiveMatchSession clears schema and legacy keys through persistence APIs', () => {
   const originalHmFS = globalThis.hmFS
-  const store = new Map()
+  const { mock, fileStore } = createHmFsMock({
+    [SCHEMA_FILENAME]: '{"status":"active"}',
+    [RUNTIME_FILENAME]: '{"status":"active"}'
+  })
 
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      if (value === '') {
-        store.delete(key)
-      } else {
-        store.set(key, value)
-      }
-    },
-    SysProGetChars(key) {
-      return store.has(key) ? store.get(key) : null
-    }
-  }
-
-  store.set(ACTIVE_MATCH_SESSION_STORAGE_KEY, '{"status":"active"}')
-  store.set(MATCH_STATE_STORAGE_KEY, '{"status":"active"}')
+  globalThis.hmFS = mock
 
   try {
     const result = clearActiveMatchSession()
@@ -42,8 +35,8 @@ test('clearActiveMatchSession clears schema and legacy keys through persistence 
       clearedSchema: true,
       clearedLegacy: true
     })
-    assert.equal(store.has(ACTIVE_MATCH_SESSION_STORAGE_KEY), false)
-    assert.equal(store.has(MATCH_STATE_STORAGE_KEY), false)
+    assert.equal(fileStore.has(SCHEMA_FILENAME), false)
+    assert.equal(fileStore.has(RUNTIME_FILENAME), false)
   } finally {
     if (typeof originalHmFS === 'undefined') {
       delete globalThis.hmFS
@@ -84,7 +77,7 @@ test('clearActiveMatchSession always returns success', () => {
 
 test('clearActiveMatchSession handles missing storage gracefully', () => {
   const originalHmFS = globalThis.hmFS
-  
+
   globalThis.hmFS = null
 
   try {
@@ -181,7 +174,6 @@ test('startNewMatchFlow clears storage, resets runtime manager, and navigates to
   const originalGetApp = globalThis.getApp
   const originalHmApp = globalThis.hmApp
 
-  const store = new Map()
   const navigationCalls = []
   const app = {
     globalData: {
@@ -199,27 +191,18 @@ test('startNewMatchFlow clears storage, resets runtime manager, and navigates to
     }
   }
 
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      if (value === '') {
-        store.delete(key)
-      } else {
-        store.set(key, value)
-      }
-    },
-    SysProGetChars(key) {
-      return store.has(key) ? store.get(key) : null
-    }
-  }
+  const { mock, fileStore } = createHmFsMock({
+    [SCHEMA_FILENAME]: '{"status":"active"}',
+    [RUNTIME_FILENAME]: '{"status":"active"}'
+  })
+
+  globalThis.hmFS = mock
   globalThis.getApp = () => app
   globalThis.hmApp = {
     gotoPage(payload) {
       navigationCalls.push(payload)
     }
   }
-
-  store.set(ACTIVE_MATCH_SESSION_STORAGE_KEY, '{"status":"active"}')
-  store.set(MATCH_STATE_STORAGE_KEY, '{"status":"active"}')
 
   try {
     const result = startNewMatchFlow()
@@ -238,8 +221,8 @@ test('startNewMatchFlow clears storage, resets runtime manager, and navigates to
       navigatedToSetup: true,
       didEncounterError: false
     })
-    assert.equal(store.has(ACTIVE_MATCH_SESSION_STORAGE_KEY), false)
-    assert.equal(store.has(MATCH_STATE_STORAGE_KEY), false)
+    assert.equal(fileStore.has(SCHEMA_FILENAME), false)
+    assert.equal(fileStore.has(RUNTIME_FILENAME), false)
     assert.deepEqual(app.globalData.matchState, createInitialMatchState())
     assert.equal(app.globalData.matchHistory.clearCalls, 1)
     assert.deepEqual(navigationCalls, [{ url: 'page/setup' }])
@@ -268,17 +251,12 @@ test('startNewMatchFlow keeps flow order and fails safe when cleanup throws', ()
   const originalHmFS = globalThis.hmFS
   const originalGetApp = globalThis.getApp
   const originalHmApp = globalThis.hmApp
-  const callOrder = []
 
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      callOrder.push('clear')
-      throw new Error('clear failed')
-    },
-    SysProGetChars(key) {
-      return null
-    }
-  }
+  // Provide a mock where remove throws — clearState/clearMatchState should swallow it
+  const { mock } = createHmFsMock()
+  mock.remove = () => { throw new Error('remove failed') }
+
+  globalThis.hmFS = mock
   globalThis.getApp = () => ({
     globalData: {
       matchState: createInitialMatchState(),
@@ -286,9 +264,7 @@ test('startNewMatchFlow keeps flow order and fails safe when cleanup throws', ()
     }
   })
   globalThis.hmApp = {
-    gotoPage() {
-      callOrder.push('navigate')
-    }
+    gotoPage() {}
   }
 
   try {
@@ -321,10 +297,8 @@ test('startNewMatchFlow fails safe when navigation throws', () => {
   const originalGetApp = globalThis.getApp
   const originalHmApp = globalThis.hmApp
 
-  globalThis.hmFS = {
-    SysProSetChars() {},
-    SysProGetChars() { return null }
-  }
+  const { mock } = createHmFsMock()
+  globalThis.hmFS = mock
   globalThis.getApp = () => ({
     globalData: {
       matchState: createInitialMatchState(),

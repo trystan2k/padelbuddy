@@ -3,7 +3,7 @@ import { createHistoryStack } from '../utils/history-stack.js'
 import { loadMatchState } from '../utils/match-storage.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { createInitialMatchState } from '../utils/match-state.js'
-import { startNewMatchFlow } from '../utils/start-new-match-flow.js'
+import { startNewMatchFlow, clearActiveMatchSession, resetMatchStateManager } from '../utils/start-new-match-flow.js'
 
 const PERSISTED_ADVANTAGE_POINT_VALUE = 50
 const PERSISTED_GAME_POINT_VALUE = 60
@@ -16,6 +16,11 @@ const HOME_TOKENS = Object.freeze({
     buttonText: 0x000000,
     primaryButton: 0x1eb98c,
     primaryButtonPressed: 0x1aa07a,
+    dangerButton: 0x3a1a1c,
+    dangerButtonArmed: 0x7a1f28,
+    dangerButtonPressed: 0x4a2022,
+    dangerButtonArmedPressed: 0x9a2530,
+    dangerButtonText: 0xff6d78,
     logo: 0x1eb98c,
     title: 0xffffff
   },
@@ -28,7 +33,8 @@ const HOME_TOKENS = Object.freeze({
     contentTop: 0.10,
     logoToTitle: 0.012,
     titleToPrimaryButton: 0.13,
-    primaryToSecondaryButton: 0.05
+    primaryToSecondaryButton: 0.05,
+    secondaryToClearButton: 0.025
   }
 })
 
@@ -183,14 +189,18 @@ Page({
     this.widgets = []
     this.savedMatchState = null
     this.hasSavedGame = false
+    this.savedMatchStateFromHandoff = false
     this.isStartingNewGame = false
+    this.isClearDataArmed = false
     this.refreshSavedMatchState()
   },
 
   onShow() {
     this.isStartingNewGame = false
+    this.isClearDataArmed = false
     this.savedMatchState = null
     this.hasSavedGame = false
+    this.savedMatchStateFromHandoff = false
     this.renderHomeScreen()
     this.refreshSavedMatchState()
   },
@@ -235,8 +245,32 @@ Page({
     return widget
   },
 
+  consumeHomeHandoff() {
+    // Read and clear the one-shot match state passed from game.js via globalData,
+    // used as a fallback when SysProGetChars doesn't reflect the write immediately.
+    try {
+      if (typeof getApp !== 'function') {
+        return null
+      }
+
+      const app = getApp()
+
+      if (!isRecord(app) || !isRecord(app.globalData)) {
+        return null
+      }
+
+      const handoff = app.globalData.pendingHomeMatchState
+      app.globalData.pendingHomeMatchState = null
+
+      return isRecord(handoff) ? handoff : null
+    } catch {
+      return null
+    }
+  },
+
   refreshSavedMatchState() {
     let savedMatchState = null
+    let fromHandoff = false
 
     try {
       savedMatchState = loadMatchState()
@@ -244,9 +278,17 @@ Page({
       savedMatchState = null
     }
 
+    // Fallback: if storage didn't return the value written just before
+    // the page transition from game.js, try the in-memory handoff instead.
+    if (!isActivePersistedMatchState(savedMatchState)) {
+      savedMatchState = this.consumeHomeHandoff()
+      fromHandoff = savedMatchState !== null
+    }
+
     const hasSavedGame = isActivePersistedMatchState(savedMatchState)
     this.savedMatchState = hasSavedGame ? cloneMatchState(savedMatchState) : null
     this.hasSavedGame = hasSavedGame
+    this.savedMatchStateFromHandoff = hasSavedGame && fromHandoff
     this.renderHomeScreen()
 
     return hasSavedGame
@@ -266,16 +308,18 @@ Page({
       Math.round(height * HOME_TOKENS.spacingScale.logoToTitle)
     const titleHeight = Math.round(height * 0.11)
     const startButtonWidth = Math.round(width * 0.62)
-    const startButtonHeight = Math.round(height * 0.216)
+    const startButtonHeight = Math.round(height * 0.14)
+    const secondaryButtonHeight = Math.round(height * 0.12)
     const startButtonX = Math.round((width - startButtonWidth) / 2)
     const startButtonY =
       titleY +
       titleHeight +
       Math.round(height * HOME_TOKENS.spacingScale.titleToPrimaryButton)
+    const secondaryButtonGap = Math.round(height * HOME_TOKENS.spacingScale.primaryToSecondaryButton)
     const resumeButtonY =
       startButtonY +
       startButtonHeight +
-      Math.round(height * HOME_TOKENS.spacingScale.primaryToSecondaryButton)
+      secondaryButtonGap
     const startNewGameButtonText = gettext('home.startNewGame')
 
     this.clearWidgets()
@@ -326,22 +370,51 @@ Page({
       click_func: () => this.handleStartNewGame()
     })
 
-    if (!this.hasSavedGame) {
-      return
+    if (this.hasSavedGame) {
+      this.createWidget(hmUI.widget.BUTTON, {
+        x: startButtonX,
+        y: resumeButtonY,
+        w: startButtonWidth,
+        h: secondaryButtonHeight,
+        radius: Math.round(secondaryButtonHeight / 2),
+        normal_color: HOME_TOKENS.colors.primaryButton,
+        press_color: HOME_TOKENS.colors.primaryButtonPressed,
+        color: HOME_TOKENS.colors.buttonText,
+        text_size: Math.round(width * HOME_TOKENS.fontScale.button),
+        text: gettext('home.resumeGame'),
+        click_func: () => this.handleResumeGame()
+      })
     }
 
+    // Clear App Data button (danger, two-tap confirmation) — always visible
+    const clearButtonBaseY = this.hasSavedGame ? resumeButtonY : startButtonY
+    const clearButtonBaseH = this.hasSavedGame ? secondaryButtonHeight : startButtonHeight
+    const clearButtonHeight = Math.round(height * 0.1)
+    const clearButtonWidth = Math.round(startButtonWidth * 0.78)
+    const clearButtonX = Math.round((width - clearButtonWidth) / 2)
+    const clearButtonY =
+      clearButtonBaseY +
+      clearButtonBaseH +
+      Math.round(height * HOME_TOKENS.spacingScale.secondaryToClearButton)
+
     this.createWidget(hmUI.widget.BUTTON, {
-      x: startButtonX,
-      y: resumeButtonY,
-      w: startButtonWidth,
-      h: startButtonHeight,
-      radius: Math.round(startButtonHeight / 2),
-      normal_color: HOME_TOKENS.colors.primaryButton,
-      press_color: HOME_TOKENS.colors.primaryButtonPressed,
-      color: HOME_TOKENS.colors.buttonText,
+      x: clearButtonX,
+      y: clearButtonY,
+      w: clearButtonWidth,
+      h: clearButtonHeight,
+      radius: Math.round(clearButtonHeight / 2),
+      normal_color: this.isClearDataArmed
+        ? HOME_TOKENS.colors.dangerButtonArmed
+        : HOME_TOKENS.colors.dangerButton,
+      press_color: this.isClearDataArmed
+        ? HOME_TOKENS.colors.dangerButtonArmedPressed
+        : HOME_TOKENS.colors.dangerButtonPressed,
+      color: HOME_TOKENS.colors.dangerButtonText,
       text_size: Math.round(width * HOME_TOKENS.fontScale.button),
-      text: gettext('home.resumeGame'),
-      click_func: () => this.handleResumeGame()
+      text: this.isClearDataArmed
+        ? gettext('home.clearDataConfirm')
+        : gettext('home.clearData'),
+      click_func: () => this.handleClearData()
     })
   },
 
@@ -363,19 +436,40 @@ Page({
   },
 
   handleResumeGame() {
+    // Re-validate from storage (most up-to-date source of truth).
+    // If storage returns an explicit non-active state or throws, fail safe.
+    // Only fall back to the in-memory cached state when storage returns null AND
+    // the cached state came from the globalData handoff — meaning SysProGetChars
+    // was unreliable from the start of this page load (timing issue on transition).
     let savedMatchState = null
 
     try {
       savedMatchState = loadMatchState()
     } catch {
-      savedMatchState = null
+      this.savedMatchState = null
+      this.hasSavedGame = false
+      this.savedMatchStateFromHandoff = false
+      this.renderHomeScreen()
+      return false
     }
 
     if (!isActivePersistedMatchState(savedMatchState)) {
-      this.savedMatchState = null
-      this.hasSavedGame = false
-      this.renderHomeScreen()
-      return false
+      if (
+        savedMatchState === null &&
+        this.savedMatchStateFromHandoff &&
+        isActivePersistedMatchState(this.savedMatchState)
+      ) {
+        // SysProGetChars still returning null — fall back to the handoff cache.
+        savedMatchState = this.savedMatchState
+      } else {
+        // Storage returned an explicit non-active state, or the cache wasn't
+        // from a handoff — the game is gone, hide the resume button.
+        this.savedMatchState = null
+        this.hasSavedGame = false
+        this.savedMatchStateFromHandoff = false
+        this.renderHomeScreen()
+        return false
+      }
     }
 
     const restoredRuntimeMatchState = normalizePersistedMatchStateForRuntime(savedMatchState)
@@ -383,15 +477,46 @@ Page({
     if (!restoredRuntimeMatchState) {
       this.savedMatchState = null
       this.hasSavedGame = false
+      this.savedMatchStateFromHandoff = false
       this.renderHomeScreen()
       return false
     }
 
     this.savedMatchState = cloneMatchState(savedMatchState)
     this.hasSavedGame = true
+    this.savedMatchStateFromHandoff = false
     this.restoreRuntimeMatchState(restoredRuntimeMatchState)
+    // Set the pendingPersistedMatchState handoff so game.js validateSessionAccess
+    // can find a valid session even when SysProGetChars returns null on transition.
+    this.storeResumeSessionHandoff(savedMatchState)
     this.navigateToGamePage()
     return true
+  },
+
+  storeResumeSessionHandoff(persistedMatchState) {
+    // Mirror of setup.js storeSessionHandoff: writes the persisted schema state
+    // into globalData.pendingPersistedMatchState so game.js validateSessionAccess
+    // can find a valid session via consumeSessionHandoff() when SysProGetChars
+    // hasn't yet reflected the stored value across the page transition.
+    try {
+      if (typeof getApp !== 'function') {
+        return
+      }
+
+      const app = getApp()
+
+      if (!isRecord(app)) {
+        return
+      }
+
+      if (!isRecord(app.globalData)) {
+        app.globalData = {}
+      }
+
+      app.globalData.pendingPersistedMatchState = cloneMatchState(persistedMatchState)
+    } catch {
+      // Non-fatal: handoff is best-effort.
+    }
   },
 
   restoreRuntimeMatchState(matchState) {
@@ -424,6 +549,33 @@ Page({
     }
 
     app.globalData.matchHistory = createHistoryStack()
+  },
+
+  handleClearData() {
+    if (!this.isClearDataArmed) {
+      this.isClearDataArmed = true
+      this.renderHomeScreen()
+      return
+    }
+
+    // Second tap: execute the clear
+    this.isClearDataArmed = false
+
+    try {
+      clearActiveMatchSession()
+    } catch {
+      // Ignore errors – best-effort clear
+    }
+
+    try {
+      resetMatchStateManager()
+    } catch {
+      // Ignore errors – best-effort reset
+    }
+
+    this.savedMatchState = null
+    this.hasSavedGame = false
+    this.renderHomeScreen()
   },
 
   navigateToGamePage() {

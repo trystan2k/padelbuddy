@@ -198,6 +198,8 @@ async function runHomePageScenario(options = {}, runAssertions) {
   const originalSetTimeout = globalThis.setTimeout
   const originalClearTimeout = globalThis.clearTimeout
   const originalStartNewMatchFlowBridge = globalThis.__homeScreenStartNewMatchFlow
+  const originalClearActiveMatchSessionBridge = globalThis.__homeScreenClearActiveMatchSession
+  const originalResetMatchStateManagerBridge = globalThis.__homeScreenResetMatchStateManager
   const originalMatchStorageAdapter = matchStorage.adapter
 
   const { hmUI, createdWidgets } = createHmUiRecorder()
@@ -237,6 +239,14 @@ async function runHomePageScenario(options = {}, runAssertions) {
     typeof options.startNewMatchFlow === 'function'
       ? options.startNewMatchFlow
       : (...args) => runStartNewMatchFlow(...args)
+  globalThis.__homeScreenClearActiveMatchSession =
+    typeof options.clearActiveMatchSession === 'function'
+      ? options.clearActiveMatchSession
+      : () => {}
+  globalThis.__homeScreenResetMatchStateManager =
+    typeof options.resetMatchStateManager === 'function'
+      ? options.resetMatchStateManager
+      : () => {}
   globalThis.setTimeout =
     typeof options.setTimeoutFn === 'function' ? options.setTimeoutFn : originalSetTimeout
   globalThis.clearTimeout =
@@ -327,6 +337,18 @@ async function runHomePageScenario(options = {}, runAssertions) {
       delete globalThis.__homeScreenStartNewMatchFlow
     } else {
       globalThis.__homeScreenStartNewMatchFlow = originalStartNewMatchFlowBridge
+    }
+
+    if (typeof originalClearActiveMatchSessionBridge === 'undefined') {
+      delete globalThis.__homeScreenClearActiveMatchSession
+    } else {
+      globalThis.__homeScreenClearActiveMatchSession = originalClearActiveMatchSessionBridge
+    }
+
+    if (typeof originalResetMatchStateManagerBridge === 'undefined') {
+      delete globalThis.__homeScreenResetMatchStateManager
+    } else {
+      globalThis.__homeScreenResetMatchStateManager = originalResetMatchStateManagerBridge
     }
 
     matchStorage.adapter = originalMatchStorageAdapter
@@ -468,7 +490,8 @@ test('home screen shows Resume when storage contains a 0-point active state', as
     async ({ createdWidgets }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
-        'home.resumeGame'
+        'home.resumeGame',
+        'home.clearData'
       ])
     }
   )
@@ -494,7 +517,7 @@ test('home screen hides Resume for partial state missing schemaVersion', async (
       matchStorageLoadResponses: [partialState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })
@@ -517,7 +540,7 @@ test('home screen hides Resume for state missing setHistory', async () => {
       matchStorageLoadResponses: [partialState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })
@@ -540,7 +563,7 @@ test('home screen hides Resume for state with currentSet.number equal to 0', asy
       matchStorageLoadResponses: [invalidState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })

@@ -567,10 +567,6 @@ Page({
     }
   },
 
-  onHide() {
-    this.handleLifecycleAutoSave()
-  },
-
   build() {
     // build() always renders. If session access was denied, navigateToSetupPage()
     // was already called in onInit via validateSessionAccess(), so this page will
@@ -611,6 +607,7 @@ Page({
         if (event === hmApp.gesture.RIGHT) {
           // Save state before navigating
           this.saveCurrentRuntimeState({ force: true })
+          this.storeHomeHandoff()
           // Navigate directly to Home Screen
           this.navigateToHomePage()
           // Return true to skip default goBack() behavior
@@ -671,13 +668,29 @@ Page({
     }
 
     try {
-      const persistedMatchState = loadMatchState()
+      let persistedMatchState = loadMatchState()
+
+      // Fallback: if SysProGetChars did not return the state written by setup.js
+      // (e.g. timing issue or unsupported API on this device), consume the handoff
+      // value passed through globalData by setup.js instead.
+      if (!isPersistedMatchStateActive(persistedMatchState)) {
+        persistedMatchState = this.consumeSessionHandoff()
+      }
+
       const hasValidActiveSession = isPersistedMatchStateActive(persistedMatchState)
 
       this.isSessionAccessGranted = hasValidActiveSession
       this.persistedSessionState = hasValidActiveSession
         ? cloneMatchState(persistedMatchState)
         : null
+
+      if (hasValidActiveSession) {
+        // Track match start time when session is validated
+        // For resumed matches, this won't be exact, but history service handles it
+        if (this.matchStartTime === null) {
+          this.matchStartTime = Date.now()
+        }
+      }
 
       if (!hasValidActiveSession) {
         this.navigateToSetupPage()
@@ -689,6 +702,29 @@ Page({
       this.isSessionAccessGranted = false
       this.navigateToSetupPage()
       return false
+    }
+  },
+
+  consumeSessionHandoff() {
+    try {
+      if (typeof getApp !== 'function') {
+        return null
+      }
+
+      const app = getApp()
+
+      if (!isRecord(app) || !isRecord(app.globalData)) {
+        return null
+      }
+
+      const handoff = app.globalData.pendingPersistedMatchState
+
+      // Consume it (clear) so it is only used once
+      app.globalData.pendingPersistedMatchState = null
+
+      return isRecord(handoff) ? handoff : null
+    } catch {
+      return null
     }
   },
 
@@ -932,6 +968,13 @@ Page({
       try {
         saveMatchState(persistedMatchStateSnapshot)
         this.persistedSessionState = cloneMatchState(persistedMatchStateSnapshot)
+
+        // Cache the last written schema snapshot in globalData so app.onDestroy
+        // can flush it as a safety net if page.onDestroy is skipped.
+        const app = this.getAppInstance()
+        if (app) {
+          app.globalData._lastPersistedSchemaState = this.persistedSessionState
+        }
       } catch {
         // Ignore schema persistence errors so gameplay interactions stay resilient.
       }
@@ -967,6 +1010,27 @@ Page({
     this.navigateToSummaryPage()
   },
 
+  storeHomeHandoff() {
+    // Pass the current persisted session state through globalData so the home
+    // page can show the Resume button even if SysProGetChars doesn't return the
+    // written value immediately after the page transition.
+    try {
+      const app = this.getAppInstance()
+
+      if (!app) {
+        return
+      }
+
+      const snapshot = this.persistedSessionState
+
+      if (isPersistedMatchState(snapshot) && isPersistedMatchStateActive(snapshot)) {
+        app.globalData.pendingHomeMatchState = cloneMatchState(snapshot)
+      }
+    } catch {
+      // Non-fatal: handoff is a best-effort optimisation.
+    }
+  },
+
   navigateToHomePage() {
     if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
       return
@@ -983,6 +1047,7 @@ Page({
 
   handleBackToHome() {
     this.saveCurrentRuntimeState({ force: true })
+    this.storeHomeHandoff()
     this.navigateToHomePage()
   },
 

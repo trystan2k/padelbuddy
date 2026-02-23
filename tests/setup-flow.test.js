@@ -52,6 +52,7 @@ async function loadSetupPageDefinition() {
   const matchSessionInitUrl = new URL('../utils/match-session-init.js', import.meta.url)
   const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
   const matchStateSchemaUrl = new URL('../utils/match-state-schema.js', import.meta.url)
+  const storageUrl = new URL('../utils/storage.js', import.meta.url)
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -60,6 +61,7 @@ async function loadSetupPageDefinition() {
     .replace("from '../utils/match-session-init.js'", `from '${matchSessionInitUrl.href}'`)
     .replace("from '../utils/match-storage.js'", `from '${matchStorageUrl.href}'`)
     .replace("from '../utils/match-state-schema.js'", `from '${matchStateSchemaUrl.href}'`)
+    .replace("from '../utils/storage.js'", `from '${storageUrl.href}'`)
 
   const moduleUrl =
     'data:text/javascript;charset=utf-8,' +

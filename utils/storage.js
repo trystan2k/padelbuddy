@@ -1,6 +1,14 @@
 import { MATCH_STATUS } from './match-state.js'
 import { SCORE_POINT_SEQUENCE } from './scoring-constants.js'
 
+// ---------------------------------------------------------------------------
+// hmFS flag constants (POSIX values — used as fallback if hmFS.O_* are undefined)
+// ---------------------------------------------------------------------------
+const FS_O_RDONLY = 0
+const FS_O_WRONLY = 1
+const FS_O_CREAT = 64   // 0x40
+const FS_O_TRUNC = 512  // 0x200
+
 export const MATCH_STATE_STORAGE_KEY = 'padel-buddy.match-state'
 
 const scorePointSet = new Set(SCORE_POINT_SEQUENCE)
@@ -13,7 +21,7 @@ function getSettingsStorage() {
   const runtimeStorage = resolveRuntimeStorage()
 
   if (runtimeStorage) {
-    return createStorageAdapter(runtimeStorage)
+    return runtimeStorage
   }
 
   return fallbackStorage
@@ -49,104 +57,211 @@ export function clearState() {
   getSettingsStorage().removeItem(MATCH_STATE_STORAGE_KEY)
 }
 
+// ---------------------------------------------------------------------------
+// UTF-8 encode / decode helpers
+// (TextEncoder/TextDecoder are not available in Zepp OS v1.0)
+// ---------------------------------------------------------------------------
+
 /**
- * Returns a storage adapter backed by hmFS.SysProSetChars / SysProGetChars
- * which is the correct key-value string storage API for Zepp OS 1.0 device apps.
+ * Encode a JS string to a Uint8Array of UTF-8 bytes.
+ * @param {string} str
+ * @returns {Uint8Array}
+ */
+function encodeUtf8(str) {
+  const bytes = []
+
+  for (let i = 0; i < str.length; i += 1) {
+    let code = str.charCodeAt(i)
+
+    // Handle UTF-16 surrogate pairs
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const hi = code
+      const lo = str.charCodeAt(i + 1)
+
+      if (lo >= 0xdc00 && lo <= 0xdfff) {
+        code = ((hi - 0xd800) << 10) + (lo - 0xdc00) + 0x10000
+        i += 1
+      }
+    }
+
+    if (code < 0x80) {
+      bytes.push(code)
+    } else if (code < 0x800) {
+      bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f))
+    } else if (code < 0x10000) {
+      bytes.push(
+        0xe0 | (code >> 12),
+        0x80 | ((code >> 6) & 0x3f),
+        0x80 | (code & 0x3f)
+      )
+    } else {
+      bytes.push(
+        0xf0 | (code >> 18),
+        0x80 | ((code >> 12) & 0x3f),
+        0x80 | ((code >> 6) & 0x3f),
+        0x80 | (code & 0x3f)
+      )
+    }
+  }
+
+  return new Uint8Array(bytes)
+}
+
+/**
+ * Decode a Uint8Array of UTF-8 bytes to a JS string.
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
+function decodeUtf8(bytes) {
+  let str = ''
+  let i = 0
+
+  while (i < bytes.length) {
+    const byte = bytes[i]
+    let code
+
+    if (byte < 0x80) {
+      code = byte
+      i += 1
+    } else if ((byte & 0xe0) === 0xc0) {
+      code = ((byte & 0x1f) << 6) | (bytes[i + 1] & 0x3f)
+      i += 2
+    } else if ((byte & 0xf0) === 0xe0) {
+      code = ((byte & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f)
+      i += 3
+    } else {
+      code =
+        ((byte & 0x07) << 18) |
+        ((bytes[i + 1] & 0x3f) << 12) |
+        ((bytes[i + 2] & 0x3f) << 6) |
+        (bytes[i + 3] & 0x3f)
+      i += 4
+    }
+
+    if (code >= 0x10000) {
+      const offset = code - 0x10000
+      str += String.fromCharCode(0xd800 + (offset >> 10), 0xdc00 + (offset & 0x3ff))
+    } else {
+      str += String.fromCharCode(code)
+    }
+  }
+
+  return str
+}
+
+/**
+ * Converts a storage key to a safe filename for the /data directory.
+ * @param {string} key
+ * @returns {string}
+ */
+function keyToFilename(key) {
+  return key.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
+}
+
+/**
+ * Returns a storage adapter backed by hmFS file I/O (persistent /data directory).
+ * Data written here survives system reboots, unlike SysProSetChars which is
+ * documented as "temporary — system reboot will clear".
  *
  * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null), removeItem: (key: string) => void } | null}
  */
 function resolveRuntimeStorage() {
-  if (typeof hmFS !== 'undefined' && typeof hmFS.SysProSetChars === 'function' && typeof hmFS.SysProGetChars === 'function') {
-    return createHmFsStorageAdapter()
+  if (
+    typeof hmFS !== 'undefined' &&
+    typeof hmFS.open === 'function' &&
+    typeof hmFS.close === 'function' &&
+    typeof hmFS.read === 'function' &&
+    typeof hmFS.write === 'function'
+  ) {
+    return createHmFsFileStorageAdapter()
   }
 
   return null
 }
 
 /**
- * Wraps hmFS.SysProSetChars / SysProGetChars into a setItem/getItem/removeItem adapter.
- * SysProSetChars persists across page transitions but clears on system reboot.
- *
+ * Creates a storage adapter backed by hmFS file I/O in the /data directory.
  * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null), removeItem: (key: string) => void }}
  */
-function createHmFsStorageAdapter() {
+function createHmFsFileStorageAdapter() {
   return {
     setItem(key, value) {
+      let fileId = -1
+
       try {
-        hmFS.SysProSetChars(key, value)
+        const filename = keyToFilename(key)
+        const encoded = encodeUtf8(value)
+        const writeFlags = (typeof hmFS.O_WRONLY === 'number' ? hmFS.O_WRONLY : FS_O_WRONLY) |
+          (typeof hmFS.O_CREAT === 'number' ? hmFS.O_CREAT : FS_O_CREAT) |
+          (typeof hmFS.O_TRUNC === 'number' ? hmFS.O_TRUNC : FS_O_TRUNC)
+        fileId = hmFS.open(filename, writeFlags)
+
+        if (fileId < 0) {
+          return
+        }
+
+        hmFS.write(fileId, encoded.buffer, 0, encoded.length)
       } catch {
         // Ignore storage write errors so app runtime does not crash.
+      } finally {
+        if (fileId >= 0) {
+          try {
+            hmFS.close(fileId)
+          } catch {
+            // Ignore close errors.
+          }
+        }
       }
     },
+
     getItem(key) {
+      let fileId = -1
+
       try {
-        const value = hmFS.SysProGetChars(key)
-        return typeof value === 'string' && value.length > 0 ? value : null
+        const filename = keyToFilename(key)
+        // hmFS.stat returns [stat_info, error_code] per the v1.0 API spec.
+        const [statInfo, statErr] = hmFS.stat(filename)
+
+        if (statErr !== 0 || !statInfo || statInfo.size <= 0) {
+          return null
+        }
+
+        const size = statInfo.size
+        const readFlag = typeof hmFS.O_RDONLY === 'number' ? hmFS.O_RDONLY : FS_O_RDONLY
+        fileId = hmFS.open(filename, readFlag)
+
+        if (fileId < 0) {
+          return null
+        }
+
+        const buffer = new Uint8Array(size)
+        const readResult = hmFS.read(fileId, buffer.buffer, 0, size)
+
+        if (readResult < 0) {
+          return null
+        }
+
+        const str = decodeUtf8(buffer)
+        return str.length > 0 ? str : null
       } catch {
         return null
+      } finally {
+        if (fileId >= 0) {
+          try {
+            hmFS.close(fileId)
+          } catch {
+            // Ignore close errors.
+          }
+        }
       }
     },
+
     removeItem(key) {
       try {
-        hmFS.SysProSetChars(key, '')
+        const filename = keyToFilename(key)
+        hmFS.remove(filename)
       } catch {
         // Ignore storage delete errors so app runtime does not crash.
-      }
-    }
-  }
-}
-
-/**
- * @param {{ setItem?: (key: string, value: string) => void, getItem?: (key: string) => (string | null | undefined), removeItem?: (key: string) => void }} storage
- * @returns {{ setItem: (key: string, value: string) => void, getItem: (key: string) => (string | null), removeItem: (key: string) => void }}
- */
-function createStorageAdapter(storage) {
-  return {
-    setItem(key, value) {
-      if (typeof storage.setItem !== 'function') {
-        return
-      }
-
-      try {
-        storage.setItem(key, value)
-      } catch {
-        // Ignore storage write errors so app runtime does not crash.
-      }
-    },
-    getItem(key) {
-      if (typeof storage.getItem !== 'function') {
-        return null
-      }
-
-      try {
-        const value = storage.getItem(key)
-
-        if (typeof value === 'string') {
-          return value
-        }
-
-        return value == null ? null : String(value)
-      } catch {
-        return null
-      }
-    },
-    removeItem(key) {
-      if (typeof storage.removeItem === 'function') {
-        try {
-          storage.removeItem(key)
-        } catch {
-          // Ignore storage delete errors so app runtime does not crash.
-        }
-
-        return
-      }
-
-      if (typeof storage.setItem === 'function') {
-        try {
-          storage.setItem(key, '')
-        } catch {
-          // Ignore storage fallback delete errors so app runtime does not crash.
-        }
       }
     }
   }

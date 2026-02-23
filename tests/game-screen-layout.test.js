@@ -9,6 +9,7 @@ import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-
 import { createHistoryStack } from '../utils/history-stack.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
+import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
 
 let gamePageImportCounter = 0
 
@@ -203,12 +204,7 @@ async function runWithRenderedGamePage(width, height, runScenario) {
     }
   }
   globalThis.getApp = () => app
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {},
-    SysProGetChars(key) {
-      return null
-    }
-  }
+  globalThis.hmFS = createHmFsMock().mock
 
   try {
     const definition = await loadGamePageDefinition()
@@ -1222,12 +1218,13 @@ async function runSessionGuardTest(storageValue, runAssertions) {
   const { hmUI, createdWidgets } = createHmUiRecorder()
   const navigationCalls = []
 
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {},
-    SysProGetChars(key) {
-      return storageValue
-    }
+  // Pre-seed the file store with storageValue at ACTIVE_MATCH_SESSION.json
+  // so the file-based storage layer (hmFS) returns it for the session guard check.
+  const initialFiles = {}
+  if (storageValue !== null && storageValue !== undefined) {
+    initialFiles[storageKeyToFilename(ACTIVE_MATCH_SESSION_STORAGE_KEY)] = storageValue
   }
+  globalThis.hmFS = createHmFsMock(initialFiles).mock
 
   globalThis.hmApp = {
     gotoPage(options) {

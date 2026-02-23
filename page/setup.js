@@ -1,8 +1,9 @@
 import { gettext } from 'i18n'
 
 import { initializeMatchState } from '../utils/match-session-init.js'
-import { loadMatchState, saveMatchState } from '../utils/match-storage.js'
+import { loadMatchState, saveMatchState, clearMatchState } from '../utils/match-storage.js'
 import { MATCH_STATUS } from '../utils/match-state-schema.js'
+import { clearState } from '../utils/storage.js'
 
 const MATCH_SET_OPTIONS = Object.freeze([1, 3, 5])
 
@@ -170,7 +171,18 @@ Page({
 
     try {
       const initializedMatchState = initializeMatchState(this.selectedSetsToPlay)
+      clearMatchState()
       saveMatchState(initializedMatchState)
+
+      // Clear the in-memory runtime state to ensure the game page
+      // loads fresh data from storage instead of using stale state
+      // from a previously completed match
+      this.clearRuntimeMatchState()
+
+      // Also pass the new session state through globalData as a fallback
+      // for devices where SysProGetChars does not reliably persist across
+      // page transitions. The game page will consume this on validateSessionAccess.
+      this.storeSessionHandoff(initializedMatchState)
     } catch {
       this.startErrorMessage = gettext('setup.saveFailed')
       this.isPersistingMatchState = false
@@ -192,6 +204,45 @@ Page({
     }
 
     return true
+  },
+
+  clearRuntimeMatchState() {
+    const app = this.getAppInstance()
+
+    if (!app || !isRecord(app.globalData)) {
+      return
+    }
+
+    // Clear the in-memory match state to prevent stale data
+    // from a previous match being used in the new game
+    app.globalData.matchState = null
+
+    // Also clear the runtime storage to ensure fresh state is loaded
+    clearState()
+  },
+
+  getAppInstance() {
+    if (typeof getApp !== 'function') {
+      return null
+    }
+
+    const app = getApp()
+
+    if (!isRecord(app)) {
+      return null
+    }
+
+    return app
+  },
+
+  storeSessionHandoff(persistedMatchState) {
+    const app = this.getAppInstance()
+
+    if (!app || !isRecord(app.globalData)) {
+      return
+    }
+
+    app.globalData.pendingPersistedMatchState = persistedMatchState
   },
 
   navigateToGamePage() {

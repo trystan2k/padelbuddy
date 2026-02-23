@@ -7,6 +7,7 @@ import { matchStorage } from '../utils/match-storage.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
+import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
 
 let homePageImportCounter = 0
 
@@ -191,6 +192,8 @@ async function runHomePageScenario(options = {}, runAssertions) {
   const originalSetTimeout = globalThis.setTimeout
   const originalClearTimeout = globalThis.clearTimeout
   const originalStartNewMatchFlowBridge = globalThis.__homeScreenStartNewMatchFlow
+  const originalClearActiveMatchSessionBridge = globalThis.__homeScreenClearActiveMatchSession
+  const originalResetMatchStateManagerBridge = globalThis.__homeScreenResetMatchStateManager
   const originalMatchStorageAdapter = matchStorage.adapter
 
   const { hmUI, createdWidgets } = createHmUiRecorder()
@@ -233,6 +236,14 @@ async function runHomePageScenario(options = {}, runAssertions) {
     typeof options.startNewMatchFlow === 'function'
       ? options.startNewMatchFlow
       : (...args) => runStartNewMatchFlow(...args)
+  globalThis.__homeScreenClearActiveMatchSession =
+    typeof options.clearActiveMatchSession === 'function'
+      ? options.clearActiveMatchSession
+      : () => {}
+  globalThis.__homeScreenResetMatchStateManager =
+    typeof options.resetMatchStateManager === 'function'
+      ? options.resetMatchStateManager
+      : () => {}
   globalThis.setTimeout =
     typeof options.setTimeoutFn === 'function'
       ? options.setTimeoutFn
@@ -241,16 +252,25 @@ async function runHomePageScenario(options = {}, runAssertions) {
     typeof options.clearTimeoutFn === 'function'
       ? options.clearTimeoutFn
       : originalClearTimeout
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      if (value === '') {
-        removedLegacyStorageKeys.push(key)
-      }
-    },
-    SysProGetChars(key) {
-      return options.legacyRuntimeState ?? null
-    }
+  // Build a file-based hmFS mock.
+  // If legacyRuntimeState is provided, pre-seed it as padel-buddy.match-state.json
+  // so the file-based storage layer reads it back.
+  const legacyFilename = storageKeyToFilename(MATCH_STATE_STORAGE_KEY)
+  const initialFiles = {}
+  if (options.legacyRuntimeState) {
+    initialFiles[legacyFilename] = options.legacyRuntimeState
   }
+  const { mock: hmFsMock } = createHmFsMock(initialFiles)
+
+  // Wrap remove() to map filename → original storage key and push into removedLegacyStorageKeys.
+  const originalRemove = hmFsMock.remove.bind(hmFsMock)
+  hmFsMock.remove = (filename) => {
+    if (filename === legacyFilename) {
+      removedLegacyStorageKeys.push(MATCH_STATE_STORAGE_KEY)
+    }
+    originalRemove(filename)
+  }
+  globalThis.hmFS = hmFsMock
 
   matchStorage.adapter = {
     save() {},
@@ -345,6 +365,18 @@ async function runHomePageScenario(options = {}, runAssertions) {
       globalThis.__homeScreenStartNewMatchFlow = originalStartNewMatchFlowBridge
     }
 
+    if (typeof originalClearActiveMatchSessionBridge === 'undefined') {
+      delete globalThis.__homeScreenClearActiveMatchSession
+    } else {
+      globalThis.__homeScreenClearActiveMatchSession = originalClearActiveMatchSessionBridge
+    }
+
+    if (typeof originalResetMatchStateManagerBridge === 'undefined') {
+      delete globalThis.__homeScreenResetMatchStateManager
+    } else {
+      globalThis.__homeScreenResetMatchStateManager = originalResetMatchStateManagerBridge
+    }
+
     matchStorage.adapter = originalMatchStorageAdapter
   }
 }
@@ -360,7 +392,8 @@ test('home screen resume visibility uses active persisted session state only', a
     async ({ createdWidgets, loadedMatchStorageKeys }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
-        'home.resumeGame'
+        'home.resumeGame',
+        'home.clearData'
       ])
       assert.deepEqual(loadedMatchStorageKeys, [ACTIVE_MATCH_SESSION_STORAGE_KEY])
     }
@@ -371,7 +404,7 @@ test('home screen resume visibility uses active persisted session state only', a
       matchStorageLoadResponses: [finishedState]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 
@@ -380,7 +413,7 @@ test('home screen resume visibility uses active persisted session state only', a
       matchStorageLoadResponses: [null]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })
@@ -393,14 +426,15 @@ test('home screen refreshes resume visibility onShow using loadMatchState', asyn
       matchStorageLoadResponses: [null, activeState]
     },
     async ({ createdWidgets, page, loadedMatchStorageKeys }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
 
       page.onShow()
       await waitForAsyncPageUpdates()
 
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [
         'home.startNewGame',
-        'home.resumeGame'
+        'home.resumeGame',
+        'home.clearData'
       ])
       assert.deepEqual(loadedMatchStorageKeys, [
         ACTIVE_MATCH_SESSION_STORAGE_KEY,
@@ -416,7 +450,7 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
       matchStorageLoadResponses: [JSON.stringify({ invalid: true })]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 
@@ -425,7 +459,7 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
       matchStorageLoadResponses: ['not-json{{{']
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 
@@ -434,7 +468,7 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
       matchStorageLoadResponses: [new Error('load failed')]
     },
     async ({ createdWidgets }) => {
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })
@@ -636,7 +670,7 @@ test('home resume click fails safe when reloaded session is no longer active', a
       assert.deepEqual(navigationCalls, [])
       assert.equal(app.globalData.matchHistory.clearCalls, 0)
       assert.deepEqual(app.globalData.matchState, initialRuntimeState)
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })
@@ -659,7 +693,7 @@ test('home resume click fails safe when reloaded session throws', async () => {
 
       assert.deepEqual(navigationCalls, [])
       assert.equal(app.globalData.matchHistory.clearCalls, 0)
-      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame'])
+      assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.clearData'])
     }
   )
 })

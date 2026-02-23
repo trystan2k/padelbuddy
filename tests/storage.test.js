@@ -8,23 +8,16 @@ import {
   loadState,
   saveState
 } from '../utils/storage.js'
+import { createHmFsMock, storageKeyToFilename, readFileStoreKey } from './helpers/hmfs-mock.js'
+
+const MATCH_STATE_FILENAME = storageKeyToFilename(MATCH_STATE_STORAGE_KEY)
 
 test('saveState serializes MatchState and persists it with the stable storage key', () => {
   const state = createInitialMatchState(1700000000)
   const originalHmFS = globalThis.hmFS
+  const { mock, fileStore } = createHmFsMock()
 
-  let capturedKey = ''
-  let capturedValue = ''
-
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      capturedKey = key
-      capturedValue = value
-    },
-    SysProGetChars(key) {
-      return null
-    }
-  }
+  globalThis.hmFS = mock
 
   try {
     saveState(state)
@@ -36,94 +29,43 @@ test('saveState serializes MatchState and persists it with the stable storage ke
     }
   }
 
-  assert.equal(capturedKey, MATCH_STATE_STORAGE_KEY)
-  assert.equal(capturedValue, JSON.stringify(state))
-  assert.deepEqual(JSON.parse(capturedValue), state)
+  assert.ok(fileStore.has(MATCH_STATE_FILENAME), 'file should be written')
+  const stored = readFileStoreKey(fileStore, MATCH_STATE_STORAGE_KEY)
+  assert.deepEqual(JSON.parse(stored), state)
 })
 
-test('clearState uses removeItem when runtime storage supports it', () => {
+test('clearState removes the file from persistent storage', () => {
   const originalHmFS = globalThis.hmFS
-
-  let removedKey = ''
-  let setItemCalls = 0
-
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      if (value === '') {
-        removedKey = key
-      } else {
-        setItemCalls += 1
-      }
-    },
-    SysProGetChars(key) {
-      return null
-    }
-  }
-
-  try {
-    clearState()
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
-
-  assert.equal(removedKey, MATCH_STATE_STORAGE_KEY)
-  assert.equal(setItemCalls, 0)
-})
-
-test('clearState falls back to setItem when removeItem is unavailable', () => {
-  const originalHmFS = globalThis.hmFS
-
-  let setItemCallCount = 0
-  let setItemPayload = null
-
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {
-      setItemCallCount += 1
-      setItemPayload = { key, value }
-    },
-    SysProGetChars(key) {
-      return null
-    }
-  }
-
-  try {
-    clearState()
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
-
-  assert.equal(setItemCallCount, 1)
-  assert.deepEqual(setItemPayload, {
-    key: MATCH_STATE_STORAGE_KEY,
-    value: ''
+  const { mock, fileStore } = createHmFsMock({
+    [MATCH_STATE_FILENAME]: JSON.stringify({ placeholder: true })
   })
+
+  globalThis.hmFS = mock
+
+  try {
+    clearState()
+  } finally {
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
+    } else {
+      globalThis.hmFS = originalHmFS
+    }
+  }
+
+  assert.ok(!fileStore.has(MATCH_STATE_FILENAME), 'file should be removed')
 })
 
 test('loadState retrieves and parses saved MatchState using the stable storage key', () => {
   const state = createInitialMatchState(1700000000)
   const originalHmFS = globalThis.hmFS
+  const { mock } = createHmFsMock()
 
-  let capturedKey = ''
-
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {},
-    SysProGetChars(key) {
-      capturedKey = key
-      return JSON.stringify(state)
-    }
-  }
+  globalThis.hmFS = mock
 
   let loadedState
 
   try {
+    saveState(state)
     loadedState = loadState()
   } finally {
     if (typeof originalHmFS === 'undefined') {
@@ -133,22 +75,14 @@ test('loadState retrieves and parses saved MatchState using the stable storage k
     }
   }
 
-  assert.equal(capturedKey, MATCH_STATE_STORAGE_KEY)
   assert.deepEqual(loadedState, state)
 })
 
 test('loadState returns null when no saved state exists', () => {
   const originalHmFS = globalThis.hmFS
+  const { mock } = createHmFsMock()
 
-  let capturedKey = ''
-
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {},
-    SysProGetChars(key) {
-      capturedKey = key
-      return null
-    }
-  }
+  globalThis.hmFS = mock
 
   let loadedState
 
@@ -162,19 +96,16 @@ test('loadState returns null when no saved state exists', () => {
     }
   }
 
-  assert.equal(capturedKey, MATCH_STATE_STORAGE_KEY)
   assert.equal(loadedState, null)
 })
 
 test('loadState returns null when saved state payload is corrupted JSON', () => {
   const originalHmFS = globalThis.hmFS
+  const { mock } = createHmFsMock({
+    [MATCH_STATE_FILENAME]: '{bad-json'
+  })
 
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {},
-    SysProGetChars(key) {
-      return '{bad-json'
-    }
-  }
+  globalThis.hmFS = mock
 
   let loadedState
 
@@ -191,7 +122,7 @@ test('loadState returns null when saved state payload is corrupted JSON', () => 
   assert.equal(loadedState, null)
 })
 
-test('saveState and loadState gracefully fallback when settingsStorage is unavailable', () => {
+test('saveState and loadState gracefully fallback when hmFS is unavailable', () => {
   const state = createInitialMatchState(1700000001)
   const originalHmFS = globalThis.hmFS
 
@@ -217,24 +148,21 @@ test('saveState and loadState gracefully fallback when settingsStorage is unavai
 
 test('loadState returns null when payload is valid JSON but invalid MatchState shape', () => {
   const originalHmFS = globalThis.hmFS
+  const invalidPayload = JSON.stringify({
+    teams: {
+      teamA: { id: 'teamA', label: 'Team A' },
+      teamB: { id: 'teamB', label: 'Team B' }
+    },
+    teamA: { points: 999, games: 0 },
+    teamB: { points: 0, games: 0 },
+    currentSetStatus: { number: 1, teamAGames: 0, teamBGames: 0 },
+    currentSet: 1,
+    status: 'active',
+    updatedAt: 1700000000
+  })
+  const { mock } = createHmFsMock({ [MATCH_STATE_FILENAME]: invalidPayload })
 
-  globalThis.hmFS = {
-    SysProSetChars(key, value) {},
-    SysProGetChars(key) {
-      return JSON.stringify({
-        teams: {
-          teamA: { id: 'teamA', label: 'Team A' },
-          teamB: { id: 'teamB', label: 'Team B' }
-        },
-        teamA: { points: 999, games: 0 },
-        teamB: { points: 0, games: 0 },
-        currentSetStatus: { number: 1, teamAGames: 0, teamBGames: 0 },
-        currentSet: 1,
-        status: 'active',
-        updatedAt: 1700000000
-      })
-    }
-  }
+  globalThis.hmFS = mock
 
   let loadedState
 

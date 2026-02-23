@@ -108,3 +108,9 @@ msgstr "Home"
 
 msgid "summary.startNewGame"
 msgstr "Start New Game"
+
+msgid "home.clearData"
+msgstr "Clear App Data"
+
+msgid "home.clearDataConfirm"
+msgstr "Tap Again to Confirm"
