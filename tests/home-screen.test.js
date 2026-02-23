@@ -419,7 +419,7 @@ test('home screen resume visibility uses active persisted session state only', a
   )
 })
 
-test('home screen refreshes resume visibility onShow using loadMatchState', async () => {
+test('home screen refreshes resume visibility on re-init (v1.0 lifecycle) using loadMatchState', async () => {
   const activeState = serializePersistedMatchState({ status: 'active' })
 
   await runHomePageScenario(
@@ -429,7 +429,9 @@ test('home screen refreshes resume visibility onShow using loadMatchState', asyn
     async ({ createdWidgets, page, loadedMatchStorageKeys }) => {
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), ['home.startNewGame', 'home.previousMatches', 'home.clearData'])
 
-      page.onShow()
+      page.onDestroy()
+      page.onInit()
+      page.build()
       await waitForAsyncPageUpdates()
 
       assert.deepEqual(getVisibleButtonLabels(createdWidgets), [

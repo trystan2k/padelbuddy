@@ -1718,7 +1718,7 @@
         "description": "Find and fix usages of Zepp OS lifecycle methods (onShow, onHide, onResume, onPause) that are invalid for API v1.0 in the codebase, replacing them with v1.0-compatible alternatives.",
         "details": "Perform a comprehensive audit of lifecycle API usage across the codebase to ensure compatibility with Zepp OS v1.0. Steps: 1) Search the repository for all occurrences of onShow, onHide, onResume, and onPause methods. 2) Verify and document usage in reporter-listed files: page/index.js, page/summary.js, page/setup.js, page/game.js, page/history-detail.js, page/history.js, identifying any additional occurrences. 3) For each occurrence, create a detailed documentation entry including: file path, exact code snippet, explanation of why it's invalid in v1.0, recommended v1.0 alternative approach, and proposed fix strategy. 4) Implement straightforward fixes by replacing onShow/onHide with v1.0 entry points (e.g., page initialization, event-based approaches) or creating feature-detection wrapper functions. 5) For complex or risky changes, document the recommended approach and create follow-up subtasks instead of implementing immediately. 6) Replace deprecated lifecycle methods with appropriate v1.0 equivalents such as using page initialization callbacks, app event listeners, or manual state management. 7) Update documentation in .taskmaster/notes with audit findings and modifications made. Deliverables include: complete audit findings list, summary of modified files, list of follow-up subtasks for risky fixes, and updated documentation.",
         "testStrategy": "1) Code review: Verify no instances of onShow/onHide/onResume/onPause remain in the codebase after fixes. 2) Functional testing for each modified page: index - verify page loads correctly and state initializes; game - confirm keep-awake functionality works and scoring persists on background; summary - validate match results display correctly after page navigation; setup - ensure match configuration initializes properly; history/history-detail - verify match history loads and displays; all pages - test navigation flow (forward and back) to ensure no state loss or crashes occur. 3) Lifecycle testing: Background the app during different states (game active, on setup screen, viewing history) and foreground to verify persistence works correctly. 4) Regression testing: Confirm that functionality from related tasks (screen keep-awake, auto-save on lifecycle events, match history storage) still operates as expected.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "9",
           "14",
@@ -1726,14 +1726,94 @@
           "12"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Search and Catalog All Lifecycle API Usage",
+            "description": "Perform a comprehensive repository-wide search for deprecated Zepp OS lifecycle methods and catalog all findings.",
+            "dependencies": [],
+            "details": "Execute a code search across the entire repository for all occurrences of onShow, onHide, onResume, and onPause methods. Use grep or IDE search functionality to find all instances. Create a preliminary catalog listing file paths, line numbers, and exact method signatures for each occurrence. Pay special attention to the reporter-listed files: page/index.js, page/summary.js, page/setup.js, page/game.js, page/history-detail.js, and page/history.js, while also scanning the entire codebase for any additional occurrences in utility files or other components.",
+            "status": "done",
+            "testStrategy": "Verify the search results by manually checking the catalog against the known file list and randomly sampling entries to ensure accuracy.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T16:00:24.876Z"
+          },
+          {
+            "id": 2,
+            "title": "Analyze and Document Incompatibility Issues",
+            "description": "Analyze each discovered lifecycle API usage and create detailed documentation explaining why it's incompatible with Zepp OS v1.0.",
+            "dependencies": [
+              1
+            ],
+            "details": "For each occurrence catalogued in the previous task, create a detailed documentation entry including: complete file path, exact code snippet context, explanation of why the method is invalid in v1.0 API, recommended v1.0 alternative approach (e.g., page initialization callbacks, app event listeners, or manual state management), and a specific proposed fix strategy. Categorize occurrences by complexity level: straightforward (simple replacement needed), moderate (requires refactoring logic), or complex/risky (requires significant architectural changes). Store this analysis in .taskmaster/notes/audit-findings.md.",
+            "status": "done",
+            "testStrategy": "Review documentation for completeness and technical accuracy. Ensure every occurrence has a clear recommended alternative documented.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T16:00:27.335Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Straightforward Page Initialization Fixes",
+            "description": "Replace onShow/onHide methods with v1.0-compatible page initialization approaches for pages with simple requirements.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement fixes for pages categorized as straightforward in the audit. Replace onShow calls with page initialization logic placed directly in the page constructor or init function. For onHide calls that only need to save state, replace with explicit save calls before navigation. Focus on pages like page/index.js, page/summary.js, and page/setup.js where the lifecycle is simple. Create feature-detection wrapper functions if needed to maintain compatibility during transition. Ensure all state initialization happens synchronously during page load rather than waiting for show events.",
+            "status": "done",
+            "testStrategy": "Test each modified page by navigating to it and verifying it loads correctly with proper initialization. Verify no onShow/onHide methods remain in these files.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T16:00:29.983Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Event-Based Lifecycle Replacements",
+            "description": "Replace deprecated lifecycle methods with v1.0 event listeners and manual state management for complex pages.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement fixes for complex pages like page/game.js, page/history-detail.js, and page/history.js. Replace onShow/onHide/onResume/onPause with app-level event listeners using app.on('pause') and app.on('resume') where appropriate. For page-specific visibility changes, implement manual state management using boolean flags or state objects that track visibility. Integrate these fixes with the existing saveMatchState functionality from Task 14. Ensure keep-awake functionality from the game page is preserved through alternative mechanisms such as wake-lock API calls on page load.",
+            "status": "done",
+            "testStrategy": "Functional testing: simulate backgrounding/foregrounding events and verify state persists correctly. Test game page to ensure scoring survives background transitions and keep-awake works as expected.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T16:00:32.574Z"
+          },
+          {
+            "id": 5,
+            "title": "Document Complex or Risky Changes for Follow-up",
+            "description": "Create detailed documentation and recommendations for any lifecycle fixes that are too complex or risky to implement immediately.",
+            "dependencies": [
+              2
+            ],
+            "details": "For any occurrences categorized as complex or risky, do not implement the fix directly. Instead, create comprehensive documentation in .taskmaster/notes/risky-fixes.md that includes: the specific code that needs changing, why the change is risky (potential side effects, performance impact, architectural concerns), detailed step-by-step recommended approach for implementation, potential migration path or phased rollout strategy, and any additional dependencies or prerequisite work needed. This documentation will serve as the basis for future follow-up tasks.",
+            "status": "done",
+            "testStrategy": "Peer review of the documentation to ensure technical accuracy and that the proposed approach is feasible and well-documented.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T16:00:35.016Z"
+          },
+          {
+            "id": 6,
+            "title": "Final Verification and Documentation Update",
+            "description": "Complete the audit by verifying all deprecated lifecycle methods are addressed and updating project documentation with findings.",
+            "dependencies": [
+              3,
+              4,
+              5
+            ],
+            "details": "Perform a final code review to verify no instances of onShow, onHide, onResume, or onPause remain in the codebase except in the risky-fixes documentation. Update .taskmaster/notes with the complete audit findings summary including: total occurrences found, files modified, fixes implemented, and list of follow-up subtasks created for risky fixes. Create a summary document .taskmaster/notes/lifecycle-audit-summary.md with deliverables: complete audit findings list, summary of modified files, list of follow-up subtasks for risky fixes, and updated documentation. Ensure all changes are committed with appropriate commit messages referencing Task 32.",
+            "status": "done",
+            "testStrategy": "Code review: search codebase one final time for any remaining deprecated lifecycle methods. Verify documentation is complete and accurate. Build project to ensure no syntax errors were introduced.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T16:00:37.823Z"
+          }
+        ],
+        "updatedAt": "2026-02-23T16:00:37.823Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-23T13:46:46.158Z",
+      "lastModified": "2026-02-23T16:00:37.823Z",
       "taskCount": 32,
-      "completedCount": 28,
+      "completedCount": 29,
       "tags": [
         "master"
       ]
