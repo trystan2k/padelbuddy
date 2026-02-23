@@ -252,10 +252,6 @@ export class ZeppOsStorageAdapter {
       return
     }
 
-    if (!this.storage) {
-      this.storage = storage
-    }
-
     try {
       storage.setItem(key, value)
     } catch {
@@ -274,10 +270,6 @@ export class ZeppOsStorageAdapter {
       return null
     }
 
-    if (!this.storage) {
-      this.storage = storage
-    }
-
     try {
       return storage.getItem(key)
     } catch {
@@ -293,10 +285,6 @@ export class ZeppOsStorageAdapter {
 
     if (!storage) {
       return
-    }
-
-    if (!this.storage) {
-      this.storage = storage
     }
 
     try {
