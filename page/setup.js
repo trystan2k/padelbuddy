@@ -76,11 +76,6 @@ Page({
     this.startErrorMessage = ''
   },
 
-  onShow() {
-    this.isNavigatingToGame = false
-    this.renderSetupScreen()
-  },
-
   build() {
     this.renderSetupScreen()
   },

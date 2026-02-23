@@ -199,16 +199,6 @@ Page({
     this.refreshSavedMatchState()
   },
 
-  onShow() {
-    this.isStartingNewGame = false
-    this.isClearDataArmed = false
-    this.savedMatchState = null
-    this.hasSavedGame = false
-    this.savedMatchStateFromHandoff = false
-    this.renderHomeScreen()
-    this.refreshSavedMatchState()
-  },
-
   build() {
     this.renderHomeScreen()
   },

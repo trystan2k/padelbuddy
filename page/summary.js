@@ -178,10 +178,6 @@ Page({
     this.refreshFinishedMatchState()
   },
 
-  onShow() {
-    this.refreshFinishedMatchState()
-  },
-
   build() {
     this.renderSummaryScreen()
     this.registerGestureHandler()

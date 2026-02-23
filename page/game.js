@@ -555,18 +555,6 @@ Page({
     this.validateSessionAccess()
   },
 
-  onShow() {
-    // Re-validate on return to page (e.g. back navigation).
-    // Only re-run if access was not yet granted (avoids redundant re-check on normal show).
-    if (!this.isSessionAccessGranted) {
-      this.validateSessionAccess()
-      if (this.isSessionAccessGranted) {
-        this.ensureRuntimeState()
-        this.renderGameScreen()
-      }
-    }
-  },
-
   build() {
     // build() always renders. If session access was denied, navigateToSetupPage()
     // was already called in onInit via validateSessionAccess(), so this page will
