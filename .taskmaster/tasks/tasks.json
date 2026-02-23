@@ -1579,14 +1579,111 @@
         "description": "Implement persistent match history storage using Zepp OS hmFS and add a Previous Matches feature to the home screen for reviewing completed matches.",
         "details": "Implement a new history storage service using `hmFS` API to persist completed match results. Create a data structure for match history entries including: matchId (unique identifier), timestamp, date, time, finalScore, setsWon for both teams, setHistory array, matchDuration (in minutes), and setsToPlay format. Implement `saveMatchToHistory(matchState)` that generates a unique ID using timestamp, extracts relevant data, calculates match duration, and saves to hmFS with filename pattern `match_<timestamp>.json` or maintains a history index file. Implement `loadMatchHistory()` to read all stored matches and `loadMatchById(matchId)` for specific matches. Update Home Screen (Task 17) to add 'Previous Matches' button alongside Start and Resume. Create a new Match History screen with SCROLL_LIST displaying previous matches with date/time as primary label (e.g., '2024-01-15 14:30') and optional brief summary like 'Team A won 2-1'. Implement navigation so tapping a history item loads the match data and navigates to Summary Screen (Task 18) for display. Ensure Summary Screen can handle both active completed matches and historical matches. Handle edge cases: empty history, corrupted files, storage limits. Consider implementing a limit (e.g., last 50 matches) with cleanup logic.",
         "testStrategy": "1. Functional test: Complete a match and verify it's saved to hmFS by checking file existence or listing history. 2. Persistence test: Save a match, restart watch/app, verify match appears in history list. 3. UI test: Navigate to home screen, verify 'Previous Matches' button appears. 4. Navigation test: Tap 'Previous Matches', verify history screen appears with list. 5. Detail test: Tap on a history item, verify summary screen displays correct match data. 6. Data integrity test: Verify stored data includes all required fields (date, time, scores, sets won, duration). 7. Multiple matches test: Complete multiple matches, verify all appear in history in chronological order. 8. Edge case test: Test with empty history (first install), verify graceful handling. 9. Display test: Verify date/time format is readable on watch screen. 10. Scroll test: With many matches in history, verify scrolling works correctly.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "16",
           "17",
           "18"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Match History Data Structure and Storage Service",
+            "description": "Define the data structure for match history entries and initialize the history storage service using hmFS API for persistent storage.",
+            "dependencies": [],
+            "details": "Create a new MatchHistoryService module using hmFS API. Define the MatchHistoryEntry interface with fields: matchId (string, unique timestamp), timestamp (number), date (string 'YYYY-MM-DD'), time (string 'HH:mm'), finalScore (string), setsWon (object with teamA and teamB), setHistory (array), matchDuration (number in minutes), setsToPlay (number). Implement the storage directory initialization and helper functions for file path construction using pattern 'match_<timestamp>.json'. Create an index file to track all stored match IDs for efficient listing.",
+            "status": "done",
+            "testStrategy": "Verify the data structure is correctly typed. Test that the storage directory is created on initialization. Validate that file paths are generated correctly using the match_<timestamp>.json pattern.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T12:25:29.553Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement saveMatchToHistory Function",
+            "description": "Implement the function to save completed match data to hmFS with unique ID generation, duration calculation, and storage limits enforcement.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement saveMatchToHistory(matchState) function that extracts relevant data from completed MatchState. Generate unique matchId using Date.now() timestamp. Calculate matchDuration by subtracting startTime from endTime (stored in matchState or derived from state timestamps). Create MatchHistoryEntry object and serialize to JSON. Save to hmFS using the filename pattern. Implement storage limit check (max 50 matches) - if limit exceeded, delete oldest match file and update index. Include error handling for write failures and disk full scenarios. Update the history index file with the new match ID.",
+            "status": "done",
+            "testStrategy": "Complete a match and verify file is created with correct filename pattern. Check that matchDuration is calculated correctly. Test that exceeding 50 matches triggers cleanup of oldest entry. Verify corrupted state doesn't crash the app.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T12:25:29.558Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement loadMatchHistory and loadMatchById Functions",
+            "description": "Implement functions to retrieve all stored matches from hmFS and load a specific match by its unique identifier with error handling.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement loadMatchHistory() that reads the index file to get all match IDs, then iterates through each ID to read individual match files. Return array of MatchHistoryEntry objects sorted by timestamp (newest first). Handle missing index file by returning empty array. Implement loadMatchById(matchId) that constructs the file path and reads the specific match JSON file. Both functions must include try-catch blocks to handle corrupted JSON files - skip corrupted entries in loadMatchHistory and return null for loadMatchById on errors. Handle file not found gracefully.",
+            "status": "done",
+            "testStrategy": "Test loading history with multiple matches saved. Verify sorting is correct (newest first). Test loading by specific matchId returns correct data. Test with corrupted file ensures it's skipped or returns null. Test empty history returns empty array.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T12:25:29.561Z"
+          },
+          {
+            "id": 4,
+            "title": "Update Home Screen with Previous Matches Button",
+            "description": "Add a 'Previous Matches' button to the Home Screen alongside existing Start and Resume buttons to enable navigation to match history.",
+            "dependencies": [],
+            "details": "Modify the Home Screen component (from Task 17) to add a new 'Previous Matches' button positioned below or alongside the existing Start and Resume buttons. Style the button consistently with existing UI. Implement the button's onClick handler to navigate to the new Match History screen (using hmUI.push or similar navigation API). Ensure the button is always visible regardless of whether there's an active match session. Consider adding a small indicator (badge) showing the count of saved matches if desired.",
+            "status": "done",
+            "testStrategy": "Verify the 'Previous Matches' button appears on Home Screen. Confirm button styling matches existing buttons. Test clicking the button navigates to Match History screen. Verify button works both with and without active match sessions.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T12:25:29.565Z"
+          },
+          {
+            "id": 5,
+            "title": "Create Match History Screen with SCROLL_LIST and Navigation",
+            "description": "Build the Match History screen displaying all stored matches in a scrollable list with tap-to-view navigation to Summary Screen.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Create new Match History screen component using Zepp OS SCROLL_LIST widget. On screen load, call loadMatchHistory() to retrieve all matches. Configure SCROLL_LIST with custom list item template showing date/time as primary label (e.g., '2024-01-15 14:30') and brief summary as secondary label (e.g., 'Team A won 2-1, 45 min'). Handle empty history case by displaying 'No matches played yet' message. Implement onTap handler for list items that calls loadMatchById(matchId), stores the loaded match data (possibly in a global or navigation context), and navigates to Summary Screen. Modify Summary Screen (Task 18) to accept and display historical match data - distinguish between active completed matches and historical matches using a flag or data source check. Edge cases: gracefully handle navigation with no matches selected, display error for corrupted entries on tap.",
+            "status": "done",
+            "testStrategy": "Verify scrollable list displays all matches with correct format. Test tapping an item loads the match and navigates to Summary Screen. Verify Summary Screen correctly displays historical match data. Test empty history shows appropriate message. Test tapping corrupted entry shows error or is handled gracefully.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T12:25:29.568Z"
+          },
+          {
+            "id": 6,
+            "title": "Improve History List UI - Larger fonts and 2 items per view",
+            "description": "Modify the SCROLL_LIST to show only 2 matches at a time; increase font size for better readability; display format: datetime + final score on single line (e.g., 23/02 14:30 - 2-1).",
+            "dependencies": [],
+            "details": "Update the SCROLL_LIST configuration and item template in page/history.js so the list shows two items per viewport (configure item height or viewport settings as needed). Increase font sizes for primary label and secondary label to improve readability on watch displays. Ensure each item shows single-line label combining date/time and final score as 'DD/MM HH:mm - finalScore'. Preserve existing onTap/navigation behavior.",
+            "status": "done",
+            "testStrategy": "verify two items visible, fonts larger, formatting correct",
+            "updatedAt": "2026-02-23T13:43:14.678Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "Research Zepp OS v1.0 Modal/Popup and Enhance Detail View",
+            "description": "Research if Zepp OS v1.0 provides modal/popup functionality; if not present, enhance existing history-detail.js page to show full set-by-set scores (games in each set).",
+            "dependencies": [],
+            "details": "Perform research and document whether Zepp OS v1.0 supports modal/popup widgets or overlays. If modal/popup is available, note the recommended widget and implementation notes. If not available, implement improvements in page/history-detail.js to present a detailed match view showing full setHistory including games and points per set, arranged clearly for small-screen watches. Include UI/UX notes for readability and navigation (back/close).",
+            "status": "done",
+            "testStrategy": "verify detail view shows all games per set and is navigable",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T13:45:37.542Z"
+          },
+          {
+            "id": 8,
+            "title": "Integration - Connect history list to detail view",
+            "description": "When clicking a match in history list, navigate to detail view with full data. Pass match data (including setHistory) to show detailed scores.",
+            "dependencies": [],
+            "details": "Implement or update the onTap handler in page/history.js to pass the selected match's full data (including setHistory and match metadata) to history-detail.js. Use navigation context or parameters supported by the app framework (e.g., push page with params or shared state). Ensure history-detail.js receives and renders the passed data; fall back to loading by matchId when full data isn't passed.",
+            "status": "done",
+            "testStrategy": "verify tapping list item opens detail view with full set-by-set scores displayed",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-23T13:46:46.158Z"
+          }
+        ],
+        "updatedAt": "2026-02-23T13:46:46.158Z"
       },
       {
         "id": "30",
@@ -1614,13 +1711,29 @@
         ],
         "priority": "medium",
         "subtasks": []
+      },
+      {
+        "id": "32",
+        "title": "Audit & Fix Zepp OS v1.0 Lifecycle API Usage",
+        "description": "Find and fix usages of Zepp OS lifecycle methods (onShow, onHide, onResume, onPause) that are invalid for API v1.0 in the codebase, replacing them with v1.0-compatible alternatives.",
+        "details": "Perform a comprehensive audit of lifecycle API usage across the codebase to ensure compatibility with Zepp OS v1.0. Steps: 1) Search the repository for all occurrences of onShow, onHide, onResume, and onPause methods. 2) Verify and document usage in reporter-listed files: page/index.js, page/summary.js, page/setup.js, page/game.js, page/history-detail.js, page/history.js, identifying any additional occurrences. 3) For each occurrence, create a detailed documentation entry including: file path, exact code snippet, explanation of why it's invalid in v1.0, recommended v1.0 alternative approach, and proposed fix strategy. 4) Implement straightforward fixes by replacing onShow/onHide with v1.0 entry points (e.g., page initialization, event-based approaches) or creating feature-detection wrapper functions. 5) For complex or risky changes, document the recommended approach and create follow-up subtasks instead of implementing immediately. 6) Replace deprecated lifecycle methods with appropriate v1.0 equivalents such as using page initialization callbacks, app event listeners, or manual state management. 7) Update documentation in .taskmaster/notes with audit findings and modifications made. Deliverables include: complete audit findings list, summary of modified files, list of follow-up subtasks for risky fixes, and updated documentation.",
+        "testStrategy": "1) Code review: Verify no instances of onShow/onHide/onResume/onPause remain in the codebase after fixes. 2) Functional testing for each modified page: index - verify page loads correctly and state initializes; game - confirm keep-awake functionality works and scoring persists on background; summary - validate match results display correctly after page navigation; setup - ensure match configuration initializes properly; history/history-detail - verify match history loads and displays; all pages - test navigation flow (forward and back) to ensure no state loss or crashes occur. 3) Lifecycle testing: Background the app during different states (game active, on setup screen, viewing history) and foreground to verify persistence works correctly. 4) Regression testing: Confirm that functionality from related tasks (screen keep-awake, auto-save on lifecycle events, match history storage) still operates as expected.",
+        "status": "pending",
+        "dependencies": [
+          "9",
+          "14",
+          "25",
+          "12"
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-22T18:38:01.379Z",
-      "taskCount": 31,
-      "completedCount": 27,
+      "lastModified": "2026-02-23T13:46:46.158Z",
+      "taskCount": 32,
+      "completedCount": 28,
       "tags": [
         "master"
       ]

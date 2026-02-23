@@ -195,6 +195,7 @@ async function loadSummaryPageDefinition() {
     import.meta.url
   )
   const storageUrl = new URL('../utils/storage.js', import.meta.url)
+  const matchHistoryStorageUrl = new URL('../utils/match-history-storage.js', import.meta.url)
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -209,6 +210,10 @@ async function loadSummaryPageDefinition() {
       `from '${startNewMatchFlowUrl.href}'`
     )
     .replace("from '../utils/storage.js'", `from '${storageUrl.href}'`)
+    .replace(
+      "from '../utils/match-history-storage.js'",
+      `from '${matchHistoryStorageUrl.href}'`
+    )
 
   const moduleUrl =
     'data:text/javascript;charset=utf-8,' +

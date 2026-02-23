@@ -2,6 +2,7 @@ import { gettext } from 'i18n'
 
 import { loadMatchState } from '../utils/match-storage.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
+import { loadMatchHistory, saveMatchToHistory } from '../utils/match-history-storage.js'
 
 const SUMMARY_TOKENS = Object.freeze({
   colors: {
@@ -298,6 +299,30 @@ Page({
       this.finishedMatchState = cloneMatchState(persistedMatchState)
     } else {
       this.finishedMatchState = this.getRuntimeFinishedMatchState()
+    }
+
+    // Save match to history if it's a finished match (with duplicate prevention)
+    if (this.finishedMatchState && this.finishedMatchState.status === PERSISTED_MATCH_STATUS.FINISHED) {
+      try {
+        const teamALabel = this.finishedMatchState.teams?.teamA?.label ?? 'Team A'
+        const teamBLabel = this.finishedMatchState.teams?.teamB?.label ?? 'Team B'
+        const completedAt = this.finishedMatchState.completedAt ?? Date.now()
+
+        // Check by comparing timestamp + if match already saved teams
+        const existingHistory = loadMatchHistory()
+        const isDuplicate = existingHistory.some(
+          (entry) =>
+            entry.completedAt === completedAt &&
+            entry.teamALabel === teamALabel &&
+            entry.teamBLabel === teamBLabel
+        )
+
+        if (!isDuplicate) {
+          saveMatchToHistory(this.finishedMatchState)
+        }
+      } catch {
+        // Best-effort: don't block summary display if history save fails
+      }
     }
 
     this.renderSummaryScreen()

@@ -114,3 +114,30 @@ msgstr "Clear App Data"
 
 msgid "home.clearDataConfirm"
 msgstr "Tap Again to Confirm"
+
+msgid "home.previousMatches"
+msgstr "Previous Matches"
+
+msgid "history.title"
+msgstr "Match History"
+
+msgid "history.empty"
+msgstr "No matches played yet"
+
+msgid "history.back"
+msgstr "Back"
+
+msgid "history.detail.title"
+msgstr "Match Details"
+
+msgid "history.detail.notFound"
+msgstr "Match not found"
+
+msgid "history.detail.wins"
+msgstr "Wins"
+
+msgid "history.detail.draw"
+msgstr "Draw"
+
+msgid "history.detail.setHistory"
+msgstr "Set History"

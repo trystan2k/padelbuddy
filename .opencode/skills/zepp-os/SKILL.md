@@ -44,6 +44,40 @@ Activate this skill for any of the following:
 - App Service / System Events / notifications
 - Zeus CLI workflows, simulator/device preview, release preparation
 
+## ⚠️ IMPORTANT: This Skill Uses Zepp OS v1.0 Only
+
+This skill targets **Zepp OS v1.0 API level**. All implementation MUST adhere to v1.0 APIs only.
+
+### v1.0 Page Lifecycle (Required)
+
+Only these three methods are valid for Device App pages:
+
+```js
+Page({
+  onInit(params) {
+    // Initialize page - called when page loads
+  },
+  
+  build() {
+    // Draw UI - called to render the page
+  },
+  
+  onDestroy() {
+    // Cleanup - called when page is destroyed
+  }
+})
+```
+
+**DO NOT USE:**
+- ❌ `onShow` - NOT available in v1.0 (exists in v2.0+)
+- ❌ `onHide` - NOT available in v1.0 (exists in v2.0+)
+- ❌ `onResume` - NOT available in v1.0 (exists in v3.0+)
+- ❌ `onPause` - NOT available in v1.0 (exists in v3.0+)
+
+### v1.0 Reference
+- Always use `/docs/1.0/` URLs from the documentation
+- See `CONTEXT.md`, if exist, for full v1.0 constraints
+
 ## Non-Negotiable Rules
 
 1. API_LEVEL-first engineering
@@ -114,12 +148,14 @@ Activate this skill for any of the following:
 
 ## Lifecycle-Driven Design
 
-### Device App
+### Device App (v1.0)
 - `App.onCreate(params)`: initialize shared app data only.
 - `Page.onInit(params)`: parse params and initialize page state.
 - `Page.build()`: create/draw UI widgets.
 - `Page.onDestroy()`: cleanup page resources.
 - `App.onDestroy()`: final app-level cleanup.
+
+> ⚠️ **Note**: `onShow`, `onHide` are NOT available in v1.0 - use `onInit` for data loading.
 
 Do not draw UI in `App.onCreate`.
 

@@ -16,6 +16,9 @@ const HOME_TOKENS = Object.freeze({
     buttonText: 0x000000,
     primaryButton: 0x1eb98c,
     primaryButtonPressed: 0x1aa07a,
+    secondaryButton: 0x24262b,
+    secondaryButtonPressed: 0x2d3036,
+    secondaryButtonText: 0xffffff,
     dangerButton: 0x3a1a1c,
     dangerButtonArmed: 0x7a1f28,
     dangerButtonPressed: 0x4a2022,
@@ -34,7 +37,8 @@ const HOME_TOKENS = Object.freeze({
     logoToTitle: 0.012,
     titleToPrimaryButton: 0.13,
     primaryToSecondaryButton: 0.05,
-    secondaryToClearButton: 0.025
+    secondaryToTertiaryButton: 0.025,
+    tertiaryToClearButton: 0.025
   }
 })
 
@@ -389,13 +393,37 @@ Page({
     // Clear App Data button (danger, two-tap confirmation) — always visible
     const clearButtonBaseY = this.hasSavedGame ? resumeButtonY : startButtonY
     const clearButtonBaseH = this.hasSavedGame ? secondaryButtonHeight : startButtonHeight
+
+    // Previous Matches button - always visible between game buttons and clear button
+    const historyButtonHeight = Math.round(height * 0.09)
+    const historyButtonWidth = Math.round(startButtonWidth * 0.78)
+    const historyButtonX = Math.round((width - historyButtonWidth) / 2)
+    const historyButtonY =
+      clearButtonBaseY +
+      clearButtonBaseH +
+      Math.round(height * HOME_TOKENS.spacingScale.secondaryToTertiaryButton)
+
+    this.createWidget(hmUI.widget.BUTTON, {
+      x: historyButtonX,
+      y: historyButtonY,
+      w: historyButtonWidth,
+      h: historyButtonHeight,
+      radius: Math.round(historyButtonHeight / 2),
+      normal_color: HOME_TOKENS.colors.secondaryButton,
+      press_color: HOME_TOKENS.colors.secondaryButtonPressed,
+      color: HOME_TOKENS.colors.secondaryButtonText,
+      text_size: Math.round(width * HOME_TOKENS.fontScale.button),
+      text: gettext('home.previousMatches'),
+      click_func: () => this.handleViewHistory()
+    })
+
     const clearButtonHeight = Math.round(height * 0.1)
     const clearButtonWidth = Math.round(startButtonWidth * 0.78)
     const clearButtonX = Math.round((width - clearButtonWidth) / 2)
     const clearButtonY =
-      clearButtonBaseY +
-      clearButtonBaseH +
-      Math.round(height * HOME_TOKENS.spacingScale.secondaryToClearButton)
+      historyButtonY +
+      historyButtonHeight +
+      Math.round(height * HOME_TOKENS.spacingScale.tertiaryToClearButton)
 
     this.createWidget(hmUI.widget.BUTTON, {
       x: clearButtonX,
@@ -549,6 +577,21 @@ Page({
     }
 
     app.globalData.matchHistory = createHistoryStack()
+  },
+
+  handleViewHistory() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
+      return false
+    }
+
+    try {
+      hmApp.gotoPage({
+        url: 'page/history'
+      })
+      return true
+    } catch {
+      return false
+    }
   },
 
   handleClearData() {
