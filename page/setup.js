@@ -2,11 +2,7 @@ import { gettext } from 'i18n'
 
 import { initializeMatchState } from '../utils/match-session-init.js'
 import { MATCH_STATUS } from '../utils/match-state-schema.js'
-import {
-  clearMatchState,
-  loadMatchState,
-  saveMatchState
-} from '../utils/match-storage.js'
+import { clearMatchState, saveMatchState } from '../utils/match-storage.js'
 import { clearState } from '../utils/storage.js'
 
 const MATCH_SET_OPTIONS = Object.freeze([1, 3, 5])
@@ -62,7 +58,7 @@ function isRecord(value) {
   return typeof value === 'object' && value !== null
 }
 
-function isVerifiedActiveSession(matchState, setsToPlay) {
+function _isVerifiedActiveSession(matchState, setsToPlay) {
   return (
     isRecord(matchState) &&
     matchState.status === MATCH_STATUS.ACTIVE &&

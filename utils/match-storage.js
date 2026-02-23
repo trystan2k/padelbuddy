@@ -124,7 +124,7 @@ const O_TRUNC = 512 // 0x200
  * @returns {string}
  */
 function keyToFilename(key) {
-  return key.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
+  return `${key.replace(/[^a-zA-Z0-9._-]/g, '_')}.json`
 }
 
 /**

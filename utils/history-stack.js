@@ -56,38 +56,36 @@ function assertJsonCloneCompatible(value, path, seen) {
   }
 
   if (valueType === 'number') {
-    if (!isFinite(value)) {
-      throw new TypeError(
-        'State snapshot has non-finite number at ' + path + '.'
-      )
+    if (!Number.isFinite(value)) {
+      throw new TypeError(`State snapshot has non-finite number at ${path}.`)
     }
 
     return
   }
 
   if (valueType === 'undefined') {
-    throw new TypeError('State snapshot has undefined at ' + path + '.')
+    throw new TypeError(`State snapshot has undefined at ${path}.`)
   }
 
   if (valueType === 'function') {
-    throw new TypeError('State snapshot has function at ' + path + '.')
+    throw new TypeError(`State snapshot has function at ${path}.`)
   }
 
   if (valueType === 'symbol') {
-    throw new TypeError('State snapshot has symbol at ' + path + '.')
+    throw new TypeError(`State snapshot has symbol at ${path}.`)
   }
 
   if (valueType === 'bigint') {
-    throw new TypeError('State snapshot has bigint at ' + path + '.')
+    throw new TypeError(`State snapshot has bigint at ${path}.`)
   }
 
   if (valueType !== 'object') {
-    throw new TypeError('State snapshot has unsupported value at ' + path + '.')
+    throw new TypeError(`State snapshot has unsupported value at ${path}.`)
   }
 
   if (seen.indexOf(value) !== -1) {
     throw new TypeError(
-      'State snapshot cannot contain circular references at ' + path + '.'
+      `State snapshot cannot contain circular references at ${path}.`
     )
   }
 
@@ -95,7 +93,7 @@ function assertJsonCloneCompatible(value, path, seen) {
 
   if (Array.isArray(value)) {
     for (let index = 0; index < value.length; index += 1) {
-      assertJsonCloneCompatible(value[index], path + '[' + index + ']', seen)
+      assertJsonCloneCompatible(value[index], `${path}[${index}]`, seen)
     }
 
     seen.pop()
@@ -113,7 +111,7 @@ function assertJsonCloneCompatible(value, path, seen) {
   const keys = Object.keys(value)
   for (let index = 0; index < keys.length; index += 1) {
     const key = keys[index]
-    const nextPath = path + '.' + key
+    const nextPath = `${path}.${key}`
     assertJsonCloneCompatible(value[key], nextPath, seen)
   }
 
@@ -130,7 +128,7 @@ export function deepCopyState(state) {
 
   try {
     return JSON.parse(JSON.stringify(state))
-  } catch (error) {
+  } catch (_error) {
     throw new TypeError('State snapshot must be JSON-clone compatible.')
   }
 }

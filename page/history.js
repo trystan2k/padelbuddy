@@ -75,7 +75,7 @@ function calculateRoundSafeSideInset(
   return Math.max(0, Math.ceil(centerX - halfChord + horizontalPadding))
 }
 
-function calculateRoundSafeSectionSideInset(
+function _calculateRoundSafeSectionSideInset(
   width,
   height,
   sectionTop,
@@ -98,7 +98,7 @@ function calculateRoundSafeSectionSideInset(
 }
 
 Page({
-  onInit(params) {
+  onInit(_params) {
     this.widgets = []
     this.historyEntries = []
 
@@ -197,7 +197,7 @@ Page({
 
   handleHistoryItemClick(index) {
     const entry = this.historyEntries[index]
-    if (entry && entry.id) {
+    if (entry?.id) {
       this.navigateToHistoryDetail(entry.id)
     }
   },
@@ -356,7 +356,7 @@ Page({
         item_config_count: 1,
         data_array: scrollDataArray,
         data_count: scrollDataArray.length,
-        item_click_func: (list, index) => {
+        item_click_func: (_list, index) => {
           this.handleHistoryItemClick(index)
         }
       })

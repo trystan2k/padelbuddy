@@ -101,7 +101,7 @@ export function createHmFsMock(initialFiles = {}) {
  * @returns {string}
  */
 export function storageKeyToFilename(key) {
-  return key.replace(/[^a-zA-Z0-9._-]/g, '_') + '.json'
+  return `${key.replace(/[^a-zA-Z0-9._-]/g, '_')}.json`
 }
 
 /**
