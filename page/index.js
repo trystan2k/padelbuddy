@@ -419,8 +419,8 @@ Page({
       y: settingsIconY,
       w: -1,
       h: -1,
-      normal_src: 'gear-icon.png',
-      press_src: 'gear-icon.png',
+      normal_src: 'setting-icon.png',
+      press_src: 'setting-icon.png',
       click_func: () => this.navigateToSettings()
     })
   },
