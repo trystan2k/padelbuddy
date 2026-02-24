@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '.opencode/**'
+      - '.taskmaster/**'
+      - '.husky/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CONTEXT.md'
   pull_request:
 
 jobs:
