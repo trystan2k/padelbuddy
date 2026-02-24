@@ -82,7 +82,7 @@ Follow these steps:
 9. Execute command(s), capture output, and run a post-action verification command.
 10. Return the structured report without asking user questions, explicitly stating whether MCP or CLI was used and why fallback occurred when applicable.
 11. **ALWAYS** check first if the memory already exists in the Basic Memory database. If it does, update it, if needed, otherwise skip.
-12. **NEVER** generate a memory without using basic-memory
+12. **NEVER** generate a memory without using basic-memory (DO NOT USE Other MCP like Serena, you must only use basic-memory, if not exist, use CLI basic-memory)
 13. **NEVER** Write the log memory manually or using other tools (like serena) than basic-memory
 14. **ALWAYS** create one memory for the task implemented (only tasks, not for the subtasks. The subtasks information should be part of the task details memory).
 15. If any step fails, stop immediately and return `partial` or `failed` with exact retry guidance.
@@ -106,6 +106,7 @@ Allowed tools:
 
 Forbidden tools:
 
+- `mcp_serena`
 - `write`
 - `edit`
 
