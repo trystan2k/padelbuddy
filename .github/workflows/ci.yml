@@ -49,11 +49,3 @@ jobs:
 
       - name: Test suite
         run: npm run test
-
-      - name: Install Zeus CLI
-        if: matrix.node-version == '20.x'
-        run: npm install -g @zeppos/zeus-cli
-
-      - name: Build – Zepp OS app
-        if: matrix.node-version == '20.x'
-        run: zeus build

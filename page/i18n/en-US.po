@@ -2,7 +2,7 @@ msgid "home.logo"
 msgstr "PADEL"
 
 msgid "home.title"
-msgstr "Scoreboard"
+msgstr "Buddy"
 
 msgid "home.startNewGame"
 msgstr "Start New Game"

@@ -3,11 +3,7 @@ import { createHistoryStack } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { loadMatchState } from '../utils/match-storage.js'
-import {
-  clearActiveMatchSession,
-  resetMatchStateManager,
-  startNewMatchFlow
-} from '../utils/start-new-match-flow.js'
+import { startNewMatchFlow } from '../utils/start-new-match-flow.js'
 
 const PERSISTED_ADVANTAGE_POINT_VALUE = 50
 const PERSISTED_GAME_POINT_VALUE = 60
@@ -29,7 +25,9 @@ const HOME_TOKENS = Object.freeze({
     dangerButtonArmedPressed: 0x9a2530,
     dangerButtonText: 0xff6d78,
     logo: 0x1eb98c,
-    title: 0xffffff
+    title: 0xffffff,
+    settingsIcon: 0x888888,
+    settingsIconPressed: 0xaaaaaa
   },
   fontScale: {
     button: 0.055,
@@ -39,10 +37,20 @@ const HOME_TOKENS = Object.freeze({
   spacingScale: {
     contentTop: 0.1,
     logoToTitle: 0.012,
-    titleToPrimaryButton: 0.13,
-    primaryToSecondaryButton: 0.05,
-    secondaryToTertiaryButton: 0.025,
-    tertiaryToClearButton: 0.025
+    titleToPrimaryButton: 0.05,
+    primaryToSecondaryButton: 0.04,
+    tertiaryToClearButton: 0.025,
+    buttonToSettingsIcon: 0.04
+  },
+  buttonSize: {
+    height: 0.2,
+    width: 0.7,
+    radiusRatio: 0.5,
+    gap: 0.04
+  },
+  settingsIcon: {
+    size: 48,
+    yOffset: 0.15
   }
 })
 
@@ -213,7 +221,6 @@ Page({
     this.hasSavedGame = false
     this.savedMatchStateFromHandoff = false
     this.isStartingNewGame = false
-    this.isClearDataArmed = false
     this.refreshSavedMatchState()
   },
 
@@ -321,19 +328,26 @@ Page({
       logoHeight +
       Math.round(height * HOME_TOKENS.spacingScale.logoToTitle)
     const titleHeight = Math.round(height * 0.11)
-    const startButtonWidth = Math.round(width * 0.62)
-    const startButtonHeight = Math.round(height * 0.14)
-    const secondaryButtonHeight = Math.round(height * 0.12)
-    const startButtonX = Math.round((width - startButtonWidth) / 2)
+
+    // Use unified button sizing from design tokens
+    const buttonWidth = Math.round(width * HOME_TOKENS.buttonSize.width)
+    const buttonHeight = Math.round(height * HOME_TOKENS.buttonSize.height)
+    const buttonX = Math.round((width - buttonWidth) / 2)
     const startButtonY =
       titleY +
       titleHeight +
       Math.round(height * HOME_TOKENS.spacingScale.titleToPrimaryButton)
-    const secondaryButtonGap = Math.round(
-      height * HOME_TOKENS.spacingScale.primaryToSecondaryButton
-    )
-    const resumeButtonY = startButtonY + startButtonHeight + secondaryButtonGap
+    const secondaryButtonGap = Math.round(height * HOME_TOKENS.buttonSize.gap)
+    const resumeButtonY = startButtonY + buttonHeight + secondaryButtonGap
     const startNewGameButtonText = gettext('home.startNewGame')
+
+    // Settings icon positioning - centered horizontally
+    const settingsIconSize = HOME_TOKENS.settingsIcon.size
+    const settingsIconX = Math.round((width - settingsIconSize) / 2)
+    const settingsIconY =
+      (this.hasSavedGame ? resumeButtonY : startButtonY) +
+      buttonHeight +
+      Math.round(height * HOME_TOKENS.spacingScale.buttonToSettingsIcon)
 
     this.clearWidgets()
 
@@ -370,11 +384,11 @@ Page({
     })
 
     this.createWidget(hmUI.widget.BUTTON, {
-      x: startButtonX,
+      x: buttonX,
       y: startButtonY,
-      w: startButtonWidth,
-      h: startButtonHeight,
-      radius: Math.round(startButtonHeight / 2),
+      w: buttonWidth,
+      h: buttonHeight,
+      radius: Math.round(buttonHeight * HOME_TOKENS.buttonSize.radiusRatio),
       normal_color: HOME_TOKENS.colors.primaryButton,
       press_color: HOME_TOKENS.colors.primaryButtonPressed,
       color: HOME_TOKENS.colors.buttonText,
@@ -385,75 +399,29 @@ Page({
 
     if (this.hasSavedGame) {
       this.createWidget(hmUI.widget.BUTTON, {
-        x: startButtonX,
+        x: buttonX,
         y: resumeButtonY,
-        w: startButtonWidth,
-        h: secondaryButtonHeight,
-        radius: Math.round(secondaryButtonHeight / 2),
-        normal_color: HOME_TOKENS.colors.primaryButton,
-        press_color: HOME_TOKENS.colors.primaryButtonPressed,
-        color: HOME_TOKENS.colors.buttonText,
+        w: buttonWidth,
+        h: buttonHeight,
+        radius: Math.round(buttonHeight * HOME_TOKENS.buttonSize.radiusRatio),
+        normal_color: HOME_TOKENS.colors.secondaryButton,
+        press_color: HOME_TOKENS.colors.secondaryButtonPressed,
+        color: HOME_TOKENS.colors.secondaryButtonText,
         text_size: Math.round(width * HOME_TOKENS.fontScale.button),
         text: gettext('home.resumeGame'),
         click_func: () => this.handleResumeGame()
       })
     }
 
-    // Clear App Data button (danger, two-tap confirmation) — always visible
-    const clearButtonBaseY = this.hasSavedGame ? resumeButtonY : startButtonY
-    const clearButtonBaseH = this.hasSavedGame
-      ? secondaryButtonHeight
-      : startButtonHeight
-
-    // Previous Matches button - always visible between game buttons and clear button
-    const historyButtonHeight = Math.round(height * 0.09)
-    const historyButtonWidth = Math.round(startButtonWidth * 0.78)
-    const historyButtonX = Math.round((width - historyButtonWidth) / 2)
-    const historyButtonY =
-      clearButtonBaseY +
-      clearButtonBaseH +
-      Math.round(height * HOME_TOKENS.spacingScale.secondaryToTertiaryButton)
-
+    // Settings icon button (gear icon using BUTTON widget with image)
     this.createWidget(hmUI.widget.BUTTON, {
-      x: historyButtonX,
-      y: historyButtonY,
-      w: historyButtonWidth,
-      h: historyButtonHeight,
-      radius: Math.round(historyButtonHeight / 2),
-      normal_color: HOME_TOKENS.colors.secondaryButton,
-      press_color: HOME_TOKENS.colors.secondaryButtonPressed,
-      color: HOME_TOKENS.colors.secondaryButtonText,
-      text_size: Math.round(width * HOME_TOKENS.fontScale.button),
-      text: gettext('home.previousMatches'),
-      click_func: () => this.handleViewHistory()
-    })
-
-    const clearButtonHeight = Math.round(height * 0.1)
-    const clearButtonWidth = Math.round(startButtonWidth * 0.78)
-    const clearButtonX = Math.round((width - clearButtonWidth) / 2)
-    const clearButtonY =
-      historyButtonY +
-      historyButtonHeight +
-      Math.round(height * HOME_TOKENS.spacingScale.tertiaryToClearButton)
-
-    this.createWidget(hmUI.widget.BUTTON, {
-      x: clearButtonX,
-      y: clearButtonY,
-      w: clearButtonWidth,
-      h: clearButtonHeight,
-      radius: Math.round(clearButtonHeight / 2),
-      normal_color: this.isClearDataArmed
-        ? HOME_TOKENS.colors.dangerButtonArmed
-        : HOME_TOKENS.colors.dangerButton,
-      press_color: this.isClearDataArmed
-        ? HOME_TOKENS.colors.dangerButtonArmedPressed
-        : HOME_TOKENS.colors.dangerButtonPressed,
-      color: HOME_TOKENS.colors.dangerButtonText,
-      text_size: Math.round(width * HOME_TOKENS.fontScale.button),
-      text: this.isClearDataArmed
-        ? gettext('home.clearDataConfirm')
-        : gettext('home.clearData'),
-      click_func: () => this.handleClearData()
+      x: settingsIconX,
+      y: settingsIconY,
+      w: -1,
+      h: -1,
+      normal_src: 'gear-icon.png',
+      press_src: 'gear-icon.png',
+      click_func: () => this.navigateToSettings()
     })
   },
 
@@ -592,48 +560,6 @@ Page({
     app.globalData.matchHistory = createHistoryStack()
   },
 
-  handleViewHistory() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
-    }
-
-    try {
-      hmApp.gotoPage({
-        url: 'page/history'
-      })
-      return true
-    } catch {
-      return false
-    }
-  },
-
-  handleClearData() {
-    if (!this.isClearDataArmed) {
-      this.isClearDataArmed = true
-      this.renderHomeScreen()
-      return
-    }
-
-    // Second tap: execute the clear
-    this.isClearDataArmed = false
-
-    try {
-      clearActiveMatchSession()
-    } catch {
-      // Ignore errors – best-effort clear
-    }
-
-    try {
-      resetMatchStateManager()
-    } catch {
-      // Ignore errors – best-effort reset
-    }
-
-    this.savedMatchState = null
-    this.hasSavedGame = false
-    this.renderHomeScreen()
-  },
-
   navigateToGamePage() {
     if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
       return
@@ -642,5 +568,20 @@ Page({
     hmApp.gotoPage({
       url: 'page/game'
     })
+  },
+
+  navigateToSettings() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
+      return false
+    }
+
+    try {
+      hmApp.gotoPage({
+        url: 'setting/index'
+      })
+      return true
+    } catch {
+      return false
+    }
   }
 })
