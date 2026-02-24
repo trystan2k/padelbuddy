@@ -141,3 +141,18 @@ msgstr "Draw"
 
 msgid "history.detail.setHistory"
 msgstr "Set History"
+
+msgid "settings.title"
+msgstr "Settings"
+
+msgid "settings.previousMatches"
+msgstr "Previous Matches"
+
+msgid "settings.clearAppData"
+msgstr "Clear App Data"
+
+msgid "settings.clearDataConfirm"
+msgstr "Tap again to confirm"
+
+msgid "settings.dataCleared"
+msgstr "Data cleared"

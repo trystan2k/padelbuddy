@@ -19,7 +19,7 @@ const HISTORY_DETAIL_TOKENS = Object.freeze({
     label: 0.06, // Increased more
     score: 0.15, // Increased significantly
     subtitle: 0.07, // Increased more
-    title: 0.075, // Increased more
+    title: 0.065,
     setHistory: 0.06 // Increased more
   },
   spacingScale: {
@@ -207,18 +207,15 @@ Page({
     return widget
   },
 
-  navigateBack() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
+  goBack() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.goBack !== 'function') {
+      return
     }
 
     try {
-      hmApp.gotoPage({
-        url: 'page/history'
-      })
-      return true
+      hmApp.goBack()
     } catch {
-      return false
+      // Ignore navigation errors
     }
   },
 
@@ -244,7 +241,10 @@ Page({
           ? HISTORY_DETAIL_TOKENS.spacingScale.roundSideInset
           : HISTORY_DETAIL_TOKENS.spacingScale.sideInset)
     )
-    const buttonHeight = clamp(Math.round(height * 0.105), 48, 58)
+    const goBackIconSize = 48
+    const goBackIconX = Math.round((width - goBackIconSize) / 2)
+    const goBackIconY = height - bottomInset - goBackIconSize
+    const buttonHeight = clamp(Math.round(height * 0.105), 48, 58) // kept for layout calculation
     const maxSectionInset = Math.floor((width - 1) / 2)
 
     // Calculate layout
@@ -471,20 +471,15 @@ Page({
       }
     }
 
-    // Back button
-    const buttonWidth = Math.max(1, width - contentSideInset * 2)
+    // Go back button - same as settings and history pages
     this.createWidget(hmUI.widget.BUTTON, {
-      x: contentSideInset,
-      y: actionsSectionY,
-      w: buttonWidth,
-      h: buttonHeight,
-      radius: Math.round(buttonHeight / 2),
-      normal_color: HISTORY_DETAIL_TOKENS.colors.buttonSecondary,
-      press_color: HISTORY_DETAIL_TOKENS.colors.buttonSecondaryPressed,
-      color: HISTORY_DETAIL_TOKENS.colors.buttonSecondaryText,
-      text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.button),
-      text: gettext('history.back'),
-      click_func: () => this.navigateBack()
+      x: goBackIconX,
+      y: goBackIconY,
+      w: -1,
+      h: -1,
+      normal_src: 'goback-icon.png',
+      press_src: 'goback-icon.png',
+      click_func: () => this.goBack()
     })
   }
 })
