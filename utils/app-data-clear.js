@@ -24,7 +24,6 @@ import { clearState } from './storage.js'
  */
 function overwriteWithNull(filename) {
   const result = saveToFile(filename, 'null')
-  console.log('overwriteWithNull:', filename, 'result:', result)
   return result
 }
 
@@ -33,26 +32,21 @@ function overwriteWithNull(filename) {
  * @returns {boolean}
  */
 function clearMatchHistoryReliable() {
-  console.log('clearMatchHistoryReliable: starting')
-
   // First try the standard remove method
-  const removeResult = clearHistoryViaRemove()
-  console.log('clearMatchHistoryReliable: remove result:', removeResult)
+  clearHistoryViaRemove()
 
   // Also overwrite with empty data to ensure it's cleared
   // Use the same filename generation as loadMatchHistory
   const filename = keyToFilename(HISTORY_STORAGE_KEY)
-  console.log('clearMatchHistoryReliable: filename:', filename)
 
   try {
     const emptyData = {
       matches: [],
       schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
     }
-    const writeResult = saveToFile(filename, JSON.stringify(emptyData))
-    console.log('clearMatchHistoryReliable: overwrite result:', writeResult)
+    saveToFile(filename, JSON.stringify(emptyData))
   } catch (e) {
-    console.log('clearMatchHistoryReliable: overwrite error:', e)
+    // Ignore error
   }
 
   return true
@@ -63,7 +57,6 @@ function clearMatchHistoryReliable() {
  * @returns {boolean} True if clear was successful
  */
 export function clearAllAppData() {
-  console.log('clearAllAppData: starting')
   let success = true
 
   // Clear active match state - BOTH storage systems!
@@ -72,9 +65,7 @@ export function clearAllAppData() {
   // 1. Clear 'padel-buddy.match-state' from storage.js
   try {
     clearState()
-    console.log('clearAllAppData: clearState() done')
   } catch (e) {
-    console.log('clearAllAppData: clearState error:', e)
     success = false
   }
   // Also overwrite the file directly (more reliable than remove)
@@ -83,9 +74,7 @@ export function clearAllAppData() {
   // 2. Clear 'ACTIVE_MATCH_SESSION' from match-storage.js
   try {
     clearMatchState()
-    console.log('clearAllAppData: clearMatchState() done')
   } catch (e) {
-    console.log('clearAllAppData: clearMatchState error:', e)
     success = false
   }
   // Also overwrite the file directly (more reliable than remove)
@@ -94,9 +83,7 @@ export function clearAllAppData() {
   // 3. Clear match history
   try {
     clearMatchHistoryReliable()
-    console.log('clearAllAppData: clearMatchHistoryReliable() done')
   } catch (e) {
-    console.log('clearAllAppData: clearMatchHistoryReliable error:', e)
     success = false
   }
 
@@ -112,13 +99,11 @@ export function clearAllAppData() {
         app.globalData.pendingPersistedMatchState = null
         app.globalData.sessionHandoff = null
         app.globalData._lastPersistedSchemaState = null
-        console.log('clearAllAppData: globalData cleared')
       }
     }
   } catch (e) {
-    console.log('clearAllAppData: globalData error:', e)
+    // Ignore error
   }
 
-  console.log('clearAllAppData: done, success =', success)
   return success
 }

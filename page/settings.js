@@ -145,7 +145,6 @@ Page({
     } else if (index === 1) {
       if (this.clearConfirmMode) {
         // Second tap - confirm
-        console.log('Clear All Data: confirm tapped')
         this.clearConfirmMode = false
         if (this.confirmTimeout) {
           clearTimeout(this.confirmTimeout)
@@ -154,9 +153,7 @@ Page({
         this.updateListData(false)
 
         // Perform clear
-        console.log('Clear All Data: calling clearAllAppData()')
         const success = clearAllAppData()
-        console.log('Clear All Data: result =', success)
 
         // Show toast
         if (
@@ -169,15 +166,13 @@ Page({
                 ? gettext('settings.dataCleared')
                 : gettext('settings.clearFailed')
             })
-            console.log('Clear All Data: toast shown')
           } catch (e) {
-            console.log('Clear All Data: toast error', e)
+            // Ignore toast error
           }
         }
 
         // Navigate to home after a brief delay to let toast show
         setTimeout(() => {
-          console.log('Clear All Data: navigating to home')
           this.navigateToHomePage()
         }, 500)
       } else {
