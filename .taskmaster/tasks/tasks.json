@@ -1947,10 +1947,104 @@
         "description": "Implement a new Settings page featuring a SCROLL_LIST widget with navigation to match history and functionality to clear all app data, while removing these actions from the Home Screen.",
         "details": "Implementation Steps:\n\n1. **Create Settings Page Structure**: Create a new page at `page/settings` using Zepp UI components. Implement the page layout with a SCROLL_LIST (try to reproduce the same as the list example in here: https://docs.zepp.com/docs/1.0/designs/template/list/, with the text and the chevron, using the chevron-icon.png) widget as the primary container, following the Zepp SCROLL_LIST API documentation (https://docs.zepp.com/docs/1.0/reference/device-app-api/hmUI/widget/SCROLL_LIST/).\n\n2. **Implement SCROLL_LIST Items**: Configure the scrollable list with the following menu items:\n   - 'Previous Matches' item: Displayed text label with navigation indicator\n   - 'Clear App Data' item: Displayed text label with appropriate icon (delete-icon.png)\n\n3. **Implement 'Previous Matches' Navigation**: Add click event handler for the 'Previous Matches' list item that navigates to the match history view. This should use `hmUI.gotoPage()` or appropriate navigation method to navigate to the page that displays match history (likely the Match Summary screen or a dedicated history view).\n\n4. **Implement 'Clear App Data' Functionality**: Create a comprehensive `clearAllAppData()` function that:\n   - Reviews all storage keys used by the application (including 'ACTIVE_MATCH_SESSION', any history storage, settings preferences)\n   - Clears in-memory data structures and state variables\n   - Removes all files from the filesystem if any are persisted\n   - Uses `hmFS.remove()` or similar APIs to delete files\n   - Uses storage clearing methods (e.g., `localStorage.removeItem()` or device-specific APIs)\n   - Logs confirmation of cleared data for debugging\n   - Returns to Home Screen after clearing\n   Add this function as the click handler for the 'Clear App Data' list item.",
         "testStrategy": "1. **Settings Page Display Test**: Launch the app and navigate to the Settings page. Verify the SCROLL_LIST widget displays correctly with both 'Previous Matches' and 'Clear App Data' items visible. Test scrolling behavior if the list is longer than the viewport.\n\n2. **Previous Matches Navigation Test**: Tap 'Previous Matches' in the Settings list. Verify the app navigates successfully to the history/match summary view. Confirm the correct history data is displayed. Test navigation back to Settings.\n\n3. **Clear App Data Functionality Test**:\n   - Start a new game and record some scores to ensure data exists in storage\n   - Navigate to Settings and tap 'Clear App Data'\n   - Verify that the action completes without errors\n   - Check that all app data has been cleared:\n     * Navigate to Home Screen - verify 'Resume Game' button is not shown (no saved match)\n     * Navigate to Previous Matches - verify no history is displayed\n     * If the app has settings/preferences, verify they are reset to defaults\n   - Attempt to navigate to game - verify the app requires new match setup\n\n4. **Home Screen Integration Test**: Verify the Home Screen no longer displays 'Previous Matches' and 'Clear App Data' buttons. Confirm the 'Settings' button is present and functional. Test that the Home Screen layout is balanced and no empty space or layout issues exist.\n\n5. **Edge Case Test**: Try to clear app data when the app is already empty. Verify no errors occur and the app remains stable.\n\n6. **Round and Square Screen Testing**: Verify the Settings page SCROLL_LIST displays correctly on both screen types, ensuring items are properly aligned and readable.",
-        "status": "pending",
-        "dependencies": ["6", "11"],
+        "status": "done",
+        "dependencies": [
+          "6",
+          "11"
+        ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Settings page structure with SCROLL_LIST widget",
+            "description": "Create the new Settings page directory and main page file with the SCROLL_LIST widget as the primary container, following Zepp UI design patterns.",
+            "dependencies": [],
+            "details": "Create a new page directory at `page/settings`. Create the `page/settings/index.js` file implementing the page lifecycle hooks (onInit, onReady, onDestroy). Add a SCROLL_LIST widget using hmUI.createWidget() following the Zepp SCROLL_LIST API documentation. Configure the list to display items with text labels and chevron indicators. Import the chevron-icon.png asset and ensure proper positioning. Test the page renders correctly on both round and square screen resolutions.",
+            "status": "done",
+            "testStrategy": "Launch the app and navigate to the Settings page. Verify the SCROLL_LIST widget displays correctly with the expected layout. Test scrolling behavior if the list exceeds viewport height.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:16.079Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement SCROLL_LIST items for Previous Matches and Clear App Data",
+            "description": "Configure the scrollable list with two menu items: Previous Matches with chevron icon, and Clear App Data with delete icon.",
+            "dependencies": [
+              1
+            ],
+            "details": "Define an array of list item objects containing text labels and icon paths for 'Previous Matches' (with chevron-icon.png) and 'Clear App Data' (with delete-icon.png). Use hmUI.createWidget() to add TEXT widgets for the labels and IMAGE widgets for the icons within each list item. Position elements to match the Zepp list template design with consistent padding and alignment. Ensure both items are properly clickable and have visual feedback when pressed.",
+            "status": "done",
+            "testStrategy": "Verify both 'Previous Matches' and 'Clear App Data' items are visible and correctly styled with their respective icons. Confirm items are visually distinct and aligned properly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:21.274Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Previous Matches navigation handler",
+            "description": "Add click event handler for the Previous Matches list item that navigates to the match history view using hmUI.gotoPage().",
+            "dependencies": [
+              2
+            ],
+            "details": "Attach an event listener to the 'Previous Matches' list item widget using the click_event property. Implement the handler function to call hmUI.gotoPage() with the appropriate route to the match history page (likely 'page/match-summary' or similar). Ensure the navigation passes any necessary parameters such as the history data reference. Add logging for debugging to confirm navigation triggers correctly when the item is clicked.",
+            "status": "done",
+            "testStrategy": "Click the 'Previous Matches' item and verify it navigates to the match history view. Confirm the destination page loads correctly and displays expected data.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:21.280Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement clearAllAppData() function",
+            "description": "Create a comprehensive function to clear all application data including storage, in-memory state, and persisted files.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create the clearAllAppData() function that: 1) Identifies all storage keys used (ACTIVE_MATCH_SESSION, history storage, settings preferences), 2) Clears in-memory data structures and state variables by resetting them to initial values, 3) Iterates through persisted files and removes them using hmFS.remove(), 4) Uses localStorage.clear() or storage-specific APIs to clear all stored data, 5) Adds console.log statements to confirm each step completes successfully, 6) Returns true or false indicating success/failure. Place this function in a utils file or within the Settings page module.",
+            "status": "done",
+            "testStrategy": "Call clearAllAppData() and verify all storage keys are removed, state is reset, and files are deleted. Check console logs for confirmation messages.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:21.283Z"
+          },
+          {
+            "id": 5,
+            "title": "Connect Clear App Data click handler and navigate home",
+            "description": "Attach the clearAllAppData() function to the Clear App Data list item and implement navigation back to Home Screen after clearing.",
+            "dependencies": [
+              4
+            ],
+            "details": "Attach an event listener to the 'Clear App Data' list item widget. Implement the click handler to call clearAllAppData() function. After successful data clearing, call hmUI.gotoPage() to navigate back to the Home Screen ('page/index'). Add a short delay or confirmation before navigation if needed. Include error handling to display an error message if clearing fails. Add visual feedback during the clearing operation if possible.",
+            "status": "done",
+            "testStrategy": "Click 'Clear App Data' and verify all app data is cleared. Confirm the app navigates back to the Home Screen automatically. Test error handling by simulating clearing failures.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:21.294Z"
+          },
+          {
+            "id": 6,
+            "title": "Remove Previous Matches and Clear App Data from Home Screen",
+            "description": "Remove the navigation buttons and actions for Previous Matches and Clear App Data from the Home Screen since they are now in Settings.",
+            "dependencies": [
+              5
+            ],
+            "details": "Open the Home Screen file ('page/index.js'). Locate and remove the widgets or buttons that provide navigation to 'Previous Matches' and 'Clear App Data' functionality. Delete any associated event handlers for these removed buttons. Clean up any unused imports or variables related to these features. Ensure the Home Screen layout adjusts properly after removal (e.g., remaining buttons are centered or fill the space appropriately). Update any UI text or labels that reference these removed features.",
+            "status": "done",
+            "testStrategy": "Launch the app and verify the Home Screen no longer displays Previous Matches or Clear App Data buttons. Confirm the Home Screen layout remains clean and functional. Navigate to Settings to confirm these features are accessible from there.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:21.297Z"
+          },
+          {
+            "id": 7,
+            "title": "Add navigation entry point to Settings from Home Screen",
+            "description": "Add a Settings button or menu item on the Home Screen to allow users to navigate to the new Settings page.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add a Settings button or menu item to the Home Screen layout. This could be a small icon button (settings-icon.png), a text menu item, or integrated into an existing menu. Position the button appropriately (e.g., top corner, bottom area, or in a hamburger menu). Attach a click event handler that calls hmUI.gotoPage('page/settings') to navigate to the Settings page. Ensure the button is accessible and clearly labeled. Test the positioning on both round and square screen layouts.",
+            "status": "done",
+            "testStrategy": "Verify the Settings button is visible and accessible on the Home Screen. Click the button and confirm it navigates to the Settings page. Test positioning on both round and square screens.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T00:57:21.299Z"
+          }
+        ],
+        "updatedAt": "2026-02-24T00:57:21.299Z"
       },
       {
         "id": "34",
@@ -1973,7 +2067,13 @@
         "details": "This task involves multiple UI refinements across different screens:\n\n1. **Remove Gray Backgrounds from All Pages**:\n   - Update `page/index` (Home Screen), `page/game` (Game Play Screen), Match Summary Screen, and Match History pages\n   - Locate container boxes/cards with gray background properties and remove or set to transparent\n   - Ensure text contrast and readability remains acceptable after background removal\n   - Apply consistent background styling across all screens\n\n2. **Replace Back to Home Buttons with House Icon Buttons (home-icon.png)**:\n   - In Game Play screen (`page/game`): Locate the 'Back to Home' button element and replace its text content with a house icon asset (home-icon.png)\n   - In Match Summary screen: Replace any 'Back to Home' text button with a house icon button\n   - Ensure both buttons maintain existing click handlers that navigate to home screen\n   - Style icon buttons with appropriate touch target sizes for usability\n\n3. **Replace Back Buttons with Return Icon Buttons**:\n   - In Match History List and Match History Detail pages: Locate 'Back' button elements\n   - Replace text with a return/back arrow icon (goback-icon.png)\n   - Verify navigation behavior remains unchanged (returns to previous page)\n\n4. **Implement Swipe Right to Close on Home Screen**:\n   - Add gesture event listener to `page/index` for swipe right detection\n   - On swipe right event, call Zepp OS app exit API (e.g., `app.exit()` or `wx.exitApp()`)\n   - Ensure this gesture only triggers on home screen and doesn't interfere with other screen interactions\n   - Test that app properly closes and returns to watchface\n\n5. **Testing and Verification**:\n   - Perform visual inspection on all affected screens\n   - Verify all navigation flows remain intact after button changes\n   - Test touch responsiveness of new icon buttons",
         "testStrategy": "1. Visual Test: Navigate to Home Screen and verify all gray backgrounds have been removed from containers\n2. Visual Test: Navigate to Game Play Screen and verify gray backgrounds are removed\n3. Functional Test: Tap the house icon button on Game Play Screen and verify it navigates to Home Screen\n4. Visual Test: Navigate to Match Summary Screen and verify gray backgrounds are removed\n5. Functional Test: Tap the house icon button on Match Summary Screen and verify it navigates to Home Screen\n6. Visual Test: Navigate to Match History List and verify back arrow icon is displayed instead of text\n7. Functional Test: Tap the return icon on Match History pages and verify it returns to the previous page\n8. Functional Test: On Home Screen, perform a swipe right gesture and verify the app closes and returns to watchface\n9. Regression Test: Verify scoring functionality and game flow still works correctly after UI changes\n10. Touch Target Test: Ensure all new icon buttons are easily tappable with appropriate touch response",
         "status": "pending",
-        "dependencies": ["6", "7", "18", "22", "23"],
+        "dependencies": [
+          "6",
+          "7",
+          "18",
+          "22",
+          "23"
+        ],
         "priority": "medium",
         "subtasks": []
       },
@@ -1984,7 +2084,9 @@
         "details": "Implement a delete mechanism for match history entries that allows users to remove specific completed matches. The implementation should:\n\n1. **UI Update - Add Delete Icon (delete-icon.png) to Match List**: Modify the existing match history list view (from Task 29) to include a trash/bin icon (delete-icon.png) button next to each match entry. The icon should be positioned on the right side of each history item and be easily tappable. (similar to this lists example: https://docs.zepp.com/docs/1.0/designs/template/list/ where the trash icon would be in the right side, in the place of the chevron)\n\n2. **Implement Delete Function**: Create a `deleteMatchFromHistory(matchId)` function that:\n   - Accepts the unique matchId of the match to delete\n   - Constructs the correct filename using the established pattern: `match_<matchId>.json`\n   - Uses the Zepp OS `hmFS` API to delete the file (e.g., `hmFS.removeAsset(path)`)\n   - Returns a boolean indicating success/failure\n   - Handles cases where the file doesn't exist gracefully\n\n3. **Handle Delete Action**: Add an event handler for the bin icon that:\n   - Calls `deleteMatchFromHistory()` with the appropriate matchId\n   - Shows a confirmation dialog (optional but recommended) before deletion to prevent accidental deletion\n   - Removes the item from the UI and refreshes the match history list\n   - Provides user feedback (e.g., toast message) confirming the deletion\n\n4. **Error Handling**: Implement proper error handling for:\n   - File system deletion failures\n   - Corrupted or missing history files\n   - Race conditions (if multiple deletions are triggered quickly)\n\n5. **UI Considerations**: Ensure the bin icon:\n   - Has adequate touch target size (at least 44x44 pixels)\n   - Uses appropriate styling (red color for delete action)\n   - Doesn't interfere with navigation to match details (if clicking on the match itself views details)",
         "testStrategy": "1. UI Visibility Test: Navigate to the match history list and verify that a bin icon appears next to each match entry.\n\n2. Delete Functionality Test: Click the bin icon on a history item, confirm the deletion (if confirmation dialog exists), and verify the match is immediately removed from the list.\n\n3. Persistence Test: Delete a match, then restart the watch/app and navigate back to match history. Verify the deleted match no longer appears in the list.\n\n4. File System Verification Test: After deleting a match through the UI, programmatically check the file system to ensure the corresponding `match_<id>.json` file has been removed.\n\n5. Multiple Deletion Test: Delete several matches in succession and verify the UI updates correctly after each deletion without crashes or glitches.\n\n6. Edge Case Test: Attempt to delete the last remaining match in history and verify the UI handles the empty state gracefully (e.g., shows 'No matches' message).\n\n7. Error Handling Test: Mock a file system deletion failure and verify appropriate user feedback is displayed without crashing the app.",
         "status": "pending",
-        "dependencies": ["29"],
+        "dependencies": [
+          "29"
+        ],
         "priority": "medium",
         "subtasks": []
       },
@@ -2032,9 +2134,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-24T00:31:18.394Z",
+      "lastModified": "2026-02-24T00:57:21.299Z",
       "taskCount": 39,
-      "completedCount": 32,
+      "completedCount": 33,
       "tags": [
         "master"
       ]

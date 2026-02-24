@@ -19,7 +19,7 @@ const HISTORY_TOKENS = Object.freeze({
     button: 0.05, // Larger button
     empty: 0.052,
     score: 0.095, // Increased more
-    title: 0.052, // Smaller title
+    title: 0.065,
     date: 0.068 // Increased more
   },
   spacingScale: {
@@ -77,46 +77,6 @@ function formatDate(entry) {
   }
 
   return ''
-}
-
-function calculateRoundSafeSideInset(
-  width,
-  height,
-  yPosition,
-  horizontalPadding
-) {
-  const radius = Math.min(width, height) / 2
-  const centerX = width / 2
-  const centerY = height / 2
-  const boundedY = clamp(yPosition, 0, height)
-  const distanceFromCenter = Math.abs(boundedY - centerY)
-  const halfChord = Math.sqrt(
-    Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter)
-  )
-
-  return Math.max(0, Math.ceil(centerX - halfChord + horizontalPadding))
-}
-
-function _calculateRoundSafeSectionSideInset(
-  width,
-  height,
-  sectionTop,
-  sectionHeight,
-  horizontalPadding
-) {
-  const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(
-    sectionTop + Math.max(sectionHeight, 0),
-    0,
-    height
-  )
-  const middleY = (boundedTop + boundedBottom) / 2
-
-  return Math.max(
-    calculateRoundSafeSideInset(width, height, boundedTop, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, middleY, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, boundedBottom, horizontalPadding)
-  )
 }
 
 Page({
@@ -183,15 +143,13 @@ Page({
     this.renderHistoryScreen()
   },
 
-  navigateToHomePage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
+  goBack() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.goBack !== 'function') {
       return
     }
 
     try {
-      hmApp.gotoPage({
-        url: 'page/index'
-      })
+      hmApp.goBack()
     } catch {
       // Ignore navigation errors
     }
@@ -244,7 +202,10 @@ Page({
           ? HISTORY_TOKENS.spacingScale.roundSideInset
           : HISTORY_TOKENS.spacingScale.sideInset)
     )
-    const buttonHeight = clamp(Math.round(height * 0.11), 50, 58) // Bigger button
+    const goBackIconSize = 48
+    const goBackIconX = Math.round((width - goBackIconSize) / 2)
+    const goBackIconY = height - bottomInset - goBackIconSize
+    const buttonHeight = clamp(Math.round(height * 0.11), 50, 58) // kept for list height calculation
 
     // Title height - smaller to fit
     const titleHeight = clamp(Math.round(height * 0.07), 28, 36)
@@ -265,9 +226,6 @@ Page({
 
     const listX = sideInset
     const listWidth = Math.max(1, width - sideInset * 2)
-
-    const actionsSectionY = height - bottomInset - buttonHeight
-    const buttonWidth = Math.max(1, width - sideInset * 2)
 
     this.clearWidgets()
 
@@ -384,19 +342,15 @@ Page({
       })
     }
 
-    // Back to Home button
+    // Go back button - same as settings page
     this.createWidget(hmUI.widget.BUTTON, {
-      x: sideInset,
-      y: actionsSectionY,
-      w: buttonWidth,
-      h: buttonHeight,
-      radius: Math.round(buttonHeight / 2),
-      normal_color: HISTORY_TOKENS.colors.buttonSecondary,
-      press_color: HISTORY_TOKENS.colors.buttonSecondaryPressed,
-      color: HISTORY_TOKENS.colors.buttonSecondaryText,
-      text_size: Math.round(width * HISTORY_TOKENS.fontScale.button),
-      text: gettext('history.back'),
-      click_func: () => this.navigateToHomePage()
+      x: goBackIconX,
+      y: goBackIconY,
+      w: -1,
+      h: -1,
+      normal_src: 'goback-icon.png',
+      press_src: 'goback-icon.png',
+      click_func: () => this.goBack()
     })
   }
 })

@@ -577,7 +577,7 @@ Page({
 
     try {
       hmApp.gotoPage({
-        url: 'setting/index'
+        url: 'page/settings'
       })
       return true
     } catch {

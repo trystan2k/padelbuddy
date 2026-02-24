@@ -30,7 +30,8 @@
             "page/game",
             "page/summary",
             "page/history",
-            "page/history-detail"
+            "page/history-detail",
+            "page/settings"
           ]
         },
         "app-side": {
@@ -61,7 +62,8 @@
             "page/game",
             "page/summary",
             "page/history",
-            "page/history-detail"
+            "page/history-detail",
+            "page/settings"
           ]
         },
         "app-side": {
