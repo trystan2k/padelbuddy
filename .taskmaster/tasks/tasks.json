@@ -2255,13 +2255,14 @@
         "description": "Implement a cancel game feature on the game play screen with a bin icon button that deletes the current active match state and navigates back to the home screen.",
         "details": "1. **UI Update - Add Cancel Button to Game Screen**: Modify the Game Screen to include a bin/trash icon button positioned alongside the existing home icon button. The icon should be clearly visible and tappable, using a standard trash icon asset.\n\n2. **Implement Cancel Handler**: Create an `cancelCurrentMatch()` function that handles the cancellation flow:\n   - Optionally display a confirmation dialog (e.g., 'Are you sure you want to cancel this match?') to prevent accidental cancellations\n   - Delete the persisted match state from storage by removing the 'ACTIVE_MATCH_SESSION' key using the persistence service (Task 12)\n   - Clear any in-memory state manager references to the active match\n   - Navigate to the Home Screen\n\n3. **Reuse Cleanup Logic**: Leverage or reference the cleanup pattern established in Task 19 (New Match Reset and Cleanup) to ensure consistency in how active sessions are terminated.\n\n4. **Error Handling**: Implement graceful handling for edge cases such as:\n   - Storage deletion failures\n   - Missing or corrupted match state\n   - Navigation errors\n\n5. **State Verification**: Ensure that after cancellation, the Home Screen properly recognizes that no active match exists and does not display the 'Resume Game' button.",
         "testStrategy": "1. **UI Visibility Test**: Navigate to the Game Screen and verify that a bin icon appears alongside the home icon button.\n\n2. **Basic Cancellation Test**: Start a new match, score a few points, then click the bin icon. Verify the game is cancelled and you are returned to the Home Screen.\n\n3. **State Cleanup Test**: After cancelling, verify that the 'Resume Game' button does NOT appear on the Home Screen, confirming the active match state was properly deleted.\n\n4. **Fresh Start Test**: Cancel an active game, then immediately start a new match. Verify the match starts fresh with scores at 0-0 and no残留 data from the cancelled game.\n\n5. **Confirmation Dialog Test**: If a confirmation dialog is implemented, verify that clicking 'Cancel' or 'No' keeps the game running, while clicking 'Confirm' or 'Yes' proceeds with cancellation.\n\n6. **Edge Case Test**: Attempt to cancel at different game stages (just started, mid-match, near completion) and verify consistent behavior.\n\n7. **Storage Verification Test**: Use storage inspection tools to verify that the 'ACTIVE_MATCH_SESSION' key is removed after cancellation.",
-        "status": "pending",
+        "status": "cancelled",
         "dependencies": [
           "12",
           "19"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2026-02-24T21:59:58.589Z"
       },
       {
         "id": "38",
@@ -2293,7 +2294,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-24T15:00:47.044Z",
+      "lastModified": "2026-02-24T21:59:58.590Z",
       "taskCount": 39,
       "completedCount": 35,
       "tags": [
