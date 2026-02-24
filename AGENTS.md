@@ -29,7 +29,7 @@ Any implementation done in this project MUST:
 For the qa gate, run the following command:
 
 ```bash
-npm run test
+npm run complete-check
 ```
 
 ## Feature branch naming
