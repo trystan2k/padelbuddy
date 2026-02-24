@@ -385,11 +385,11 @@ Page({
     const resumeButtonY = startButtonY + buttonHeight + secondaryButtonGap
     const startNewGameButtonText = gettext('home.startNewGame')
 
-    // Settings icon positioning - centered horizontally
+    // Settings icon positioning - always at bottom, as if resume button is always visible
     const settingsIconSize = HOME_TOKENS.settingsIcon.size
     const settingsIconX = Math.round((width - settingsIconSize) / 2)
     const settingsIconY =
-      (this.hasSavedGame ? resumeButtonY : startButtonY) +
+      resumeButtonY +
       buttonHeight +
       Math.round(height * HOME_TOKENS.spacingScale.buttonToSettingsIcon)
 
