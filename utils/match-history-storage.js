@@ -374,3 +374,38 @@ export function clearMatchHistory() {
 export function getMatchHistoryCount() {
   return loadMatchHistory().length
 }
+
+/**
+ * Delete a specific match from history by ID.
+ * @param {string} matchId - The ID of the match to delete
+ * @returns {boolean} True if deleted successfully
+ */
+export function deleteMatchFromHistory(matchId) {
+  if (!matchId || typeof matchId !== 'string') {
+    return false
+  }
+
+  try {
+    // Load existing history
+    const history = loadMatchHistory()
+
+    // Filter out the match to delete
+    const filteredHistory = history.filter((entry) => entry.id !== matchId)
+
+    // If no match was removed, return false
+    if (filteredHistory.length === history.length) {
+      return false
+    }
+
+    // Save updated history
+    const storageData = {
+      matches: filteredHistory,
+      schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
+    }
+
+    const filename = keyToFilename(HISTORY_STORAGE_KEY)
+    return saveToFile(filename, JSON.stringify(storageData))
+  } catch {
+    return false
+  }
+}

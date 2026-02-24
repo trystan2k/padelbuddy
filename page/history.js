@@ -83,6 +83,7 @@ Page({
   onInit(_params) {
     this.widgets = []
     this.historyEntries = []
+    this.scrollList = null
 
     // Load history data during init (v1.0 compatible)
     try {
@@ -116,11 +117,13 @@ Page({
   clearWidgets() {
     if (typeof hmUI === 'undefined') {
       this.widgets = []
+      this.scrollList = null
       return
     }
 
     this.widgets.forEach((widget) => hmUI.deleteWidget(widget))
     this.widgets = []
+    this.scrollList = null
   },
 
   createWidget(widgetType, properties) {
@@ -275,7 +278,19 @@ Page({
         color: HISTORY_TOKENS.colors.cardBackground
       })
 
-      // Build data for SCROLL_LIST with separate date and score
+      // Layout calculations for chevron icon
+      const iconSize = Math.round(rowHeight * 0.5)
+      const iconPad = Math.round(width * 0.02)
+      const iconX = listWidth - iconSize - iconPad
+      const iconY = Math.round((rowHeight - iconSize) / 2)
+
+      // Adjusted positions to make room for icon
+      const dateX = Math.round(width * 0.02)
+      const dateWidth = Math.round(listWidth * 0.45)
+      const scoreX = Math.round(listWidth * 0.5)
+      const scoreWidth = iconX - scoreX - iconPad
+
+      // Build data for SCROLL_LIST with separate date, score, and chevron icon
       const scrollDataArray = this.historyEntries.map((entry) => {
         const dateStr = formatDate(entry)
         const scoreStr = `${entry.setsWonTeamA}-${entry.setsWonTeamB}`
@@ -283,60 +298,64 @@ Page({
         return {
           date: dateStr,
           score: scoreStr,
-          matchId: entry.id
+          icon: 'chevron-icon.png'
         }
       })
 
-      // SCROLL_LIST with TWO text views: date (white) and score (accent)
-      this.createWidget(hmUI.widget.SCROLL_LIST, {
+      // Single item config (no danger state needed)
+      const itemConfig = {
+        type_id: 1,
+        item_height: rowHeight,
+        item_bg_color: HISTORY_TOKENS.colors.cardBackground,
+        item_bg_radius: 0,
+        text_view: [
+          // Date - left side, white
+          {
+            x: dateX,
+            y: Math.round(
+              (rowHeight - Math.round(width * HISTORY_TOKENS.fontScale.date)) /
+                2
+            ),
+            w: dateWidth,
+            h: Math.round(width * HISTORY_TOKENS.fontScale.date),
+            key: 'date',
+            color: HISTORY_TOKENS.colors.text,
+            text_size: Math.round(width * HISTORY_TOKENS.fontScale.date)
+          },
+          // Score - center, accent color
+          {
+            x: scoreX,
+            y: Math.round(
+              (rowHeight - Math.round(width * HISTORY_TOKENS.fontScale.score)) /
+                2
+            ),
+            w: scoreWidth,
+            h: Math.round(width * HISTORY_TOKENS.fontScale.score),
+            key: 'score',
+            color: HISTORY_TOKENS.colors.accent,
+            text_size: Math.round(width * HISTORY_TOKENS.fontScale.score)
+          }
+        ],
+        text_view_count: 2,
+        image_view: [
+          { x: iconX, y: iconY, w: iconSize, h: iconSize, key: 'icon' }
+        ],
+        image_view_count: 1
+      }
+
+      // SCROLL_LIST - simplified with single config
+      this.scrollList = this.createWidget(hmUI.widget.SCROLL_LIST, {
         x: listX,
         y: listY,
         w: listWidth,
         h: listHeight,
         item_space: 2,
-        item_config: [
-          {
-            type_id: 1,
-            item_height: rowHeight,
-            item_bg_color: HISTORY_TOKENS.colors.cardBackground,
-            item_bg_radius: 0,
-            text_view: [
-              // Date - left side, white
-              {
-                x: Math.round(width * 0.02),
-                y: Math.round(
-                  (rowHeight -
-                    Math.round(width * HISTORY_TOKENS.fontScale.date)) /
-                    2
-                ),
-                w: Math.round(listWidth * 0.6),
-                h: Math.round(width * HISTORY_TOKENS.fontScale.date),
-                key: 'date',
-                color: HISTORY_TOKENS.colors.text,
-                text_size: Math.round(width * HISTORY_TOKENS.fontScale.date)
-              },
-              // Score - right side, accent color
-              {
-                x: Math.round(listWidth * 0.55),
-                y: Math.round(
-                  (rowHeight -
-                    Math.round(width * HISTORY_TOKENS.fontScale.score)) /
-                    2
-                ),
-                w: Math.round(listWidth * 0.4),
-                h: Math.round(width * HISTORY_TOKENS.fontScale.score),
-                key: 'score',
-                color: HISTORY_TOKENS.colors.accent,
-                text_size: Math.round(width * HISTORY_TOKENS.fontScale.score)
-              }
-            ],
-            text_view_count: 2
-          }
-        ],
+        item_config: [itemConfig],
         item_config_count: 1,
         data_array: scrollDataArray,
         data_count: scrollDataArray.length,
         item_click_func: (_list, index) => {
+          // Navigate to detail page
           this.handleHistoryItemClick(index)
         }
       })
