@@ -1,26 +1,24 @@
 import { gettext } from 'i18n'
-import { loadMatchById } from '../utils/match-history-storage.js'
+import {
+  deleteMatchFromHistory,
+  loadMatchById
+} from '../utils/match-history-storage.js'
 
 const HISTORY_DETAIL_TOKENS = Object.freeze({
   colors: {
     accent: 0x1eb98c,
-    accentPressed: 0x1aa07a,
     background: 0x000000,
-    buttonSecondary: 0x24262b,
-    buttonSecondaryPressed: 0x2d3036,
-    buttonSecondaryText: 0xffffff,
     cardBackground: 0x000000,
     mutedText: 0x7d8289,
     text: 0xffffff
   },
   fontScale: {
-    body: 0.055, // Increased more
-    button: 0.055, // Increased more
-    label: 0.06, // Increased more
-    score: 0.15, // Increased significantly
-    subtitle: 0.07, // Increased more
+    body: 0.055,
+    label: 0.06,
+    score: 0.15,
+    subtitle: 0.07,
     title: 0.065,
-    setHistory: 0.06 // Increased more
+    setHistory: 0.06
   },
   spacingScale: {
     bottomInset: 0.05,
@@ -123,6 +121,9 @@ Page({
   onInit(params) {
     this.widgets = []
     this.matchEntry = null
+    this.deleteConfirmMode = false
+    this.confirmTimeout = null
+    this.deleteButton = null
     this.parseParams(params)
     // Render screen after loading data (v1.0 compatible - no onShow)
     this.renderDetailScreen()
@@ -133,6 +134,11 @@ Page({
   },
 
   onDestroy() {
+    if (this.confirmTimeout) {
+      clearTimeout(this.confirmTimeout)
+      this.confirmTimeout = null
+    }
+    this.deleteButton = null
     this.clearWidgets()
   },
 
@@ -190,11 +196,13 @@ Page({
   clearWidgets() {
     if (typeof hmUI === 'undefined') {
       this.widgets = []
+      this.deleteButton = null
       return
     }
 
     this.widgets.forEach((widget) => hmUI.deleteWidget(widget))
     this.widgets = []
+    this.deleteButton = null
   },
 
   createWidget(widgetType, properties) {
@@ -219,6 +227,77 @@ Page({
     }
   },
 
+  handleDeleteClick() {
+    if (!this.matchEntry) return
+
+    if (this.deleteConfirmMode) {
+      // Second tap - execute deletion
+      this.deleteConfirmMode = false
+      if (this.confirmTimeout) {
+        clearTimeout(this.confirmTimeout)
+        this.confirmTimeout = null
+      }
+
+      // Perform deletion
+      const success = deleteMatchFromHistory(this.matchEntry.id)
+
+      if (success) {
+        // Navigate back to history list
+        this.goBack()
+      } else {
+        // If failed, just reset the icon
+        this.updateDeleteButtonIcon(false)
+      }
+    } else {
+      // First tap - enter confirm mode
+      this.deleteConfirmMode = true
+      this.updateDeleteButtonIcon(true)
+
+      // Show toast
+      hmUI.showToast({ text: gettext('history.deleteConfirmToast') })
+
+      // Auto-reset after 3 seconds
+      this.confirmTimeout = setTimeout(() => {
+        this.deleteConfirmMode = false
+        this.confirmTimeout = null
+        this.updateDeleteButtonIcon(false)
+      }, 3000)
+    }
+  },
+
+  updateDeleteButtonIcon(isConfirmMode) {
+    if (typeof hmUI === 'undefined') return
+
+    // In Zepp OS v1.0, we need to delete and recreate the button to change its image
+    // Store button position before deleting
+    const buttonSize = 48
+    const { width, height } = this.getScreenMetrics()
+    const bottomInset = Math.round(
+      height * HISTORY_DETAIL_TOKENS.spacingScale.bottomInset
+    )
+    const buttonGap = Math.round(width * 0.12)
+    const totalButtonWidth = buttonSize * 2 + buttonGap
+    const buttonsStartX = Math.round((width - totalButtonWidth) / 2)
+    const buttonY = height - bottomInset - buttonSize
+
+    // Delete old button
+    if (this.deleteButton) {
+      hmUI.deleteWidget(this.deleteButton)
+      this.deleteButton = null
+    }
+
+    // Create new button with updated icon
+    this.deleteButton = hmUI.createWidget(hmUI.widget.BUTTON, {
+      x: buttonsStartX,
+      y: buttonY,
+      w: buttonSize,
+      h: buttonSize,
+      normal_src: isConfirmMode ? 'remove-icon.png' : 'delete-icon.png',
+      press_src: isConfirmMode ? 'remove-icon.png' : 'delete-icon.png',
+      click_func: () => this.handleDeleteClick()
+    })
+  },
+
   renderDetailScreen() {
     if (typeof hmUI === 'undefined') {
       return
@@ -241,10 +320,7 @@ Page({
           ? HISTORY_DETAIL_TOKENS.spacingScale.roundSideInset
           : HISTORY_DETAIL_TOKENS.spacingScale.sideInset)
     )
-    const goBackIconSize = 48
-    const goBackIconX = Math.round((width - goBackIconSize) / 2)
-    const goBackIconY = height - bottomInset - goBackIconSize
-    const buttonHeight = clamp(Math.round(height * 0.105), 48, 58) // kept for layout calculation
+    const buttonSize = 48
     const maxSectionInset = Math.floor((width - 1) / 2)
 
     // Calculate layout
@@ -279,7 +355,7 @@ Page({
     const contentX = contentSideInset
     const contentWidth = Math.max(1, width - contentSideInset * 2)
 
-    const actionsSectionY = height - bottomInset - buttonHeight
+    const actionsSectionY = height - bottomInset - buttonSize
 
     this.clearWidgets()
 
@@ -471,12 +547,29 @@ Page({
       }
     }
 
-    // Go back button - same as settings and history pages
+    // Icon button layout at bottom - Delete (left) and Return (right)
+    const buttonGap = Math.round(width * 0.12)
+    const totalButtonWidth = buttonSize * 2 + buttonGap
+    const buttonsStartX = Math.round((width - totalButtonWidth) / 2)
+    const buttonY = height - bottomInset - buttonSize
+
+    // Delete button (left side) - double-tap to delete
+    this.deleteButton = this.createWidget(hmUI.widget.BUTTON, {
+      x: buttonsStartX,
+      y: buttonY,
+      w: buttonSize,
+      h: buttonSize,
+      normal_src: 'delete-icon.png',
+      press_src: 'delete-icon.png',
+      click_func: () => this.handleDeleteClick()
+    })
+
+    // Home/Go back button (right side)
     this.createWidget(hmUI.widget.BUTTON, {
-      x: goBackIconX,
-      y: goBackIconY,
-      w: -1,
-      h: -1,
+      x: buttonsStartX + buttonSize + buttonGap,
+      y: buttonY,
+      w: buttonSize,
+      h: buttonSize,
       normal_src: 'goback-icon.png',
       press_src: 'goback-icon.png',
       click_func: () => this.goBack()

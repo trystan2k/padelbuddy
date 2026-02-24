@@ -1,7 +1,7 @@
 ---
 title: Task 32 Audit & Fix Zepp OS v1.0 Lifecycle API Usage
 type: note
-permalink: docs/development-logs/task-32-audit-fix-zepp-os-v1.0-lifecycle-api-usage
+permalink: development-logs/task-32-audit-fix-zepp-os-v1.0-lifecycle-api-usage
 ---
 
 # Development Log: Task 32
@@ -52,4 +52,3 @@ permalink: docs/development-logs/task-32-audit-fix-zepp-os-v1.0-lifecycle-api-us
 ## Notes
 - Code review: Approved — no changes required
 - All removals verified safe; no regressions detected
-

@@ -2148,12 +2148,106 @@
         "description": "Implement functionality to delete individual matches from the match history by adding a bin icon alongside each history match entry in the match list.",
         "details": "Implement a delete mechanism for match history entries that allows users to remove specific completed matches. The implementation should:\n\n1. **UI Update - Add Delete Icon (delete-icon.png) to Match List**: Modify the existing match history list view (from Task 29) to include a trash/bin icon (delete-icon.png) button next to each match entry. The icon should be positioned on the right side of each history item and be easily tappable. (similar to this lists example: https://docs.zepp.com/docs/1.0/designs/template/list/ where the trash icon would be in the right side, in the place of the chevron)\n\n2. **Implement Delete Function**: Create a `deleteMatchFromHistory(matchId)` function that:\n   - Accepts the unique matchId of the match to delete\n   - Constructs the correct filename using the established pattern: `match_<matchId>.json`\n   - Uses the Zepp OS `hmFS` API to delete the file (e.g., `hmFS.removeAsset(path)`)\n   - Returns a boolean indicating success/failure\n   - Handles cases where the file doesn't exist gracefully\n\n3. **Handle Delete Action**: Add an event handler for the bin icon that:\n   - Calls `deleteMatchFromHistory()` with the appropriate matchId\n   - Shows a confirmation dialog (optional but recommended) before deletion to prevent accidental deletion\n   - Removes the item from the UI and refreshes the match history list\n   - Provides user feedback (e.g., toast message) confirming the deletion\n\n4. **Error Handling**: Implement proper error handling for:\n   - File system deletion failures\n   - Corrupted or missing history files\n   - Race conditions (if multiple deletions are triggered quickly)\n\n5. **UI Considerations**: Ensure the bin icon:\n   - Has adequate touch target size (at least 44x44 pixels)\n   - Uses appropriate styling (red color for delete action)\n   - Doesn't interfere with navigation to match details (if clicking on the match itself views details)",
         "testStrategy": "1. UI Visibility Test: Navigate to the match history list and verify that a bin icon appears next to each match entry.\n\n2. Delete Functionality Test: Click the bin icon on a history item, confirm the deletion (if confirmation dialog exists), and verify the match is immediately removed from the list.\n\n3. Persistence Test: Delete a match, then restart the watch/app and navigate back to match history. Verify the deleted match no longer appears in the list.\n\n4. File System Verification Test: After deleting a match through the UI, programmatically check the file system to ensure the corresponding `match_<id>.json` file has been removed.\n\n5. Multiple Deletion Test: Delete several matches in succession and verify the UI updates correctly after each deletion without crashes or glitches.\n\n6. Edge Case Test: Attempt to delete the last remaining match in history and verify the UI handles the empty state gracefully (e.g., shows 'No matches' message).\n\n7. Error Handling Test: Mock a file system deletion failure and verify appropriate user feedback is displayed without crashing the app.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "29"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add Delete Icon to Match History List UI",
+            "description": "Modify the existing match history list view from Task 29 to include a trash/bin icon (delete-icon.png) button next to each match entry positioned on the right side.",
+            "dependencies": [],
+            "details": "Update the match history list UI component to add a delete icon button to each list item. Position the icon on the right side where the chevron would typically be in Zepp OS list templates. Use the delete-icon.png resource file and ensure the icon is clearly visible against the list item background. Apply red color styling to indicate destructive action. Set minimum touch target size of 44x44 pixels for accessibility.",
+            "status": "done",
+            "testStrategy": "Navigate to match history list and verify that a bin icon appears next to each match entry. Verify icon positioning is on the right side of each item. Check that icon styling uses appropriate red color.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.022Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement deleteMatchFromHistory Function",
+            "description": "Create the core deleteMatchFromHistory(matchId) function that uses Zepp OS hmFS API to delete match files by matchId.",
+            "dependencies": [],
+            "details": "Implement deleteMatchFromHistory(matchId) function in the storage service. The function should: accept a unique matchId parameter, construct the filename using pattern 'match_<matchId>.json', use hmFS.removeAsset(path) or appropriate hmFS API to delete the file, return true on successful deletion or false on failure, gracefully handle cases where the file doesn't exist by returning false rather than throwing an error, and log any unexpected errors for debugging.",
+            "status": "done",
+            "testStrategy": "Unit test the function with valid matchId to verify file deletion. Test with non-existent matchId to verify graceful handling. Test return values for both success and failure scenarios.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.026Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Delete Confirmation Dialog",
+            "description": "Add a confirmation dialog that appears before deletion to prevent accidental deletion of match history entries.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a confirmation dialog component using Zepp OS dialog APIs. The dialog should display when a user taps the delete icon, showing a clear message like 'Delete this match?' with 'Cancel' and 'Delete' buttons. The dialog should be modal and capture user focus. On 'Delete', proceed with the deletion action. On 'Cancel', close the dialog without any changes. Style the Delete button in red to reinforce destructive action intent.",
+            "status": "done",
+            "testStrategy": "Tap delete icon and verify confirmation dialog appears. Test both Cancel and Delete button behaviors. Verify dialog is modal and blocks other interactions. Verify Cancel closes dialog without deletion.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.036Z"
+          },
+          {
+            "id": 4,
+            "title": "Wire Delete Icon Click Event Handler",
+            "description": "Add event listeners to delete icons that trigger the confirmation dialog and handle the deletion flow.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Implement click/tap event handlers for the delete icon buttons in the match history list. Each handler should: retrieve the associated matchId from the list item data, trigger the confirmation dialog, wait for user confirmation, on confirmation call deleteMatchFromHistory(matchId), and prepare for UI refresh. Ensure the matchId is correctly extracted from each list item's context. Store reference to the list item being deleted for later UI removal.",
+            "status": "done",
+            "testStrategy": "Click delete icon on various match entries and verify correct matchId is passed. Verify confirmation appears before any deletion action. Test tapping multiple delete icons to ensure correct data association.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.039Z"
+          },
+          {
+            "id": 5,
+            "title": "Refresh UI After Successful Deletion",
+            "description": "Implement UI update logic to remove deleted items from the match history list and refresh the display.",
+            "dependencies": [
+              2,
+              4
+            ],
+            "details": "After successful deletion, update the match history list UI to remove the deleted item. Options include: removing the specific list item element from the DOM with animation, or reloading the entire match history list from storage. Prefer removing the item directly for better performance and user experience. Add a fade-out or slide animation for smooth deletion. Ensure the list layout adjusts properly after item removal. Update any match count displays if present.",
+            "status": "done",
+            "testStrategy": "Delete a match and verify it immediately disappears from the UI. Verify remaining items shift up correctly. Test deleting multiple items sequentially. Test deleting the last item in list.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.041Z"
+          },
+          {
+            "id": 6,
+            "title": "Implement Error Handling and User Feedback",
+            "description": "Add comprehensive error handling for deletion failures and provide user feedback via toast messages.",
+            "dependencies": [
+              2,
+              5
+            ],
+            "details": "Implement error handling for: file system deletion failures, corrupted or missing history files, and race conditions from rapid deletions. Show toast messages for user feedback: 'Match deleted' on success, 'Failed to delete match' on failure, and 'Match not found' for non-existent files. Prevent multiple simultaneous deletion attempts on the same item by disabling the delete button during active deletion. Ensure toast messages are displayed with appropriate duration and styling.",
+            "status": "done",
+            "testStrategy": "Simulate file system errors and verify error toast appears. Test rapid tapping of delete icon to verify race condition prevention. Verify success toast appears after successful deletion.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.043Z"
+          },
+          {
+            "id": 7,
+            "title": "Testing and Documentation Updates",
+            "description": "Write comprehensive tests for the delete functionality and update project documentation.",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Write unit tests for deleteMatchFromHistory function covering success, failure, and edge cases. Create integration tests for the complete delete flow from UI click to file removal. Perform manual UI testing on device/simulator to verify touch target sizes, icon positioning, and overall usability. Update README.md to document the new delete match history feature, including how to use it and any limitations. Add the delete-icon.png to assets documentation if applicable.",
+            "status": "done",
+            "testStrategy": "Run full test suite including unit and integration tests. Perform manual testing on actual device or emulator. Verify documentation accurately describes the feature and usage.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T15:00:47.044Z"
+          }
+        ],
+        "updatedAt": "2026-02-24T15:00:47.044Z"
       },
       {
         "id": "37",
@@ -2199,9 +2293,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-24T11:18:49.275Z",
+      "lastModified": "2026-02-24T15:00:47.044Z",
       "taskCount": 39,
-      "completedCount": 34,
+      "completedCount": 35,
       "tags": [
         "master"
       ]
