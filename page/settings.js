@@ -1,5 +1,6 @@
 import { gettext } from 'i18n'
 import { clearAllAppData } from '../utils/app-data-clear.js'
+import { APP_VERSION } from '../utils/version.js'
 
 const SETTINGS_TOKENS = Object.freeze({
   colors: {
@@ -11,7 +12,8 @@ const SETTINGS_TOKENS = Object.freeze({
   },
   fontScale: {
     title: 0.065,
-    item: 0.07
+    item: 0.07,
+    version: 0.055
   },
   spacingScale: {
     topInset: 0.035,
@@ -106,16 +108,17 @@ Page({
     }
   },
 
-  // type_id 1 = normal, type_id 2 = danger (red)
+  // type_id 1 = normal, type_id 2 = danger (red), type_id 3 = version (muted)
   updateListData(confirmMode) {
     if (!this.scrollList) return
 
     this.scrollList.setProperty(hmUI.prop.UPDATE_DATA, {
       data_type_config: [
         { start: 0, end: 0, type_id: 1 },
-        { start: 1, end: 1, type_id: confirmMode ? 2 : 1 }
+        { start: 1, end: 1, type_id: confirmMode ? 2 : 1 },
+        { start: 2, end: 2, type_id: 3 }
       ],
-      data_type_config_count: 2,
+      data_type_config_count: 3,
       data_array: [
         {
           label: gettext('settings.previousMatches'),
@@ -126,9 +129,12 @@ Page({
             ? gettext('settings.clearDataConfirm')
             : gettext('settings.clearAppData'),
           icon: 'delete-icon.png'
+        },
+        {
+          version: `${gettext('settings.version')} ${APP_VERSION}`
         }
       ],
-      data_count: 2,
+      data_count: 3,
       on_page: 1
     })
   },
@@ -187,6 +193,7 @@ Page({
         }, 3000)
       }
     }
+    // index === 2 is version item - do nothing (non-clickable)
   },
 
   renderSettingsScreen() {
@@ -212,7 +219,7 @@ Page({
     const spaceForTitle = titleHeight + sectionGap * 2
     const listMaxHeight = height - topInset - bottomInset - spaceForTitle
     const rowHeight = Math.floor(listMaxHeight / 3.57)
-    const listHeight = rowHeight * 2 + 2
+    const listHeight = rowHeight * 3 + 2
 
     const listY = topInset + titleHeight + sectionGap * 2
     const goBackIconSize = 48
@@ -255,7 +262,14 @@ Page({
     const textX = iconPad
     const textW = iconX - textX - iconPad / 2
 
-    // Two item type configs: type_id 1 = normal, type_id 2 = danger (red text)
+    // Version text styling (centered, smaller)
+    const versionTextSize = Math.round(
+      width * SETTINGS_TOKENS.fontScale.version
+    )
+    const versionTextH = Math.round(versionTextSize * 1.4)
+    const versionTextY = Math.round((rowHeight - versionTextH) / 2)
+
+    // Three item type configs: type_id 1 = normal, type_id 2 = danger (red text), type_id 3 = version (muted, centered)
     const itemConfigNormal = {
       type_id: 1,
       item_height: rowHeight,
@@ -302,28 +316,54 @@ Page({
       image_view_count: 1
     }
 
-    // SCROLL_LIST with two type configs
+    const itemConfigVersion = {
+      type_id: 3,
+      item_height: rowHeight,
+      item_bg_color: SETTINGS_TOKENS.colors.background,
+      item_bg_radius: 0,
+      text_view: [
+        {
+          x: 0,
+          y: versionTextY,
+          w: listWidth,
+          h: versionTextH,
+          key: 'version',
+          color: SETTINGS_TOKENS.colors.mutedText,
+          text_size: versionTextSize
+        }
+      ],
+      text_view_count: 1,
+      image_view: [],
+      image_view_count: 0
+    }
+
+    // SCROLL_LIST with three type configs
     this.scrollList = this.createWidget(hmUI.widget.SCROLL_LIST, {
       x: listX,
       y: listY,
       w: listWidth,
       h: listHeight,
       item_space: 2,
-      item_config: [itemConfigNormal, itemConfigDanger],
-      item_config_count: 2,
+      item_config: [itemConfigNormal, itemConfigDanger, itemConfigVersion],
+      item_config_count: 3,
       data_array: [
         {
           label: gettext('settings.previousMatches'),
           icon: 'chevron-icon.png'
         },
-        { label: gettext('settings.clearAppData'), icon: 'delete-icon.png' }
+        { label: gettext('settings.clearAppData'), icon: 'delete-icon.png' },
+        { version: `${gettext('settings.version')} ${APP_VERSION}` }
       ],
-      data_count: 2,
+      data_count: 3,
       item_click_func: (_list, index) => {
         this.handleListItemClick(index)
       },
-      data_type_config: [{ start: 0, end: 1, type_id: 1 }],
-      data_type_config_count: 1
+      data_type_config: [
+        { start: 0, end: 0, type_id: 1 },
+        { start: 1, end: 1, type_id: 1 },
+        { start: 2, end: 2, type_id: 3 }
+      ],
+      data_type_config_count: 3
     })
 
     // Go back button
