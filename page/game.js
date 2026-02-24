@@ -21,7 +21,7 @@ const GAME_TOKENS = Object.freeze({
     buttonSecondary: 0x24262b,
     buttonSecondaryPressed: 0x2d3036,
     buttonSecondaryText: 0xffffff,
-    cardBackground: 0x111318,
+    cardBackground: 0x000000,
     dangerText: 0xff6d78,
     divider: 0x2a2d34,
     mutedText: 0x7d8289,
@@ -1401,9 +1401,9 @@ Page({
     const setsRowY = headerTop
     const gamesRowY = setsRowY + headerRowHeight
 
-    // ── Bottom: back-home button ───────────────────────────────────────────
+    // ── Bottom: home icon area ───────────────────────────────────────────
+    const homeIconSize = 48
     const backHomeButtonHeight = clamp(Math.round(height * 0.15), 48, 68)
-    const backHomeButtonWidth = clamp(Math.round(width * 0.4), 120, 180)
     const baseBottomInset = Math.round(
       height * GAME_TOKENS.spacingScale.bottomInset
     )
@@ -1414,7 +1414,6 @@ Page({
         )
       : baseBottomInset
     const backHomeButtonY = height - bottomInset - backHomeButtonHeight
-    const backHomeButtonX = Math.round((width - backHomeButtonWidth) / 2)
 
     // ── Score area: fills space between header and back button ─────────────
     const sectionGap = Math.round(height * GAME_TOKENS.spacingScale.sectionGap)
@@ -1654,18 +1653,18 @@ Page({
       })
     }
 
-    // ── Back-home button (always shown at bottom centre) ──────────────────
+    // ── Home icon button (always shown at bottom centre) ───────────────────
+    const homeIconX = Math.round((width - homeIconSize) / 2)
+    const homeIconY =
+      backHomeButtonY + Math.round((backHomeButtonHeight - homeIconSize) / 2)
+
     this.createWidget(hmUI.widget.BUTTON, {
-      x: backHomeButtonX,
-      y: backHomeButtonY,
-      w: backHomeButtonWidth,
-      h: backHomeButtonHeight,
-      radius: Math.round(backHomeButtonHeight / 2),
-      normal_color: GAME_TOKENS.colors.buttonSecondary,
-      press_color: GAME_TOKENS.colors.buttonSecondaryPressed,
-      color: GAME_TOKENS.colors.buttonSecondaryText,
-      text_size: Math.round(width * GAME_TOKENS.fontScale.button),
-      text: isMatchFinished ? gettext('game.home') : gettext('game.backHome'),
+      x: homeIconX,
+      y: homeIconY,
+      w: -1,
+      h: -1,
+      normal_src: 'home-icon.png',
+      press_src: 'home-icon.png',
       click_func: () => this.handleBackToHome()
     })
   }
