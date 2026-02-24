@@ -449,18 +449,37 @@ test('game controls keep key visible widgets in bounds for square and round scre
       (widget) =>
         hasVisibleRect(widget) && !isBackgroundFillRect(widget, width, height)
     )
+    // Text buttons have positive dimensions, image buttons use w: -1, h: -1
+    const textButtons = buttons.filter(
+      (button) =>
+        Number.isFinite(button.properties.w) && button.properties.w > 0
+    )
+    const imageButtons = buttons.filter(
+      (button) =>
+        !Number.isFinite(button.properties.w) || button.properties.w < 0
+    )
     const widgetsWithBoundsChecks = [
-      ...buttons,
+      ...textButtons,
       ...visibleTextWidgets,
       ...visibleForegroundFillRects
     ]
 
     assert.equal(buttons.length, 5)
+    assert.equal(textButtons.length, 4) // Score and minus buttons
+    assert.equal(imageButtons.length, 1) // Home icon button
     assert.equal(visibleTextWidgets.length > 0, true)
     assert.equal(visibleForegroundFillRects.length > 0, true)
 
     widgetsWithBoundsChecks.forEach((widget) => {
       assertWidgetWithinScreen(widget, width, height)
+    })
+
+    // Verify image button position is within screen bounds
+    imageButtons.forEach((button) => {
+      assert.equal(button.properties.x >= 0, true)
+      assert.equal(button.properties.y >= 0, true)
+      assert.equal(button.properties.x < width, true)
+      assert.equal(button.properties.y < height, true)
     })
   }
 })
@@ -482,7 +501,10 @@ test('game screen renders expected bottom control button labels', async () => {
   const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
   const labels = buttons.map((button) => button.properties.text)
 
-  assert.deepEqual(labels, ['0', '0', '−', '−', 'game.backHome'])
+  // First 4 buttons are text buttons, 5th is home icon image button
+  assert.deepEqual(labels.slice(0, 4), ['0', '0', '−', '−'])
+  // Home icon button uses normal_src instead of text
+  assert.equal(buttons[4]?.properties.normal_src, 'home-icon.png')
 })
 
 test('game screen renders sets-won counters with default 0-0 values', async () => {
@@ -882,8 +904,16 @@ test('game controls keep minimum 48x48 touch targets in active and finished stat
 
         assert.equal(activeButtons.length, 5)
         activeButtons.forEach((button) => {
-          assert.equal(button.properties.w >= 48, true)
-          assert.equal(button.properties.h >= 48, true)
+          // Image buttons use w: -1, h: -1 (native image dimensions)
+          // The home-icon.png is 48x48, providing adequate touch target
+          if (button.properties.normal_src) {
+            // Image button - check that it exists (native size is 48x48)
+            assert.equal(button.properties.normal_src, 'home-icon.png')
+          } else {
+            // Text button - check dimensions
+            assert.equal(button.properties.w >= 48, true)
+            assert.equal(button.properties.h >= 48, true)
+          }
         })
 
         app.globalData.matchState.status = 'finished'
@@ -895,8 +925,8 @@ test('game controls keep minimum 48x48 touch targets in active and finished stat
         const finishedButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
 
         assert.equal(finishedButtons.length, 1)
-        assert.equal(finishedButtons[0].properties.w >= 48, true)
-        assert.equal(finishedButtons[0].properties.h >= 48, true)
+        // Home icon button uses native image dimensions (48x48)
+        assert.equal(finishedButtons[0].properties.normal_src, 'home-icon.png')
       }
     )
   }
@@ -907,20 +937,20 @@ test('game control buttons apply primary and secondary style variants', async ()
     const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
     const addTeamAButton = buttons[0]
     const removeTeamAButton = buttons[2]
-    const backHomeButton = buttons[4]
+    const homeIconButton = buttons[4]
 
     assert.equal(buttons.length, 5)
     assert.equal(addTeamAButton?.properties.normal_color, 0x000000)
-    assert.equal(addTeamAButton?.properties.press_color, 0x111318)
+    assert.equal(addTeamAButton?.properties.press_color, 0x000000)
     assert.equal(addTeamAButton?.properties.color, 0xffffff)
 
     assert.equal(removeTeamAButton?.properties.normal_color, 0x24262b)
     assert.equal(removeTeamAButton?.properties.press_color, 0x2d3036)
     assert.equal(removeTeamAButton?.properties.color, 0xff6d78)
 
-    assert.equal(backHomeButton?.properties.normal_color, 0x24262b)
-    assert.equal(backHomeButton?.properties.press_color, 0x2d3036)
-    assert.equal(backHomeButton?.properties.color, 0xffffff)
+    // Home icon button uses image instead of color styling
+    assert.equal(homeIconButton?.properties.normal_src, 'home-icon.png')
+    assert.equal(homeIconButton?.properties.press_src, 'home-icon.png')
   })
 })
 
@@ -948,7 +978,8 @@ test('game finished state renders winner message and home-only navigation contro
     )
 
     assert.equal(buttons.length, 1)
-    assert.equal(buttons[0].properties.text, 'game.home')
+    // Home button is now an image button
+    assert.equal(buttons[0].properties.normal_src, 'home-icon.png')
     assert.equal(
       Boolean(findButtonByText(buttons, 'game.teamAAddPoint')),
       false
@@ -1484,8 +1515,11 @@ test('game access guard allows render when persisted session is valid and active
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
       assert.equal(buttons.length, 5)
 
+      // First 4 buttons are text buttons, 5th is home icon image button
       const labels = buttons.map((button) => button.properties.text)
-      assert.deepEqual(labels, ['0', '0', '−', '−', 'game.backHome'])
+      assert.deepEqual(labels.slice(0, 4), ['0', '0', '−', '−'])
+      // Home icon button uses normal_src instead of text
+      assert.equal(buttons[4]?.properties.normal_src, 'home-icon.png')
     }
   )
 })

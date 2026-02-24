@@ -11,7 +11,7 @@ const SETUP_TOKENS = Object.freeze({
   colors: {
     background: 0x000000,
     buttonText: 0x000000,
-    cardBackground: 0x111318,
+    cardBackground: 0x000000,
     disabledButton: 0x2a2d34,
     disabledButtonText: 0x7d8289,
     errorText: 0xff6d78,

@@ -2066,10 +2066,81 @@
         "description": "Remove gray backgrounds from all page containers and update navigation buttons with appropriate icons across multiple screens. Implement swipe-right-to-close behavior on the home screen.",
         "details": "This task involves multiple UI refinements across different screens:\n\n1. **Remove Gray Backgrounds from All Pages**:\n   - Update `page/index` (Home Screen), `page/game` (Game Play Screen), Match Summary Screen, and Match History pages\n   - Locate container boxes/cards with gray background properties and remove or set to transparent\n   - Ensure text contrast and readability remains acceptable after background removal\n   - Apply consistent background styling across all screens\n\n2. **Replace Back to Home Buttons with House Icon Buttons (home-icon.png)**:\n   - In Game Play screen (`page/game`): Locate the 'Back to Home' button element and replace its text content with a house icon asset (home-icon.png)\n   - In Match Summary screen: Replace any 'Back to Home' text button with a house icon button\n   - Ensure both buttons maintain existing click handlers that navigate to home screen\n   - Style icon buttons with appropriate touch target sizes for usability\n\n3. **Implement Swipe Right to Close on Home Screen**:\n   - Add gesture event listener to `page/index` for swipe right detection\n   - On swipe right event, call Zepp OS app exit API (e.g., `app.exit()` or `wx.exitApp()`)\n   - Ensure this gesture only triggers on home screen and doesn't interfere with other screen interactions\n   - Test that app properly closes and returns to watchface\n\n4. **Testing and Verification**:\n   - Perform visual inspection on all affected screens\n   - Verify all navigation flows remain intact after button changes\n   - Test touch responsiveness of new icon buttons",
         "testStrategy": "1. Visual Test: Navigate to Home Screen and verify all gray backgrounds have been removed from containers\n2. Visual Test: Navigate to Game Play Screen and verify gray backgrounds are removed\n3. Functional Test: Tap the house icon button on Game Play Screen and verify it navigates to Home Screen\n4. Visual Test: Navigate to Match Summary Screen and verify gray backgrounds are removed\n5. Functional Test: Tap the house icon button on Match Summary Screen and verify it navigates to Home Screen\n6. Visual Test: Navigate to Match History List and verify back arrow icon is displayed instead of text\n7. Functional Test: Tap the return icon on Match History pages and verify it returns to the previous page\n8. Functional Test: On Home Screen, perform a swipe right gesture and verify the app closes and returns to watchface\n9. Regression Test: Verify scoring functionality and game flow still works correctly after UI changes\n10. Touch Target Test: Ensure all new icon buttons are easily tappable with appropriate touch response",
-        "status": "pending",
-        "dependencies": ["6", "7", "18", "22", "23"],
+        "status": "done",
+        "dependencies": [
+          "6",
+          "7",
+          "18",
+          "22",
+          "23"
+        ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove gray backgrounds from all page containers",
+            "description": "Update all screen pages to remove gray background properties from container boxes/cards, setting them to transparent or removing the background property entirely.",
+            "dependencies": [],
+            "details": "Update page/index (Home Screen), page/game (Game Play Screen), Match Summary Screen, and Match History pages. Locate container boxes/cards with gray background properties and remove or set to transparent. Ensure text contrast and readability remains acceptable after background removal. Apply consistent background styling across all screens.",
+            "status": "done",
+            "testStrategy": "Visual inspection of all screens to confirm gray backgrounds are removed and text remains readable.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T10:47:07.546Z"
+          },
+          {
+            "id": 2,
+            "title": "Replace Back to Home button with house icon in Game Play screen",
+            "description": "Locate the 'Back to Home' button element in the Game Play screen (page/game) and replace its text content with a house icon asset (home-icon.png).",
+            "dependencies": [
+              1
+            ],
+            "details": "In page/game, find the 'Back to Home' button element and replace text content with home-icon.png. Ensure the button maintains existing click handlers that navigate to home screen. Style icon button with appropriate touch target sizes (minimum 44x44px) for usability.",
+            "status": "done",
+            "testStrategy": "Tap the house icon button and verify it navigates to Home Screen with proper responsiveness.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T11:01:15.139Z"
+          },
+          {
+            "id": 3,
+            "title": "Replace Back to Home button with house icon in Match Summary screen",
+            "description": "Locate and replace the 'Back to Home' text button in the Match Summary screen with a house icon button using the home-icon.png asset.",
+            "dependencies": [
+              2
+            ],
+            "details": "In Match Summary screen, find the 'Back to Home' text button and replace with home-icon.png. Ensure the button maintains existing click handlers that navigate to home screen. Apply consistent styling with the Game Play screen icon button (same touch target size and visual treatment).",
+            "status": "done",
+            "testStrategy": "Tap the house icon button on Match Summary screen and verify it navigates to Home Screen correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T11:10:56.974Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement swipe-right-to-close gesture on Home Screen",
+            "description": "Add gesture event listener to the Home Screen (page/index) for swipe right detection that calls the app exit API when triggered.",
+            "dependencies": [
+              3
+            ],
+            "details": "Add gesture event listener to page/index for swipe right detection. On swipe right event, call Zepp OS app exit API (app.exit() or wx.exitApp()). Ensure this gesture only triggers on home screen and doesn't interfere with other screen interactions. Set appropriate swipe threshold (e.g., minimum 100px distance) to prevent accidental triggers.",
+            "status": "done",
+            "testStrategy": "Swipe right on the Home Screen and verify the app properly closes and returns to the watchface. Verify other screens are not affected.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T11:15:04.179Z"
+          },
+          {
+            "id": 5,
+            "title": "Testing and verification of all UI enhancements",
+            "description": "Perform comprehensive testing of all UI changes including background removal, icon button functionality, and swipe gesture behavior across all affected screens.",
+            "dependencies": [
+              4
+            ],
+            "details": "Perform visual inspection on all affected screens (Home, Game Play, Match Summary, Match History) to verify consistent styling. Verify all navigation flows remain intact after button changes. Test touch responsiveness of new icon buttons on both screens. Verify swipe-right-to-close only works on Home Screen. Check text contrast and readability after background removal.",
+            "status": "done",
+            "testStrategy": "Complete visual and functional test suite including navigation tests, touch target tests, gesture tests, and accessibility checks for text contrast.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T11:18:49.274Z"
+          }
+        ],
+        "updatedAt": "2026-02-24T11:18:49.274Z"
       },
       {
         "id": "36",
@@ -2128,9 +2199,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-24T00:57:21.299Z",
+      "lastModified": "2026-02-24T11:18:49.275Z",
       "taskCount": 39,
-      "completedCount": 33,
+      "completedCount": 34,
       "tags": [
         "master"
       ]

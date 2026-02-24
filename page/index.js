@@ -222,6 +222,7 @@ Page({
     this.savedMatchStateFromHandoff = false
     this.isStartingNewGame = false
     this.refreshSavedMatchState()
+    this.registerGestureHandler()
   },
 
   build() {
@@ -229,7 +230,50 @@ Page({
   },
 
   onDestroy() {
+    this.unregisterGestureHandler()
     this.clearWidgets()
+  },
+
+  registerGestureHandler() {
+    if (
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.registerGestureEvent !== 'function'
+    ) {
+      return
+    }
+
+    try {
+      hmApp.registerGestureEvent((event) => {
+        if (event === hmApp.gesture.RIGHT) {
+          // Exit the app and return to watchface
+          // Using gotoHome() instead of goBack() to properly exit the app
+          // (goBack() only navigates the page stack, not exit the app)
+          if (typeof hmApp.gotoHome === 'function') {
+            hmApp.gotoHome()
+          }
+          return true
+        }
+        // For other gestures, don't skip default behavior
+        return false
+      })
+    } catch {
+      // Non-fatal: gesture registration failed
+    }
+  },
+
+  unregisterGestureHandler() {
+    if (
+      typeof hmApp === 'undefined' ||
+      typeof hmApp.unregisterGestureEvent !== 'function'
+    ) {
+      return
+    }
+
+    try {
+      hmApp.unregisterGestureEvent()
+    } catch {
+      // Non-fatal: gesture unregistration failed
+    }
   },
 
   getScreenMetrics() {

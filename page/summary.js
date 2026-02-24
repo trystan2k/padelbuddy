@@ -15,7 +15,7 @@ const SUMMARY_TOKENS = Object.freeze({
     buttonSecondary: 0x24262b,
     buttonSecondaryPressed: 0x2d3036,
     buttonSecondaryText: 0xffffff,
-    cardBackground: 0x111318,
+    cardBackground: 0x000000,
     mutedText: 0x7d8289,
     text: 0xffffff
   },
@@ -427,16 +427,10 @@ Page({
 
     const headerSideInset = resolveSectionSideInset(headerY, headerHeight)
     const historySideInset = resolveSectionSideInset(historyY, historyHeight)
-    const actionsSideInset = resolveSectionSideInset(
-      actionsSectionY,
-      actionsSectionHeight
-    )
     const headerX = headerSideInset
     const headerWidth = Math.max(1, width - headerSideInset * 2)
     const historyX = historySideInset
     const historyWidth = Math.max(1, width - historySideInset * 2)
-    const actionsX = actionsSideInset
-    const actionsWidth = Math.max(1, width - actionsSideInset * 2)
     const titleHeight = clamp(Math.round(headerHeight * 0.28), 24, 34)
     const winnerHeight = clamp(Math.round(headerHeight * 0.36), 28, 44)
     const scoreLabelHeight = clamp(Math.round(headerHeight * 0.18), 16, 24)
@@ -580,18 +574,19 @@ Page({
       data_count: scrollDataArray.length
     })
 
-    // ── Home button ───────────────────────────────────────────────────────
+    // ── Home icon button ───────────────────────────────────────────────────────
+    const homeIconSize = 48
+    const homeIconX = Math.round((width - homeIconSize) / 2)
+    const homeIconY =
+      actionsSectionY + Math.round((buttonHeight - homeIconSize) / 2)
+
     this.createWidget(hmUI.widget.BUTTON, {
-      x: actionsX,
-      y: actionsSectionY,
-      w: actionsWidth,
-      h: buttonHeight,
-      radius: Math.round(buttonHeight / 2),
-      normal_color: SUMMARY_TOKENS.colors.buttonSecondary,
-      press_color: SUMMARY_TOKENS.colors.buttonSecondaryPressed,
-      color: SUMMARY_TOKENS.colors.buttonSecondaryText,
-      text_size: Math.round(width * SUMMARY_TOKENS.fontScale.button),
-      text: gettext('summary.home'),
+      x: homeIconX,
+      y: homeIconY,
+      w: -1,
+      h: -1,
+      normal_src: 'home-icon.png',
+      press_src: 'home-icon.png',
       click_func: () => this.handleNavigateHome()
     })
   }

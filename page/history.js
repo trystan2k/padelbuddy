@@ -10,7 +10,7 @@ const HISTORY_TOKENS = Object.freeze({
     buttonSecondary: 0x24262b,
     buttonSecondaryPressed: 0x2d3036,
     buttonSecondaryText: 0xffffff,
-    cardBackground: 0x111318,
+    cardBackground: 0x000000,
     mutedText: 0x7d8289,
     text: 0xffffff,
     winner: 0x1eb98c

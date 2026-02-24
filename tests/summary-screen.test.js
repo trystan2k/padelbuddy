@@ -174,6 +174,12 @@ function findButtonByText(createdWidgets, text) {
   )
 }
 
+function findButtonByImageSrc(createdWidgets, imageSrc) {
+  return getVisibleWidgets(createdWidgets, 'BUTTON').find(
+    (widget) => widget.properties.normal_src === imageSrc
+  )
+}
+
 function getVisibleTextValues(createdWidgets) {
   return getVisibleWidgets(createdWidgets, 'TEXT').map(
     (widget) => widget.properties.text
@@ -518,9 +524,11 @@ test('summary home button navigates to home screen', async () => {
       matchStorageLoadResponses: [serializePersistedMatchState()]
     },
     async ({ createdWidgets, navigationCalls }) => {
-      const homeButton = findButtonByText(createdWidgets, 'summary.home')
+      const homeButton = findButtonByImageSrc(createdWidgets, 'home-icon.png')
 
       assert.equal(typeof homeButton?.properties.click_func, 'function')
+      assert.equal(homeButton?.properties.normal_src, 'home-icon.png')
+      assert.equal(homeButton?.properties.press_src, 'home-icon.png')
 
       homeButton.properties.click_func()
 
