@@ -1961,13 +1961,13 @@
         "description": "Refine the Home Screen UI by removing unnecessary buttons, standardizing the size of action buttons, and adding a settings access button.",
         "details": "Update the Home Screen layout in `page/index` to remove the 'Previous Matches' and 'Clear App Data' buttons. Resize the 'Start New Game' and 'Resume Game' buttons to make them larger (increase height and padding) and ensure they have identical dimensions for visual consistency. Add a gear icon button positioned after the two main buttons. Implement click handler for the gear icon to navigate to the Settings page (`page/settings`). Apply design tokens for consistent spacing, colors, and icon sizing. Ensure the layout remains responsive and properly aligned on both Round and Square screen types. Maintain all existing functionality for the Start and Resume buttons.",
         "testStrategy": "Visual QA: Verify 'Previous Matches' and 'Clear App Data' buttons are completely removed from the Home Screen. Visual QA: Confirm 'Start New Game' and 'Resume Game' buttons are visibly larger than the previous implementation and have exactly matching dimensions. Functional Test: Tap the gear icon button and verify it successfully navigates to the Settings page. Visual QA: Verify the gear icon is properly positioned after the two main buttons with appropriate spacing. Responsive Test: Test on both Round and Square simulators to ensure buttons and icon do not overlap or get cut off. Regression Test: Verify 'Start New Game' clears storage and navigates correctly; verify 'Resume Game' restores state and navigates correctly. Verify conditional display of 'Resume Game' button still works based on saved match state.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [
           "6"
         ],
         "priority": "medium",
         "subtasks": [],
-        "updatedAt": "2026-02-23T23:57:56.230Z"
+        "updatedAt": "2026-02-24T00:31:18.393Z"
       },
       {
         "id": "35",
@@ -2043,9 +2043,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-23T23:57:56.231Z",
+      "lastModified": "2026-02-24T00:31:18.394Z",
       "taskCount": 39,
-      "completedCount": 31,
+      "completedCount": 32,
       "tags": [
         "master"
       ]
