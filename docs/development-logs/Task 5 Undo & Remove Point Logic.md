@@ -1,7 +1,7 @@
 ---
 title: Task 5 Undo & Remove Point Logic.md
 type: note
-permalink: development-logs/task-5-undo-remove-point-logic.md
+permalink: development-logs/task-5-undo-remove-point-logic
 tags:
 - task-5
 - development-log

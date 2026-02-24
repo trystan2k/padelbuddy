@@ -1,7 +1,7 @@
 ---
 title: Task 4 Padel Scoring Logic Engine.md
 type: note
-permalink: development-logs/task-4-padel-scoring-logic-engine.md
+permalink: development-logs/task-4-padel-scoring-logic-engine
 tags:
 - task
 - padel

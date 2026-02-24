@@ -1,7 +1,7 @@
 ---
 title: Task 7 Game Screen Layout Construction.md
 type: note
-permalink: development-logs/task-7-game-screen-layout-construction.md
+permalink: development-logs/task-7-game-screen-layout-construction
 tags:
 - task
 - task-7

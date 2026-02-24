@@ -1,7 +1,7 @@
 ---
 title: Task 26 Update App Icons for GTR-3 and GTS-3 Devices.md
 type: note
-permalink: development-logs/task-26-update-app-icons-for-gtr-3-and-gts-3-devices.md
+permalink: development-logs/task-26-update-app-icons-for-gtr-3-and-gts-3-devices
 tags:
 - development-log
 - task-26

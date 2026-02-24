@@ -1,7 +1,7 @@
 ---
 title: Task 30 Add QA Controls with Husky Biome and Commitlint
 type: note
-permalink: docs/docs/development-logs/task-30-add-qa-controls-with-husky-biome-and-commitlint-1
+permalink: development-logs/task-30-add-qa-controls-with-husky-biome-and-commitlint
 ---
 
 # Development Log: 30

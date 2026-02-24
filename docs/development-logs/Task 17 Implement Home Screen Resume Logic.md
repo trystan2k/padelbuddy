@@ -1,7 +1,7 @@
 ---
 title: Task 17 Implement Home Screen Resume Logic.md
 type: note
-permalink: development-logs/task-17-implement-home-screen-resume-logic.md
+permalink: development-logs/task-17-implement-home-screen-resume-logic
 tags:
 - task:17
 - development-log

@@ -1,7 +1,7 @@
 ---
 title: Task 9 Navigation & Lifecycle Handling.md
 type: note
-permalink: development-logs/task-9-navigation-lifecycle-handling.md
+permalink: development-logs/task-9-navigation-lifecycle-handling
 tags:
 - task
 - development-log

@@ -1,7 +1,7 @@
 ---
 title: Task 2 Data Model & State Management Design.md
 type: note
-permalink: development-logs/task-2-data-model-state-management-design.md
+permalink: development-logs/task-2-data-model-state-management-design
 ---
 
 # Development Log: 2

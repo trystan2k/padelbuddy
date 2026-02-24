@@ -1,7 +1,7 @@
 ---
 title: Task 14 Integrate Lifecycle Persistence Triggers.md
 type: note
-permalink: development-logs/task-14-integrate-lifecycle-persistence-triggers.md
+permalink: development-logs/task-14-integrate-lifecycle-persistence-triggers
 tags:
 - task
 - development-log

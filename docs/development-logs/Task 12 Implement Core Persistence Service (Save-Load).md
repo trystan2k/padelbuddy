@@ -1,7 +1,7 @@
 ---
 title: Task 12 Implement Core Persistence Service (Save-Load).md
 type: note
-permalink: development-logs/task-12-implement-core-persistence-service-save-load-.md
+permalink: development-logs/task-12-implement-core-persistence-service-save-load-
 ---
 
 # Development Log: Task 12

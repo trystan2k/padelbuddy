@@ -1,7 +1,7 @@
 ---
 title: Task 20 - Edge Case Handling and Data Validation.md
 type: note
-permalink: development-logs/task-20-edge-case-handling-and-data-validation.md
+permalink: development-logs/task-20-edge-case-handling-and-data-validation
 ---
 
 # Development Log: Task 20 - Edge Case Handling and Data Validation

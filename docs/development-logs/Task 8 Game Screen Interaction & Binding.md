@@ -1,7 +1,7 @@
 ---
 title: Task 8 Game Screen Interaction & Binding.md
 type: note
-permalink: development-logs/task-8-game-screen-interaction-binding.md
+permalink: development-logs/task-8-game-screen-interaction-binding
 tags:
 - task
 - task-8

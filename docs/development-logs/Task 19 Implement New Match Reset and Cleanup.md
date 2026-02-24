@@ -1,7 +1,7 @@
 ---
 title: Task 19 Implement New Match Reset and Cleanup.md
 type: note
-permalink: development-logs/task-19-implement-new-match-reset-and-cleanup.md
+permalink: development-logs/task-19-implement-new-match-reset-and-cleanup
 ---
 
 # Development Log: Task 19

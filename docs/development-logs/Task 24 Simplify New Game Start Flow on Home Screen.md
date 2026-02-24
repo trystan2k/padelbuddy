@@ -1,7 +1,7 @@
 ---
 title: Task 24 Simplify New Game Start Flow on Home Screen.md
 type: note
-permalink: development-logs/task-24-simplify-new-game-start-flow-on-home-screen.md
+permalink: development-logs/task-24-simplify-new-game-start-flow-on-home-screen
 ---
 
 # Development Log: Task 24 Simplify New Game Start Flow on Home Screen

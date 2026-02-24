@@ -1,7 +1,7 @@
 ---
 title: Task 3 Local Storage & Persistence Layer.md
 type: note
-permalink: development-logs/task-3-local-storage-persistence-layer.md
+permalink: development-logs/task-3-local-storage-persistence-layer
 ---
 
 # Development Log: Task 3

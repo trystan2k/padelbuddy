@@ -1,7 +1,7 @@
 ---
 title: Task 23 Implement Scrollable Match History on Summary Screen.md
 type: note
-permalink: development-logs/task-23-implement-scrollable-match-history-on-summary-screen.md
+permalink: development-logs/task-23-implement-scrollable-match-history-on-summary-screen
 ---
 
 # Development Log: Task 23

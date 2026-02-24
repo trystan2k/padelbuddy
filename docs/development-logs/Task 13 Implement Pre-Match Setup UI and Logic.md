@@ -1,7 +1,7 @@
 ---
 title: Task 13 Implement Pre-Match Setup UI and Logic.md
 type: note
-permalink: development-logs/task-13-implement-pre-match-setup-ui-and-logic.md
+permalink: development-logs/task-13-implement-pre-match-setup-ui-and-logic
 ---
 
 # Development Log: Task 13

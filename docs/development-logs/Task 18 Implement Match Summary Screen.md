@@ -1,7 +1,7 @@
 ---
 title: Task 18 Implement Match Summary Screen.md
 type: note
-permalink: development-logs/task-18-implement-match-summary-screen.md
+permalink: development-logs/task-18-implement-match-summary-screen
 ---
 
 # Development Log: 18

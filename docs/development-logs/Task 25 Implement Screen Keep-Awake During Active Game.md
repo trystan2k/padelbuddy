@@ -1,7 +1,7 @@
 ---
 title: Task 25 Implement Screen Keep-Awake During Active Game.md
 type: note
-permalink: development-logs/task-25-implement-screen-keep-awake-during-active-game.md
+permalink: development-logs/task-25-implement-screen-keep-awake-during-active-game
 tags:
 - task
 - development-log

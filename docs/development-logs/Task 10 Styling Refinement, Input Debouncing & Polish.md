@@ -1,7 +1,7 @@
 ---
 title: Task 10 Styling Refinement, Input Debouncing & Polish.md
 type: note
-permalink: development-logs/task-10-styling-refinement-input-debouncing-polish.md
+permalink: development-logs/task-10-styling-refinement-input-debouncing-polish
 ---
 
 # Development Log: 10

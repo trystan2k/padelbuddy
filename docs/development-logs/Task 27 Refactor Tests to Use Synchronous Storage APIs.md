@@ -1,7 +1,7 @@
 ---
 title: Task 27 Refactor Tests to Use Synchronous Storage APIs.md
 type: note
-permalink: development-logs/task-27-refactor-tests-to-use-synchronous-storage-apis.md
+permalink: development-logs/task-27-refactor-tests-to-use-synchronous-storage-apis
 tags:
 - task
 - tests

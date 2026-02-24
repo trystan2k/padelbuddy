@@ -1,7 +1,7 @@
 ---
 title: Task 22 Redesign Game Screen UI for Enhanced Readability and Touch Interaction.md
 type: note
-permalink: development-logs/task-22-redesign-game-screen-ui-for-enhanced-readability-and-touch-interaction.md
+permalink: development-logs/task-22-redesign-game-screen-ui-for-enhanced-readability-and-touch-interaction
 ---
 
 # Development Log: Task 22

@@ -1,7 +1,7 @@
 ---
 title: Task 15 Update Game Screen for Set Point Display.md
 type: note
-permalink: development-logs/task-15-update-game-screen-for-set-point-display.md
+permalink: development-logs/task-15-update-game-screen-for-set-point-display
 ---
 
 # Development Log: Task 15

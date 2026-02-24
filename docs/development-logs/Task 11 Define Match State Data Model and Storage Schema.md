@@ -1,7 +1,7 @@
 ---
 title: Task 11 Define Match State Data Model and Storage Schema.md
 type: note
-permalink: development-logs/task-11-define-match-state-data-model-and-storage-schema.md
+permalink: development-logs/task-11-define-match-state-data-model-and-storage-schema
 ---
 
 # Development Log: Task 11

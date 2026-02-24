@@ -1,7 +1,7 @@
 ---
 title: Task 6 Home Screen UI Implementation.md
 type: note
-permalink: development-logs/task-6-home-screen-ui-implementation.md
+permalink: development-logs/task-6-home-screen-ui-implementation
 tags:
 - task
 - Task 6

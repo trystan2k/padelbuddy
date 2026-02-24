@@ -1,7 +1,7 @@
 ---
 title: Task 16 Implement Set Completion and Match Completion Logic.md
 type: note
-permalink: development-logs/task-16-implement-set-completion-and-match-completion-logic.md
+permalink: development-logs/task-16-implement-set-completion-and-match-completion-logic
 ---
 
 # Development Log: Task 16
