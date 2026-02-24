@@ -166,7 +166,7 @@ Page({
                 ? gettext('settings.dataCleared')
                 : gettext('settings.clearFailed')
             })
-          } catch (e) {
+          } catch (_e) {
             // Ignore toast error
           }
         }

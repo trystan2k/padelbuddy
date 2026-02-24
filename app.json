@@ -89,6 +89,12 @@
   "i18n": {
     "en-US": {
       "appName": "Padel Buddy"
+    },
+    "pt-BR": {
+      "appName": "Padel Buddy"
+    },
+    "es-ES": {
+      "appName": "Padel Buddy"
     }
   },
   "defaultLanguage": "en-US"

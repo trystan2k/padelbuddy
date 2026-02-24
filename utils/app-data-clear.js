@@ -45,7 +45,7 @@ function clearMatchHistoryReliable() {
       schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
     }
     saveToFile(filename, JSON.stringify(emptyData))
-  } catch (e) {
+  } catch (_e) {
     // Ignore error
   }
 
@@ -65,7 +65,7 @@ export function clearAllAppData() {
   // 1. Clear 'padel-buddy.match-state' from storage.js
   try {
     clearState()
-  } catch (e) {
+  } catch (_e) {
     success = false
   }
   // Also overwrite the file directly (more reliable than remove)
@@ -74,7 +74,7 @@ export function clearAllAppData() {
   // 2. Clear 'ACTIVE_MATCH_SESSION' from match-storage.js
   try {
     clearMatchState()
-  } catch (e) {
+  } catch (_e) {
     success = false
   }
   // Also overwrite the file directly (more reliable than remove)
@@ -83,7 +83,7 @@ export function clearAllAppData() {
   // 3. Clear match history
   try {
     clearMatchHistoryReliable()
-  } catch (e) {
+  } catch (_e) {
     success = false
   }
 
@@ -101,7 +101,7 @@ export function clearAllAppData() {
         app.globalData._lastPersistedSchemaState = null
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // Ignore error
   }
 

@@ -2270,7 +2270,7 @@
         "description": "Add comprehensive multi-language support for Portuguese and Spanish with automatic device language detection and English fallback, including translation of all UI text strings across the application.",
         "details": "Implement a localization system for the Padel scoring app with the following components:\n\n1. **Translation Infrastructure**: Create a `LocalizationService` module that manages language resources. Define a translation dictionary structure containing key-value pairs for all UI text in the app (English, Portuguese, Spanish). Store translations in JSON files or objects organized by language code (en, pt, es).\n\n2. **Language Detection**: Implement automatic language detection using Zepp OS device settings API (e.g., `hmSystem.getDeviceInfo().language` or similar). Parse the device language code and map it to supported languages:\n   - 'pt' or 'pt-PT' or 'pt-BR' → Portuguese\n   - 'es' or 'es-ES' → Spanish\n   - Any other → English (default/fallback)\n\n3. **Translation Keys**: Identify all text strings in the application that need translation:\n   - Home Screen: 'Resume Game', 'New Game', 'Previous Matches'\n   - Setup Screen: 'Match Setup', '1 Set', '3 Sets', '5 Sets', instructions\n   - Game Screen: Score labels, team names, 'Undo' button\n   - Summary Screen: 'Team A Wins', 'Set 1:', 'Home', 'Start New Game'\n   - History Screen: 'Previous Matches', date/time formats, delete confirmation\n   - General: 'Confirm', 'Cancel', 'Back', any toast messages or alerts\n\n4. **Translation Function**: Create a `t(key, params)` function that:\n   - Takes a translation key and optional parameters for dynamic values\n   - Returns the translated string based on current language\n   - Falls back to English if key is missing in target language\n   - Handles parameter interpolation (e.g., 'Team {name} Wins')\n\n5. **Language Persistence**: Store the selected/detected language in settings storage using the persistence service from Task 12. This allows manual language override (if needed) and consistent behavior across app restarts.\n\n6. **UI Integration**: Update all UI components to use the translation function instead of hardcoded strings. This includes:\n   - Screen titles and labels\n   - Button text\n   - Status messages and toasts\n   - Date/time formatting (may need locale-specific formatting)\n\n7. **Implementation Structure**:\n   ```javascript\n   // translations/en.json, translations/pt.json, translations/es.json\n   {\n     \"home.resumeGame\": \"Resume Game\",\n     \"home.newGame\": \"New Game\",\n     \"setup.title\": \"Match Setup\",\n     \"setup.sets\": \"Sets\",\n     \"summary.teamWins\": \"Team {team} Wins\",\n     ...\n   }\n   \n   // LocalizationService.js\n   class LocalizationService {\n     constructor() {\n       this.currentLang = this.detectLanguage();\n       this.translations = this.loadTranslations(this.currentLang);\n     }\n     \n     detectLanguage() {\n       const deviceLang = hmSystem.getDeviceInfo().language || 'en';\n       if (deviceLang.startsWith('pt')) return 'pt';\n       if (deviceLang.startsWith('es')) return 'es';\n       return 'en';\n     }\n     \n     t(key, params = {}) {\n       let text = this.translations[key] || this.english[key] || key;\n       Object.keys(params).forEach(param => {\n         text = text.replace(`{${param}}`, params[param]);\n       });\n       return text;\n     }\n   }\n   ```",
         "testStrategy": "1. **Language Detection Test**: Change device language settings to Portuguese and launch the app. Verify all UI text displays in Portuguese. Repeat for Spanish. Test with unsupported languages (e.g., German, French) and verify English is used as fallback.\n\n2. **Translation Coverage Test**: Navigate through all screens (Home, Setup, Game, Summary, History) and verify every text element is properly translated. Check for any missing translations or English fallbacks where they shouldn't be.\n\n3. **Persistence Test**: Set device language to Spanish, launch the app, then restart. Verify Spanish is maintained after restart. Change device language to Portuguese and verify the app updates on next launch.\n\n4. **Parameter Interpolation Test**: Complete a match and verify dynamic text like 'Team A Wins' displays correctly in all three languages. Check date/time formatting in the history list for proper locale formatting.\n\n5. **Edge Case Test**: Test with partial locale codes (e.g., 'pt' without country) and verify it correctly maps to Portuguese. Ensure no crashes or errors occur if translation files are missing keys.\n\n6. **Visual QA**: Take screenshots of all screens in English, Portuguese, and Spanish to verify text fits properly within UI elements and doesn't cause layout issues or text overflow.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "13",
           "17",
@@ -2278,7 +2278,84 @@
           "29"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Translation Dictionary Structure and JSON Files",
+            "description": "Define the translation dictionary structure and create JSON files for English, Portuguese, and Spanish containing all UI text keys.",
+            "dependencies": [],
+            "details": "Create three JSON files (translations/en.json, translations/pt.json, translations/es.json) with key-value pairs for all UI text strings. Organize keys by screen/feature using dot notation (e.g., 'home.resumeGame', 'setup.title'). Include translations for: Home Screen (Resume Game, New Game, Previous Matches), Setup Screen (Match Setup, 1 Set, 3 Sets, 5 Sets, instructions), Game Screen (score labels, team names, Undo), Summary Screen (Team A Wins, Set 1:, Home, Start New Game), History Screen (Previous Matches, delete confirmation), and General UI elements (Confirm, Cancel, Back, toast messages).",
+            "status": "done",
+            "testStrategy": "Verify JSON files are valid and contain all required translation keys. Check that each language file has matching keys.",
+            "updatedAt": "2026-02-24T22:25:20.338Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement LocalizationService with Automatic Language Detection",
+            "description": "Create the LocalizationService class that manages language resources and implements automatic device language detection using Zepp OS API.",
+            "dependencies": [],
+            "details": "Create LocalizationService.js class with constructor that initializes currentLang by calling detectLanguage(). Implement detectLanguage() method using hmSystem.getDeviceInfo().language API to retrieve device language. Parse the language code and map: 'pt', 'pt-PT', 'pt-BR' to 'pt'; 'es', 'es-ES' to 'es'; any other value defaults to 'en'. Add loadTranslations(langCode) method to load the appropriate JSON file. Store English translations as fallback reference.",
+            "status": "done",
+            "testStrategy": "Test with device set to Portuguese, Spanish, and unsupported languages. Verify correct language detection and default to English for unsupported languages.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T22:31:17.727Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Translation Function with Parameter Interpolation",
+            "description": "Create the t() translation function that supports parameter interpolation and falls back to English for missing translation keys.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement t(key, params = {}) method in LocalizationService that takes a translation key and optional parameters object. The function should first look up the key in current language translations, then fall back to English translations, then return the key itself if not found. For parameter interpolation, replace placeholders like {team} or {name} with corresponding values from params object using string replacement. Example: 'Team {team} Wins' with params {team: 'A'} returns 'Team A Wins'.",
+            "status": "done",
+            "testStrategy": "Test t() function with valid keys, missing keys, and parameter interpolation. Verify English fallback works for missing translations in pt/es.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T22:38:18.202Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement Language Persistence in Settings Storage",
+            "description": "Store the detected or selected language in persistent storage to maintain language preference across app restarts and enable manual override.",
+            "dependencies": [
+              2
+            ],
+            "details": "Using the persistence service from Task 12, implement language storage functionality. Add methods to LocalizationService: saveLanguagePreference(langCode) that stores the language code in settingsStorage, loadLanguagePreference() that retrieves stored language, and setLanguage(langCode) for manual override. Modify detectLanguage() to check stored preference first before falling back to device language. This allows users to override automatic detection if desired and ensures consistent language selection across app sessions.",
+            "status": "done",
+            "testStrategy": "Test that language preference persists after app restart. Verify manual override takes precedence over device language detection.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T22:50:12.378Z"
+          },
+          {
+            "id": 5,
+            "title": "Update UI Components to Use Translation Function",
+            "description": "Replace all hardcoded text strings across the application with calls to the translation function for dynamic multi-language support.",
+            "dependencies": [
+              3
+            ],
+            "details": "Update all UI components in the following screens: Home Screen - replace 'Resume Game', 'New Game', 'Previous Matches' with t('home.resumeGame'), etc.; Setup Screen - update 'Match Setup', set options (1 Set, 3 Sets, 5 Sets), and instructions; Game Screen - update score labels, team names, 'Undo' button; Summary Screen - update winner message, set labels, 'Home', 'Start New Game' buttons; History Screen - update title, date/time formats, delete confirmation; General elements - update 'Confirm', 'Cancel', 'Back' buttons, all toast messages and alerts. Also update date/time formatting to use locale-specific formats where applicable.",
+            "status": "done",
+            "testStrategy": "Manually review each screen to ensure all text is dynamically translated. Test that UI updates correctly when language changes.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T22:50:14.096Z"
+          },
+          {
+            "id": 6,
+            "title": "Test Multi-Language Functionality and Coverage",
+            "description": "Comprehensive testing of the multi-language implementation including language detection, translation coverage, and fallback behavior.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Perform language detection test: Change device language to Portuguese and launch app, verify all UI displays in Portuguese. Repeat for Spanish. Test with unsupported languages (German, French) and verify English is used as fallback. Perform translation coverage test: Navigate through all screens (Home, Setup, Game, Summary, History) and verify no hardcoded text remains visible. Test all buttons, labels, and messages. Verify parameter interpolation works correctly for dynamic text like 'Team {team} Wins'. Test toast messages and alerts display correctly in each language. Verify language persistence works by restarting the app after setting a specific language.",
+            "status": "done",
+            "testStrategy": "Systematic testing across all three supported languages and unsupported languages with English fallback. Document any missing translations or display issues.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-24T22:50:16.032Z"
+          }
+        ],
+        "updatedAt": "2026-02-24T22:50:16.032Z"
       },
       {
         "id": "39",
@@ -2294,9 +2371,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-24T21:59:58.590Z",
+      "lastModified": "2026-02-24T22:50:16.032Z",
       "taskCount": 39,
-      "completedCount": 35,
+      "completedCount": 36,
       "tags": [
         "master"
       ]
