@@ -129,7 +129,7 @@ function decodeUtf8(bytes) {
  * @param {string} key
  * @returns {string}
  */
-function keyToFilename(key) {
+export function keyToFilename(key) {
   return `${key.replace(/[^a-zA-Z0-9._-]/g, '_')}.json`
 }
 
@@ -151,8 +151,9 @@ function isHmFsAvailable() {
  * Save data to a file using hmFS.
  * @param {string} filename
  * @param {string} data
+ * @returns {boolean}
  */
-function saveToFile(filename, data) {
+export function saveToFile(filename, data) {
   if (!isHmFsAvailable()) {
     return false
   }

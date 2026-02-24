@@ -7,12 +7,12 @@
     "mcp_task-master-ai": {
       "type": "local",
       "command": ["npx", "-y", "--package=task-master-ai", "task-master-ai"],
-      "enabled": true
+      "enabled": false
     },
     "mcp_basic-memory": {
       "type": "local",
       "command": ["uvx", "basic-memory", "mcp", "--project", "padelbuddy"],
-      "enabled": true
+      "enabled": false
     },
     "mcp_serena": {
       "enabled": true,

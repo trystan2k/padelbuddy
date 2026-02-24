@@ -139,13 +139,41 @@ Page({
     } else if (index === 1) {
       if (this.clearConfirmMode) {
         // Second tap - confirm
+        console.log('Clear All Data: confirm tapped')
         this.clearConfirmMode = false
         if (this.confirmTimeout) {
           clearTimeout(this.confirmTimeout)
           this.confirmTimeout = null
         }
         this.updateListData(false)
-        clearAllAppData()
+
+        // Perform clear
+        console.log('Clear All Data: calling clearAllAppData()')
+        const success = clearAllAppData()
+        console.log('Clear All Data: result =', success)
+
+        // Show toast
+        if (
+          typeof hmUI !== 'undefined' &&
+          typeof hmUI.showToast === 'function'
+        ) {
+          try {
+            hmUI.showToast({
+              text: success
+                ? gettext('settings.dataCleared')
+                : gettext('settings.clearFailed')
+            })
+            console.log('Clear All Data: toast shown')
+          } catch (e) {
+            console.log('Clear All Data: toast error', e)
+          }
+        }
+
+        // Navigate to home after a brief delay to let toast show
+        setTimeout(() => {
+          console.log('Clear All Data: navigating to home')
+          this.navigateToHomePage()
+        }, 500)
       } else {
         // First tap - enter confirm mode
         this.clearConfirmMode = true

@@ -9,24 +9,23 @@ const HISTORY_TOKENS = Object.freeze({
     buttonText: 0x000000,
     buttonSecondary: 0x24262b,
     buttonSecondaryPressed: 0x2d3036,
-    buttonSecondaryText: 0xffffff,
     cardBackground: 0x000000,
     mutedText: 0x7d8289,
     text: 0xffffff,
     winner: 0x1eb98c
   },
   fontScale: {
-    button: 0.05, // Larger button
+    button: 0.05,
     empty: 0.052,
-    score: 0.095, // Increased more
+    score: 0.095,
     title: 0.065,
-    date: 0.068 // Increased more
+    date: 0.068
   },
   spacingScale: {
     bottomInset: 0.06,
-    roundSideInset: 0.06, // Reduced for wider list
+    roundSideInset: 0.06,
     sectionGap: 0.015,
-    sideInset: 0.04, // Reduced for wider list
+    sideInset: 0.04,
     topInset: 0.035
   }
 })
@@ -208,13 +207,14 @@ Page({
     const goBackIconSize = 48
     const goBackIconX = Math.round((width - goBackIconSize) / 2)
     const goBackIconY = height - bottomInset - goBackIconSize
-    const buttonHeight = clamp(Math.round(height * 0.11), 50, 58) // kept for list height calculation
+    const listX = baseSectionSideInset
+    const listWidth = Math.max(1, width - baseSectionSideInset * 2)
 
     // Title height - smaller to fit
     const titleHeight = clamp(Math.round(height * 0.07), 28, 36)
 
     // Calculate available space for list
-    const spaceForTitleAndButton = titleHeight + buttonHeight + sectionGap * 3
+    const spaceForTitleAndButton = titleHeight + goBackIconSize + sectionGap * 3
     const listMaxHeight =
       height - topInset - bottomInset - spaceForTitleAndButton
 
@@ -227,9 +227,6 @@ Page({
     // Minimal side inset for wider list
     const sideInset = Math.max(baseSectionSideInset, Math.round(width * 0.02))
 
-    const listX = sideInset
-    const listWidth = Math.max(1, width - sideInset * 2)
-
     this.clearWidgets()
 
     // Background
@@ -241,7 +238,7 @@ Page({
       color: HISTORY_TOKENS.colors.background
     })
 
-    // Title - centered at top
+    // Title
     this.createWidget(hmUI.widget.TEXT, {
       x: 0,
       y: topInset,
@@ -278,11 +275,19 @@ Page({
         color: HISTORY_TOKENS.colors.cardBackground
       })
 
-      // Layout calculations for chevron icon
-      const iconSize = Math.round(rowHeight * 0.5)
+      // Font sizes - use token values
+      const dateTextSize = Math.round(width * HISTORY_TOKENS.fontScale.date)
+      const scoreTextSize = Math.round(width * HISTORY_TOKENS.fontScale.score)
+
+      // Icon is fixed at 48px - calculate Y to center it in the row
+      const iconSize = 48
       const iconPad = Math.round(width * 0.02)
       const iconX = listWidth - iconSize - iconPad
       const iconY = Math.round((rowHeight - iconSize) / 2)
+
+      // Text uses same Y and H as icon so they share the same center
+      const textY = iconY
+      const textH = iconSize
 
       // Adjusted positions to make room for icon
       const dateX = Math.round(width * 0.02)
@@ -312,28 +317,22 @@ Page({
           // Date - left side, white
           {
             x: dateX,
-            y: Math.round(
-              (rowHeight - Math.round(width * HISTORY_TOKENS.fontScale.date)) /
-                2
-            ),
+            y: textY,
             w: dateWidth,
-            h: Math.round(width * HISTORY_TOKENS.fontScale.date),
+            h: textH,
             key: 'date',
             color: HISTORY_TOKENS.colors.text,
-            text_size: Math.round(width * HISTORY_TOKENS.fontScale.date)
+            text_size: dateTextSize
           },
           // Score - center, accent color
           {
             x: scoreX,
-            y: Math.round(
-              (rowHeight - Math.round(width * HISTORY_TOKENS.fontScale.score)) /
-                2
-            ),
+            y: textY,
             w: scoreWidth,
-            h: Math.round(width * HISTORY_TOKENS.fontScale.score),
+            h: textH,
             key: 'score',
             color: HISTORY_TOKENS.colors.accent,
-            text_size: Math.round(width * HISTORY_TOKENS.fontScale.score)
+            text_size: scoreTextSize
           }
         ],
         text_view_count: 2,

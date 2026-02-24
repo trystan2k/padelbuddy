@@ -160,4 +160,7 @@ msgstr "Tap again to confirm"
 msgid "settings.dataCleared"
 msgstr "Data cleared"
 
+msgid "settings.clearFailed"
+msgstr "Clear failed"
+
 
