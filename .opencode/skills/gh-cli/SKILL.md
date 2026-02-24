@@ -937,6 +937,41 @@ gh pr create --repo owner/repo
 gh pr create --web
 ```
 
+### PR Body Best Practices (programmatic/agent use)
+
+For programmatic or automated flows (scripts and agents), prefer `--body-file`:
+
+1. Create a body file with a quoted heredoc (prevents expansion/escaping issues):
+   ```bash
+   cat > /tmp/pr_body.md <<'PRBODY_EOF'
+   ## Summary
+   Multi-line markdown content here, including:
+   - bullet lists
+   - code blocks
+   - links and markdown formatting
+   PRBODY_EOF
+   ```
+
+2. Create PR using --body-file:
+   ```bash
+   gh pr create --title "Title" --body-file /tmp/pr_body.md --base main --head mybranch
+   ```
+
+3. Verify and repair:
+   ```bash
+   # Verify body was applied
+   gh pr view <number> --json body --jq '.body'
+
+   # Repair if verification shows empty body
+   gh pr edit <number> --body-file /tmp/pr_body.md
+   ```
+
+**Why prefer `--body-file` over `--body "$(cat file)"`?**
+- Handles newlines and special characters without shell quoting complexity
+- Avoids silent truncation or expansion issues in shells or programmatic environments
+- Easier to inspect and debug before PR creation (open the file locally)
+- gh CLI explicitly supports `--body-file` which is the intended API for file-based bodies
+
 ### List Pull Requests
 
 ```bash
