@@ -1,0 +1,167 @@
+msgid "home.logo"
+msgstr "PADEL"
+
+msgid "home.title"
+msgstr "Buddy"
+
+msgid "home.startNewGame"
+msgstr "Nova Partida"
+
+msgid "home.confirmStartNewGame"
+msgstr "Toque Novamente para Reiniciar"
+
+msgid "home.resumeGame"
+msgstr "Continuar Partida"
+
+msgid "game.title"
+msgstr "Placar da Partida"
+
+msgid "game.setLabel"
+msgstr "Set"
+
+msgid "game.setsLabel"
+msgstr "SETS"
+
+msgid "game.gamesLabel"
+msgstr "JOGOS"
+
+msgid "game.setsWonLabel"
+msgstr "Sets"
+
+msgid "game.teamAAddPoint"
+msgstr "+ Time A"
+
+msgid "game.teamBAddPoint"
+msgstr "+ Time B"
+
+msgid "game.teamARemovePoint"
+msgstr "- Time A"
+
+msgid "game.teamBRemovePoint"
+msgstr "- Time B"
+
+msgid "game.backHome"
+msgstr "Voltar ao Início"
+
+msgid "game.home"
+msgstr "Início"
+
+msgid "game.finishedLabel"
+msgstr "Jogo Finalizado"
+
+msgid "game.winsSuffix"
+msgstr "Vence!"
+
+msgid "game.matchFinished"
+msgstr "Partida Finalizada"
+
+msgid "game.undo"
+msgstr "Desfazer"
+
+msgid "setup.title"
+msgstr "Configurar Partida"
+
+msgid "setup.selectSetsHint"
+msgstr "Escolha o número de sets"
+
+msgid "setup.option.oneSet"
+msgstr "1 Set"
+
+msgid "setup.option.threeSets"
+msgstr "3 Sets"
+
+msgid "setup.option.fiveSets"
+msgstr "5 Sets"
+
+msgid "setup.startMatch"
+msgstr "Iniciar Partida"
+
+msgid "setup.saveFailed"
+msgstr "Não foi possível salvar a configuração"
+
+msgid "summary.title"
+msgstr "Resumo da Partida"
+
+msgid "summary.teamAWins"
+msgstr "Time A Vence"
+
+msgid "summary.teamBWins"
+msgstr "Time B Vence"
+
+msgid "summary.matchFinished"
+msgstr "Partida Finalizada"
+
+msgid "summary.matchUnavailable"
+msgstr "Resumo indisponível"
+
+msgid "summary.finalScoreLabel"
+msgstr "Sets Final"
+
+msgid "summary.setHistoryTitle"
+msgstr "Histórico de Sets"
+
+msgid "summary.noSetHistory"
+msgstr "Nenhum set finalizado"
+
+msgid "summary.home"
+msgstr "Início"
+
+msgid "summary.startNewGame"
+msgstr "Nova Partida"
+
+msgid "home.clearData"
+msgstr "Limpar Dados"
+
+msgid "home.clearDataConfirm"
+msgstr "Toque Novamente para Confirmar"
+
+msgid "home.previousMatches"
+msgstr "Partidas Anteriores"
+
+msgid "history.title"
+msgstr "Histórico de Partidas"
+
+msgid "history.empty"
+msgstr "Nenhuma partida jogada ainda"
+
+msgid "history.back"
+msgstr "Voltar"
+
+msgid "history.detail.title"
+msgstr "Detalhes da Partida"
+
+msgid "history.detail.notFound"
+msgstr "Partida não encontrada"
+
+msgid "history.detail.wins"
+msgstr "Vence"
+
+msgid "history.detail.draw"
+msgstr "Empate"
+
+msgid "history.detail.setHistory"
+msgstr "Histórico de Sets"
+
+msgid "history.deleteConfirmToast"
+msgstr "Pressione novamente para confirmar exclusão"
+
+msgid "settings.title"
+msgstr "Configurações"
+
+msgid "settings.previousMatches"
+msgstr "Partidas Anteriores"
+
+msgid "settings.clearAppData"
+msgstr "Limpar Dados do App"
+
+msgid "settings.clearDataConfirm"
+msgstr "Toque novamente para confirmar"
+
+msgid "settings.dataCleared"
+msgstr "Dados limpos"
+
+msgid "settings.clearFailed"
+msgstr "Falha ao limpar"
+
+msgid "settings.version"
+msgstr "Versão:"
