@@ -100,25 +100,35 @@ Follow these steps in order.
 
 1. Preparation
    - **Start timer** for Preparation phase.
-   - Ask `taskmaster-specialist`
+   
+   **CRITICAL: SEQUENTIAL EXECUTION REQUIRED**
+   The following two operations MUST be executed sequentially, NEVER in parallel, because the branch naming depends on the task title retrieved from taskmaster-specialist.
+   
+   **Step 1.1: Get Task Details (MUST COMPLETE FIRST)**
+   - Ask `taskmaster-specialist`:
       - To validate the provided task or subtask ID exists and retrieve current status.
       - If task appears already implemented or completed, ask the user for clarification before proceeding.
-      - Get basic task details, like title and description and return
-   Only continue after you have the basic task details.
+      - Get basic task details (ID, title, description) and return them.
+   - **DO NOT proceed to Step 1.2 until you have received the task title from taskmaster-specialist.**
+   
+   **Step 1.2: Create Feature Branch (MUST WAIT FOR STEP 1.1)**
    - Ask `git-specialist` to ensure repository is on `main` and it is up-to-date and then create a feature branch:
-     - If current branch is not `main`, switch to `main`.
-     - If uncommitted changes exist, stash changes, checkout `main`, pull latest, then restore stashed changes.
-     - Create a new feature branch from `main`
-         - Use the pattern defined in the AGENTS.md file.
-         - One feature branch per task ID.
-         - All subtasks of that task use the same branch.
-         - Branch naming must follow pattern in project `AGENTS.md`.
-         - If no pattern is found, pause and ask user for naming guidance.
-   - Wait branch creation before moving to next step.
-   - Ask `taskmaster-specialist`
+      - If current branch is not `main`, switch to `main`.
+      - If uncommitted changes exist, stash changes, checkout `main`, pull latest, then restore stashed changes.
+      - Create a new feature branch from `main`:
+          - Use the task title obtained from Step 1.1 to construct the branch name.
+          - Use the pattern defined in the AGENTS.md file (e.g., `feature/PAD-[id]-[title-slug]`).
+          - One feature branch per task ID.
+          - All subtasks of that task use the same branch.
+          - If no pattern is found, pause and ask user for naming guidance.
+   - **Wait for branch creation confirmation before moving to Step 1.3.**
+   
+   **Step 1.3: Get Full Task Details (MUST WAIT FOR STEP 1.2)**
+   - Ask `taskmaster-specialist`:
       - Check expansion state.
       - If task is not expanded, expand it before implementation.
       - Once created, return the full task details, subtasks, dependencies, and acceptance criteria. Always pass the necessary information that the specification requires.
+   
    - **Stop timer** and record Preparation phase time.
 
 2. Planning with Deepthink
