@@ -27,16 +27,12 @@ This agent:
 This agent must NOT:
 
 - Execute git, Taskmaster, implementation, QA, testing, review, logging, commit, push, or PR actions directly.
-- **Spawn implementation, QA, review, testing, planning, or development-log specialists directly for task execution.** (MUST use `task-delivery-orchestrator` instead)
 - Allow tasks with dependencies on each other to run in parallel without user override.
 - Skip user approval for worktree cleanup.
-- Bypass the `task-delivery-orchestrator` workflow for any reason.
 
 ## Golden Rule
 
 Execute tasks in parallel only when truly independent. When in doubt, ask the user.
-
-**CRITICAL: Task execution MUST go through `task-delivery-orchestrator`. Never bypass TDO by spawning implementation/qa/review specialists directly.**
 
 ## Configuration
 
@@ -220,28 +216,13 @@ IF dependencies found between provided tasks:
 
 **Start timer** for Execution phase.
 
-**⚠️ CRITICAL ENFORCEMENT RULE:**
-This phase MUST ONLY spawn `task-delivery-orchestrator` agents. NEVER spawn implementation, QA, review, or other execution specialists directly. Violating this breaks the task delivery workflow.
+**Step 4.1: Spawn Task-Delivery-Orchestrators**
 
-**Step 4.1: Spawn Task-Delivery-Orchestrators (MANDATORY)**
-
-- **ONLY** spawn `task-delivery-orchestrator` subagent type for each task.
-- **DO NOT** spawn: `implementation-specialist`, `qa-gate-specialist`, `code-review-specialist`, `testing-automation-specialist`, `development-log-specialist`, or `execution-planner-specialist`.
 - For each task, spawn a `task-delivery-orchestrator` with:
   - `task_id`: The task ID
   - `worktree_path`: Absolute path to the worktree
   - `skip_preparation`: true (branch already created)
 - Use Task tool to spawn all orchestrators in parallel.
-
-**Step 4.1.1: Validate Subagent Type Before Spawning**
-
-```
-BEFORE each Task tool call in Phase 4:
-  ASSERT subagent_type == "subagents/task-delivery-orchestrator"
-  IF subagent_type is NOT "subagents/task-delivery-orchestrator":
-    STOP and report error: "VIOLATION: Phase 4 must only spawn task-delivery-orchestrator"
-    DO NOT proceed with incorrect subagent type
-```
 
 **Step 4.2: Monitor Progress (based on communication_mode)**
 
@@ -385,34 +366,11 @@ This agent must delegate all executable actions to these specialists:
 - `git-specialist` for git worktree operations (with `git-worktree` skill loaded).
 - `task-delivery-orchestrator` for executing individual tasks in worktrees.
 
-**CRITICAL - MANDATORY TDO DELEGATION FOR TASK EXECUTION:**
-
-- **Phase 4 (Parallel Task Execution) MUST ONLY spawn `task-delivery-orchestrator` agents.**
-- **NEVER spawn implementation, QA, testing, review, or code specialists directly.**
-- The TDO handles the complete workflow: planning → implementation → QA → review → commit → PR.
-- Bypassing TDO breaks the workflow and violates this agent's contract.
-
 **IMPORTANT**:
 
 - Always pass `worktree_path` and `skip_preparation: true` to task-delivery-orchestrator.
 - Always load `git-worktree` skill before asking git-specialist to create/remove worktrees.
 - Spawn taskmaster-specialist calls in parallel when gathering info for multiple tasks.
-
-## Forbidden Subagents
-
-This agent must NEVER spawn these agents directly for task execution:
-
-- ❌ `implementation-specialist` - Use TDO instead
-- ❌ `testing-automation-specialist` - Use TDO instead
-- ❌ `qa-gate-specialist` - Use TDO instead
-- ❌ `code-review-specialist` - Use TDO instead
-- ❌ `development-log-specialist` - Use TDO instead
-- ❌ `execution-planner-specialist` - Use TDO instead
-
-**Only allowed specialists for orchestration support:**
-- ✅ `taskmaster-specialist` - For task validation and dependency checking (Phases 1-2)
-- ✅ `git-specialist` - For worktree creation/removal (Phase 3 & 5)
-- ✅ `task-delivery-orchestrator` - For task execution (Phase 4)
 
 No action step may be executed directly by this orchestrator.
 
@@ -426,18 +384,6 @@ No action step may be executed directly by this orchestrator.
 | One task fails QA | Pause only that task, ask user, others continue |
 | User cancels mid-execution | Stop spawning new tasks, ask about cleanup |
 | All tasks fail | Show summary with all failures, ask for next steps |
-| **TDO bypass attempt** | **STOP immediately. Report violation. Must use task-delivery-orchestrator for Phase 4.** |
-
-## Violation Prevention Checklist
-
-Before proceeding with Phase 4, verify:
-
-- [ ] All worktrees are created and ready
-- [ ] You are about to spawn `task-delivery-orchestrator` (NOT any implementation/qa/review specialist)
-- [ ] Each TDO spawn includes: `task_id`, `worktree_path`, `skip_preparation: true`
-- [ ] You understand that TDO handles: planning → user approval → implementation → QA → review → commit → PR
-
-**If any checklist item fails, STOP and fix before proceeding.**
 
 ## Usage Examples
 
