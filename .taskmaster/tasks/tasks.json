@@ -2671,13 +2671,80 @@
         "description": "Implement utils/layout-presets.js containing factory functions that return layout schemas for common page patterns following a strict 3-section structure (header, body, footer) with consistent spacing and round-safe inset handling.",
         "details": "Create a new file at `utils/layout-presets.js` that exports the following factory functions:\n\n**1. createStandardPageLayout(options)**\n- Returns a layout schema with header, body, and footer sections\n- Options parameter:\n  - hasHeader (default: true)\n  - hasFooter (default: true)\n  - headerHeight (default: TOKENS.typography.pageTitle * 2)\n  - footerHeight (default: TOKENS.typography.button * 2)\n- Header section: top='pageTop', height=headerHeight or 'auto', roundSafeInset=true\n- Body section: after='header', gap=TOKENS.spacing.headerToContent, height='fill', roundSafeInset=true\n- Footer section: bottom='footerBottom', height=footerHeight, roundSafeInset=false\n\n**2. createPageWithFooterButton(options)**\n- Returns standard layout with an icon button in the footer\n- Options parameter:\n  - icon (default: 'home-icon.png')\n  - onClick (function callback)\n- Extends createStandardPageLayout with additional footer element for the button\n- Button should be centered in footer area\n\n**3. createTwoColumnLayout(parentSection)**\n- Returns a schema with leftColumn and rightColumn sections nested under parentSection\n- Each column: width='50%', height='100%'\n- Used for game page score area display\n- Sets roundSafeInset: true for both columns\n\n**All presets must:**\n- Import and use TOKENS.spacing values (pageTop, pageBottom, headerToContent) from design-tokens.js\n- Set roundSafeInset: true for body sections to ensure content doesn't overlap bezel on round screens\n- Set roundSafeInset: false for footer sections (icon centering handles positioning)\n- Return schemas compatible with the layout-engine.js resolveLayout function",
         "testStrategy": "1. **Syntax Verification**: Ensure the file compiles without syntax errors using Node.js or the Zepp build system.\n\n2. **Schema Structure Test**: Import the file and verify each factory function returns a valid schema object that can be consumed by layout-engine.js:\n   - Test createStandardPageLayout() returns sections: header, body, footer\n   - Test createStandardPageLayout({hasHeader: false}) excludes header\n   - Test createStandardPageLayout({hasFooter: false}) excludes footer\n   - Test createPageWithFooterButton() includes all standard sections plus footer button\n   - Test createTwoColumnLayout('body') returns leftColumn and rightColumn nested under body\n\n3. **Token Integration Test**: Verify all schemas reference TOKENS.spacing values correctly:\n   ```javascript\n   import { TOKENS } from './design-tokens.js';\n   const schema = createStandardPageLayout();\n   // Verify spacing values from TOKENS are used\n   ```\n\n4. **Resolution Test**: Pass schemas to layout-engine.resolveLayout() with mock metrics to ensure they resolve without errors.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40",
           "42"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create layout-presets.js file with base imports and structure",
+            "description": "Initialize the utils/layout-presets.js file with proper imports from design-tokens.js and set up the module export structure for all factory functions.",
+            "dependencies": [],
+            "details": "Create utils/layout-presets.js file at the root of utils directory. Import TOKENS object from '../utils/design-tokens.js'. Set up an empty exports object or module.exports that will contain createStandardPageLayout, createPageWithFooterButton, and createTwoColumnLayout functions. Add JSDoc comments at the top of the file explaining the utility's purpose and the strict 3-section structure requirement.",
+            "status": "done",
+            "testStrategy": "Verify the file compiles without syntax errors using Node.js or the Zepp build system. Confirm that the TOKENS import is successful by logging TOKENS.spacing values in a test import.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T23:44:27.521Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement createStandardPageLayout factory function",
+            "description": "Implement the core factory function that returns a layout schema with header, body, and footer sections based on the provided options.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement createStandardPageLayout(options) function with parameter destructuring for hasHeader (default: true), hasFooter (default: true), headerHeight (default: TOKENS.typography.pageTitle * 2), and footerHeight (default: TOKENS.typography.button * 2). Conditionally include header and footer sections based on hasHeader and hasFooter flags. Header: { top: TOKENS.spacing.pageTop, height: headerHeight or 'auto', roundSafeInset: true }. Body: { after: 'header', gap: TOKENS.spacing.headerToContent, height: 'fill', roundSafeInset: true }. Footer: { bottom: TOKENS.spacing.pageBottom, height: footerHeight, roundSafeInset: false }. Return schema object with sections property containing all configured sections.",
+            "status": "done",
+            "testStrategy": "Test with default options, hasHeader: false, and hasFooter: false combinations. Verify returned schema structure matches expected format with correct TOKENS values. Confirm body section always has roundSafeInset: true.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T23:44:30.687Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement createPageWithFooterButton factory function",
+            "description": "Extend the standard layout with an icon button element positioned in the footer area, centered horizontally.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement createPageWithFooterButton(options) function with parameter destructuring for icon (default: 'home-icon.png') and onClick (function callback). Call createStandardPageLayout internally to get the base schema. Add an elements property to the returned schema containing a footerButton object. Position the button in the footer section with horizontal centering using the layout engine's positioning capabilities. Ensure the button element references the footer section properly and includes the icon path and onClick handler in its metadata.",
+            "status": "done",
+            "testStrategy": "Verify the schema includes all standard layout sections plus the footer button element. Test that button positioning references footer section correctly and icon/onClick properties are passed through.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T23:44:33.813Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement createTwoColumnLayout factory function",
+            "description": "Create a layout schema with two nested columns (leftColumn and rightColumn) under a specified parent section, each at 50% width.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement createTwoColumnLayout(parentSection) function that accepts a parent section identifier string. Return a schema with leftColumn and rightColumn sections nested under the parent. Each column should have: width: '50%', height: '100%', roundSafeInset: true. The columns should be positioned relative to the parent section using the layout engine's parent-child syntax. Left column positioned at left edge, right column positioned at 50% or after leftColumn.",
+            "status": "done",
+            "testStrategy": "Verify both columns have identical width/height values and roundSafeInset: true. Test that columns position correctly when resolved under various parent section sizes using layout-engine.js.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T23:44:36.954Z"
+          },
+          {
+            "id": 5,
+            "title": "Create validation test suite for all layout presets",
+            "description": "Create a comprehensive test script that validates all factory functions return schemas compatible with layout-engine.js and meet all specification requirements.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Create tests/layout-presets.test.js file that imports all three factory functions and the layout-engine's resolveLayout function. Test cases: 1) Verify createStandardPageLayout returns valid schema structure, 2) Test all option variations (hasHeader/hasFooter false), 3) Verify createPageWithFooterButton extends standard correctly with button element, 4) Verify createTwoColumnLayout creates properly sized columns, 5) Test roundSafeInset values are correct (true for body/columns, false for footer), 6) Validate all schemas can be successfully resolved by resolveLayout with mock screen metrics. Log all test results.",
+            "status": "done",
+            "testStrategy": "Run the test suite and verify all tests pass. Ensure schemas resolve without errors using mock metrics for both round and square screen types. Manually inspect console output for any anomalies in spacing calculations.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T23:44:40.102Z"
+          }
+        ],
+        "updatedAt": "2026-02-25T23:44:40.102Z"
       },
       {
         "id": "44",
@@ -2690,7 +2757,66 @@
           "40"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up ui-components.js file structure and imports",
+            "description": "Create the utils/ui-components.js file with proper imports from design tokens and module export structure",
+            "dependencies": [],
+            "details": "Create new file at utils/ui-components.js. Import TOKENS from ../utils/design-tokens.js. Set up ES module export structure to export all factory functions. Include any necessary helper functions like getFontSize if not already imported.",
+            "status": "pending",
+            "testStrategy": "Verify file compiles without syntax errors and TOKENS imports correctly",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implement basic shape widget factories",
+            "description": "Implement createBackground, createCard, and createDivider functions for simple FILL_RECT widgets",
+            "dependencies": [
+              1
+            ],
+            "details": "Create three factory functions: createBackground uses metrics.width/height for full-screen fill; createCard creates rounded containers with configurable radiusRatio defaulting to 0.07; createDivider creates horizontal or vertical lines based on bounds dimensions. All must use TOKENS colors as defaults.",
+            "status": "pending",
+            "testStrategy": "Test each function creates correct hmUI.FILL_RECT widget with expected bounds and colors from TOKENS",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implement createText generic factory function",
+            "description": "Implement the foundational text element factory with dynamic styling and alignment support",
+            "dependencies": [
+              1
+            ],
+            "details": "Create createText function accepting text (required), style (typography key), color, and align options (default CENTER_H). Use getFontSize(style, bounds.w) for responsive sizing. Default color to TOKENS.colors.text. Validate required text parameter and return created widget.",
+            "status": "pending",
+            "testStrategy": "Verify text renders correctly with different styles, colors, alignments, and responsive sizing",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implement text helper wrapper functions",
+            "description": "Implement createPageTitle, createSectionTitle, and createBodyText as convenience wrappers around createText",
+            "dependencies": [
+              3
+            ],
+            "details": "Create three helper functions: createPageTitle uses 'pageTitle' style with TOKENS.colors.text; createSectionTitle uses 'sectionTitle' style with TOKENS.colors.mutedText; createBodyText uses 'body' style with TOKENS.colors.text. Each wraps createText with predefined style and color values.",
+            "status": "pending",
+            "testStrategy": "Test each helper produces correctly styled text elements matching their intended use case",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement createButton factory with variant support",
+            "description": "Implement unified button factory supporting primary, secondary, icon, and danger variants with press states",
+            "dependencies": [
+              1
+            ],
+            "details": "Create createButton function requiring text and onClick options. Support variant types: primary (TOKENS.colors.primaryButton), secondary, icon (uses icon option with normal_src/press_src), danger. Each variant has press_color state. Handle disabled state with grayed appearance. Text size from getFontSize('buttonLarge', bounds.w). Radius from bounds.h * TOKENS.sizing.buttonRadiusRatio (default 0.2).",
+            "status": "pending",
+            "testStrategy": "Test all button variants with correct colors, press states, disabled appearance, and icon rendering",
+            "parentId": "undefined"
+          }
+        ]
       },
       {
         "id": "45",
@@ -2809,9 +2935,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-25T16:41:34.137Z",
+      "lastModified": "2026-02-25T23:44:40.102Z",
       "taskCount": 51,
-      "completedCount": 40,
+      "completedCount": 41,
       "tags": [
         "master"
       ]
