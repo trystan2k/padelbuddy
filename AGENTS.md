@@ -22,6 +22,29 @@ Padel match score tracker for Amazfit watches.
 - `biome` - Linting/formatting
 - `husky` / `lint-staged` - Git hooks
 - `gh-cli` - GitHub operations
+- `git-worktree` - Git worktree operations for parallel task execution
+
+## Parallel Execution (Worktrees)
+
+Configuration for running multiple tasks in parallel using git worktrees.
+
+```yaml
+worktree:
+  directory: .worktrees              # Directory for worktrees (relative to project root)
+  communication_mode: status-polling # "fire-and-forget" or "status-polling"
+  auto_cleanup: false                # Auto-remove worktrees after completion (without asking)
+  skip_baseline_tests: false         # Skip running tests after worktree creation
+```
+
+**Usage:**
+```
+User: "Please start tasks #15, #16, and #17 in parallel"
+```
+
+**Notes:**
+- Worktrees are created at `.worktrees/<branch-name>/`
+- Each task runs in its own isolated workspace
+- Branch naming follows the pattern: `feature/PAD-[id]-[title]`, created from update main branch, always
 
 ## MCP Priority
 - Always prefer **Serena MCP** for supported operations (file search, content search, code intelligence) when available

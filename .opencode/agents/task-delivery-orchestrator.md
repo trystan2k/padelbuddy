@@ -57,11 +57,40 @@ Inputs:
 - Task identifier (task ID or subtask ID) that exists in Taskmaster.
 - Optional constraints or requester instructions.
 
+**Worktree Mode Inputs (optional):**
+
+- `worktree_path`: Absolute path to a git worktree. If provided, all operations execute within this worktree context instead of the main repository.
+- `skip_preparation`: If `true`, skip branch creation (Phase 1 Steps 1.1-1.2). Used when called by `parallel-task-orchestrator` which has already created the branch and worktree.
+
 If required inputs are missing, return:
 
 - `Missing Inputs`
 - `Why Orchestration Cannot Start`
 - `Required Input Shape`
+
+## Worktree Mode
+
+When `worktree_path` is provided:
+
+- All file operations, git commands, and specialist delegations operate within the worktree directory.
+- The orchestrator does NOT switch branches or create new branches (assumed already done).
+- Set `skip_preparation: true` to skip Phase 1 branch creation steps.
+- The completion report includes the worktree path for tracking by the parent orchestrator.
+
+**Worktree Mode Output Format:**
+
+```markdown
+✅ Task #[ID] completed successfully (Worktree Mode)
+
+📋 [Task title]
+📁 Worktree: [worktree_path]
+✔️ QA: Passed all checks
+💾 PR: [PR link]
+
+## Time Tracking Summary
+| Phase | Subagent | Time Spent |
+...
+```
 
 ## Outputs
 
@@ -100,17 +129,25 @@ Follow these steps in order.
 
 1. Preparation
    - **Start timer** for Preparation phase.
-   
+
+   **WORKTREE MODE CHECK**
+   If `skip_preparation: true` is provided:
+   - Skip Steps 1.1 and 1.2 (branch already created by parent orchestrator).
+   - Jump directly to Step 1.3 to get full task details.
+   - All subsequent operations use `worktree_path` as the working directory.
+
+   **STANDARD MODE (skip_preparation not set or false):**
+
    **CRITICAL: SEQUENTIAL EXECUTION REQUIRED**
    The following two operations MUST be executed sequentially, NEVER in parallel, because the branch naming depends on the task title retrieved from taskmaster-specialist.
-   
+
    **Step 1.1: Get Task Details (MUST COMPLETE FIRST)**
    - Ask `taskmaster-specialist`:
       - To validate the provided task or subtask ID exists and retrieve current status.
       - If task appears already implemented or completed, ask the user for clarification before proceeding.
       - Get basic task details (ID, title, description) and return them.
    - **DO NOT proceed to Step 1.2 until you have received the task title from taskmaster-specialist.**
-   
+
    **Step 1.2: Create Feature Branch (MUST WAIT FOR STEP 1.1)**
    - Ask `git-specialist` to ensure repository is on `main` and it is up-to-date and then create a feature branch:
       - If current branch is not `main`, switch to `main`.
@@ -122,13 +159,13 @@ Follow these steps in order.
           - All subtasks of that task use the same branch.
           - If no pattern is found, pause and ask user for naming guidance.
    - **Wait for branch creation confirmation before moving to Step 1.3.**
-   
-   **Step 1.3: Get Full Task Details (MUST WAIT FOR STEP 1.2)**
+
+   **Step 1.3: Get Full Task Details**
    - Ask `taskmaster-specialist`:
       - Check expansion state.
       - If task is not expanded, expand it before implementation.
       - Once created, return the full task details, subtasks, dependencies, and acceptance criteria. Always pass the necessary information that the specification requires.
-   
+
    - **Stop timer** and record Preparation phase time.
 
 2. Planning with Deepthink
@@ -232,5 +269,14 @@ This agent must delegate all executable actions to these specialists:
 - `development-log-specialist` for Basic Memory development logs.
 
 **IMPORTANT**: Always pass all required input information to specialists. Do not leave any information out.
+
+**Worktree Mode Specialist Calls:**
+When `worktree_path` is provided, pass it to all specialists that perform file or git operations:
+
+- `git-specialist`: Include `worktree_path` as the working directory for all git operations.
+- `implementation-specialist`: Include `worktree_path` as the working directory.
+- `qa-gate-specialist`: Include `worktree_path` as the working directory.
+- `code-review-specialist`: Include `worktree_path` as the working directory.
+- `development-log-specialist`: Include `worktree_path` for context.
 
 No action step may be executed directly by this orchestrator.
