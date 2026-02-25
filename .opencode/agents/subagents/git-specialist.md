@@ -105,7 +105,7 @@ Safety rules:
 
 GitHub (`gh`) typical commands:
 
-- Create PR: `gh pr create --title <title> --body <body> --base <base> --head <head>`
+- Create PR: `gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH"` (see "PR Creation with gh CLI — REQUIRED Pattern" section for full pattern)
 - View PR: `gh pr view <number|url|branch>`
 - Review comments: `gh pr view <number|url|branch> --comments`
 - Add review/comment: `gh pr review <number> --comment -b <body>`
@@ -113,6 +113,8 @@ GitHub (`gh`) typical commands:
 - Change PR status: `gh pr ready <number>` or `gh pr ready <number> --undo`
 - Close or reopen: `gh pr close <number>` / `gh pr reopen <number>`
 - Merge PR: `gh pr merge <number>`
+
+**IMPORTANT**: When creating PRs, always use the heredoc variable assignment pattern documented in the "PR Creation with gh CLI — REQUIRED Pattern" section. Never use inline body strings or --body-file.
 
 ## User Confirmation Rules
 
@@ -165,6 +167,132 @@ This subagent must not delegate to other subagents.
 6- Do not include any unnecessary information in the pull request description
 7- Do not include any sensitive information in the pull request description
 8- **NEVER** Do not include any task number information in the pull request title and/or description, never include any reference to the task or subtask ID or any LLM model used.
+
+## PR Creation with gh CLI — REQUIRED Pattern
+
+When creating a PR using `gh pr create`, you **MUST** follow this exact pattern to ensure the body is passed correctly without shell escaping issues:
+
+### Step 1: Store PR metadata in variables
+
+```bash
+TITLE="feat: your feature description"
+BASE="main"
+BRANCH="feature/your-branch-name"
+```
+
+### Step 2: Create body using heredoc with variable assignment (quoted to prevent expansion)
+
+```bash
+BODY=$(cat <<'EOF'
+## Summary
+
+Your multi-line markdown content here, including:
+- Bullet lists
+- Code blocks
+- Links and formatting
+
+## What was added
+
+- Item 1
+- Item 2
+
+## Test results
+
+- ✅ Test 1 passed
+- ✅ Test 2 passed
+EOF
+)
+```
+
+### Step 3: Create PR using --body with the variable
+
+```bash
+set -e
+OUTPUT=$(gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH" 2>&1) || { echo "GH_CREATE_FAILED: $OUTPUT"; exit 3; }
+echo "GH_CREATE_OUTPUT:
+$OUTPUT"
+```
+
+### Step 4: Extract and verify PR URL
+
+```bash
+# Extract URL using gh pr view by branch
+PR_URL=$(gh pr view --json url --jq .url 2>/dev/null || true)
+if [ -n "$PR_URL" ]; then
+  echo "PR_URL: $PR_URL"
+else
+  # Try to parse from OUTPUT
+  echo "$OUTPUT" | sed -n 's#\(https://github\.com/[^ ]*pull/[0-9]*\).*#\1#p' | head -n1 || true
+fi
+```
+
+### Complete Example
+
+```bash
+set -e
+TITLE="feat: add QA controls with Husky, Biome, and Commitlint"
+BRANCH="feature/PAD-030-qa-controls-husky-biome-commitlint"
+BASE="main"
+# Use heredoc for exact body
+BODY=$(cat <<'EOF'
+## Summary
+Sets up a complete automated code quality gate stack for the project.
+
+## What was added
+- `biome.json` — Biome v2 config
+- `.husky/pre-commit` — runs lint-staged
+- `.husky/commit-msg` — validates commit messages
+- `.husky/pre-push` — runs tests
+
+## Test results
+- ✅ All tests pass
+EOF
+)
+# Create the pull request
+OUTPUT=$(gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH" 2>&1) || { echo "GH_CREATE_FAILED: $OUTPUT"; exit 3; }
+echo "GH_CREATE_OUTPUT:
+$OUTPUT"
+PR_URL=$(gh pr view --json url --jq .url 2>/dev/null || true)
+echo "PR_URL: $PR_URL"
+```
+
+### Why this pattern is REQUIRED
+
+- **Quoted heredoc (`<<'EOF'`)** prevents shell variable expansion and preserves exact content
+- **Variable assignment (`BODY=$(cat <<'EOF' ...)`)** keeps the body in memory without temp files
+- **`--body "$BODY"`** with proper quoting handles newlines and special characters correctly
+- **Variables for metadata** makes the command readable and prevents quoting errors in title
+- **`set -e`** ensures the script fails fast on errors
+- **Output capture** allows error handling and URL extraction
+
+### ❌ NEVER do this
+
+```bash
+# WRONG: Inline body with quotes/escaping issues
+gh pr create --title "Title" --body "Multi-line
+content with 'quotes' and \"escapes\""
+
+# WRONG: Using --body-file (creates unnecessary temp files)
+cat > /tmp/pr_body.md <<'EOF'
+content
+EOF
+gh pr create --title "Title" --body-file /tmp/pr_body.md --base main
+```
+
+### ✅ ALWAYS do this
+
+```bash
+# CORRECT: Heredoc variable assignment + --body pattern
+TITLE="Title"
+BRANCH="feature/my-branch"
+BASE="main"
+BODY=$(cat <<'EOF'
+Multi-line
+content with 'quotes' and "escapes"
+EOF
+)
+gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH"
+```
 
 ## PR review
 
