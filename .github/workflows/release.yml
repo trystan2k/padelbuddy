@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     # Only run if there are actual code changes (double-check)
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,6 +47,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-24-modules-
 
+      - name: Install zeus cli
+        run: npm install -g @zeppos/zeus-cli
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
@@ -56,10 +58,10 @@ jobs:
         run: |
           # Get list of changed files in this commit
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-          
+
           # Define releasable paths (code that affects the app)
           RELEASABLE="page/|app.js|app.json|app-side/|setting/|utils/|assets/|shared/"
-          
+
           # Check if any releasable files changed
           if echo "$CHANGED_FILES" | grep -qE "^($RELEASABLE)"; then
             echo "Releasable changes detected"

@@ -149,7 +149,7 @@ This subagent must not delegate to other subagents.
 7- Do not include any task number information in the commit message, unless it is explicitly requested
 8- Never include any information that is not related to the changes made in the code
 9- Never skip git hooks
-10- Add all files to the commit
+10- **IMPORTANT**: Add all files to the commit, including any new files created by the task
 
 ## Push changes
 
