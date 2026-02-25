@@ -96,6 +96,8 @@ Outputs:
 
 Follow these steps in order.
 
+**MCP Priority**: Always prefer **Serena MCP** for supported operations (file search, content search, code intelligence) when available. Fall back to native opencode tools only when Serena MCP is unavailable.
+
 1. Preparation
    - **Start timer** for Preparation phase.
    - Ask `git-specialist` to ensure repository is on `main` and it is up-to-date and then create a feature branch:

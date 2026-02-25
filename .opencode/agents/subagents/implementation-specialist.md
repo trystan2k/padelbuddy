@@ -78,6 +78,8 @@ Follow this protocol before writing code:
 
 Follow these steps:
 
+**MCP Priority**: Always prefer **Serena MCP** for supported operations (file search, content search, code intelligence) when available. Fall back to native opencode tools only when Serena MCP is unavailable.
+
 1. Validate inputs and verify the deepthink plan file path exists.
 2. Read the approved deepthink plan file and parse it into executable steps.
 3. Run stack detection and load relevant skills using the protocol above.
