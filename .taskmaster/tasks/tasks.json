@@ -2363,17 +2363,83 @@
         "description": "Research and implement an automated release and changelog generation system using GitHub Actions with semantic-release and conventional commits. This task enables automated versioning, changelog creation, and GitHub releases triggered by the npm run release command.",
         "details": "Implement a comprehensive release automation system using the conventional-commits and semantic-release approach, similar to the reference implementation at https://github.com/trystan2k/publish-blog-post/. The implementation includes:\n\n1. **Install and Configure Dependencies**:\n   - Install `semantic-release` and related plugins (`@semantic-release/git`, `@semantic-release/changelog`, `@semantic-release/npm`, `@semantic-release/github`)\n   - Configure `.releaserc` or `release.config.js` with appropriate settings for the Zepp OS/JavaScript project\n\n2. **Configure package.json Scripts**:\n   - Add `\"release\": \"semantic-release\"` script to package.json\n   - Ensure `version` field is managed by semantic-release (set to a placeholder like `0.0.0-semantically-released`)\n\n3. **Create GitHub Actions Workflow**:\n   - Create `.github/workflows/release.yml` workflow file\n   - Configure trigger: `on:\n  push:\n    tags:\n      - 'v*'`\n   - Set up job steps:\n     - Checkout code\n     - Setup Node.js environment\n     - Install dependencies\n     - Run semantic-release (which will create the GitHub release)\n\n4. **Configure Conventional Commits**:\n   - Add `commitlint` configuration to enforce conventional commit format\n   - Configure supported commit types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `revert`\n   - Set up pre-commit hooks or CI checks to validate commit messages\n\n5. **Release Process Flow**:\n   - Developer runs `npm run release` locally or pushes commits with conventional commit messages\n   - Semantic-release analyzes commit history since last release\n   - Determines next version number based on commit types (major for breaking changes, minor for features, patch for fixes)\n   - Generates changelog from commit messages\n   - Creates git tag with version number\n   - Pushes changes to repository\n   - GitHub Actions workflow detects new tag and creates GitHub release with changelog\n\n6. **Changelog Configuration**:\n   - Configure changelog format and sections\n   - Include link to commit comparison in generated changelog\n   - Store changelog in `CHANGELOG.md` file\n\n7. **Branch Protection (Recommended)**:\n   - Configure main branch to require pull request reviews\n   - Enable status checks for conventional commit validation. It is also important that it updates not only the version in package.json, but also in the app.json and in utils/version.js",
         "testStrategy": "1. **Local Script Test**: Run `npm run release` locally on the main branch. Verify the script executes without errors and provides appropriate output (e.g., 'no release needed' if no changes).\n\n2. **Conventional Commit Validation Test**: Create commits with various formats:\n   - Valid: `feat: add new scoring logic`\n   - Valid: `fix: resolve crash on game start`\n   - Valid: `feat(match-history): implement storage`\n   - Invalid: `add new feature` (should fail validation if commitlint is configured)\n   Verify that valid commits pass and invalid commits are rejected.\n\n3. **Version Bump Test**: Create a series of commits:\n   - `feat: add feature A`\n   - `fix: minor bug fix`\n   Push to main and trigger release. Verify version increments to `1.0.0` (from initial). Then:\n   - `feat: add feature B` → verify version bumps to `1.1.0`\n   - `fix: resolve bug` → verify version bumps to `1.1.1`\n   - `feat!: breaking change` → verify version bumps to `2.0.0`\n\n4. **Changelog Generation Test**: After triggering a release, verify that:\n   - `CHANGELOG.md` is updated with new version section\n   - Changelog includes proper categorization (Features, Bug Fixes, etc.)\n   - Commit messages are properly formatted in the changelog\n   - Links to commits and comparisons are included\n\n5. **GitHub Release Test**: Verify that:\n   - Git tags are created with correct version format (v1.0.0)\n   - GitHub Actions workflow triggers on tag push\n   - GitHub Release is created with:\n     - Correct version tag\n     - Changelog as release notes\n     - Proper release title\n\n6. **No Release Scenario Test**: Make a commit with type `chore:` or `docs:` that doesn't trigger a release. Run `npm run release` and verify no new release is created and the version remains unchanged.\n\n7. **End-to-End Integration Test**: Complete the full flow:\n   - Create a feature branch with a conventional commit\n   - Create PR and merge to main\n   - Run `npm run release` locally or via CI\n   - Verify tag is pushed and GitHub Release is created automatically\n   - Verify project version in package.json is updated",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Install and Configure Semantic Release Dependencies",
+            "description": "Install semantic-release and required plugins for automated versioning and changelog generation",
+            "dependencies": [],
+            "details": "Install semantic-release package along with @semantic-release/git, @semantic-release/changelog, @semantic-release/npm, and @semantic-release/github plugins using npm or yarn. Configure the plugins to work together for automated releases, changelog generation, and git operations.",
+            "status": "done",
+            "testStrategy": "Verify all packages are installed correctly by checking package.json devDependencies. Run npm list to confirm no peer dependency conflicts.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T01:28:50.088Z"
+          },
+          {
+            "id": 2,
+            "title": "Configure package.json and Release Config",
+            "description": "Set up package.json scripts and create semantic-release configuration file with version management for multiple files",
+            "dependencies": [
+              1
+            ],
+            "details": "Update package.json to include 'release': 'semantic-release' script and set version to '0.0.0-semantically-released'. Create release.config.js or .releaserc configuring plugins to update versions in package.json, app.json, and utils/version.js files. Configure branch settings, tag format, and commit message conventions for the Zepp OS project.",
+            "status": "done",
+            "testStrategy": "Validate package.json JSON syntax. Verify release script exists. Confirm configuration file is valid JSON and contains proper plugin settings for all three versioned files.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T01:28:50.092Z"
+          },
+          {
+            "id": 3,
+            "title": "Create GitHub Actions Workflow for Release",
+            "description": "Implement a GitHub Actions workflow that triggers on version tags and executes the release process",
+            "dependencies": [
+              2
+            ],
+            "details": "Create .github/workflows/release.yml with a single job triggered by push to tags matching 'v*'. Configure steps: checkout code with fetch-depth: 0, setup Node.js, install dependencies, run npm run release. Set GITHUB_TOKEN permissions for creating releases and managing repository contents. Ensure workflow runs on semantic-release tags only.",
+            "status": "done",
+            "testStrategy": "Validate workflow YAML syntax. Manually trigger workflow with a test tag to verify all steps execute without errors. Check workflow logs for successful completion and proper token authentication.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T01:28:50.094Z"
+          },
+          {
+            "id": 4,
+            "title": "Configure Conventional Commits Validation",
+            "description": "Set up commitlint and commit message validation to enforce conventional commits format across the project",
+            "dependencies": [],
+            "details": "Install @commitlint/cli and @commitlint/config-conventional packages. Create commitlint.config.js defining supported commit types: feat, fix, docs, style, refactor, perf, test, chore, revert. Configure husky for pre-commit hooks or add CI check to validate commit messages. Ensure enforcement prevents non-conventional commits from being merged.",
+            "status": "done",
+            "testStrategy": "Create valid and invalid commit messages locally to verify validation works correctly. Test pre-commit hooks by attempting to commit non-conventional messages and confirming they're rejected. Verify CI check fails on invalid commits.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T01:28:50.096Z"
+          },
+          {
+            "id": 5,
+            "title": "Test and Verify Release Automation Flow",
+            "description": "End-to-end testing of the release automation to ensure proper version updates, changelog generation, and GitHub releases",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Execute a test release by creating conventional commits on a feature branch, merging to main, and running npm run release locally in dry-run mode first. Then perform actual release with minor version bump. Verify versions update in package.json, app.json, and utils/version.js. Confirm CHANGELOG.md is generated/updated with proper format, commit comparison links, and git tags are created correctly.",
+            "status": "done",
+            "testStrategy": "Run npm run release --dry-run to preview changes without committing. Perform actual release and verify: all three version files updated, CHANGELOG.md contains correct entries with links, git tag created in correct format, and GitHub release includes changelog content.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T01:28:50.098Z"
+          }
+        ],
+        "updatedAt": "2026-02-25T01:28:50.098Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-24T22:50:16.032Z",
+      "lastModified": "2026-02-25T01:28:50.098Z",
       "taskCount": 39,
-      "completedCount": 36,
+      "completedCount": 37,
       "tags": [
         "master"
       ]

@@ -11,7 +11,9 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "complete-check": "npm run lint:fix && npm run format && npm run test"
+    "complete-check": "npm run lint:fix && npm run format && npm run test",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run"
   },
   "keywords": [
     "padel",
@@ -29,8 +31,13 @@
     "@biomejs/biome": "~2.4.4",
     "@commitlint/cli": "~20.4.2",
     "@commitlint/config-conventional": "~20.4.2",
+    "@semantic-release/changelog": "~6.0.3",
+    "@semantic-release/exec": "~7.1.0",
+    "@semantic-release/git": "~10.0.1",
+    "@semantic-release/github": "~12.0.6",
     "@zeppos/device-types": "~1.0.0",
     "husky": "~9.1.7",
-    "lint-staged": "~16.2.7"
+    "lint-staged": "~16.2.7",
+    "semantic-release": "~25.0.3"
   }
 }

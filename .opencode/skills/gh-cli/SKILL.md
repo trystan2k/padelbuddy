@@ -939,38 +939,110 @@ gh pr create --web
 
 ### PR Body Best Practices (programmatic/agent use)
 
-For programmatic or automated flows (scripts and agents), prefer `--body-file`:
+For programmatic or automated flows (scripts and agents), **ALWAYS** use heredoc variable assignment with `--body`:
 
-1. Create a body file with a quoted heredoc (prevents expansion/escaping issues):
+1. Store PR metadata in variables:
    ```bash
-   cat > /tmp/pr_body.md <<'PRBODY_EOF'
+   TITLE="feat: your feature description"
+   BRANCH="feature/your-branch-name"
+   BASE="main"
+   ```
+
+2. Create body using heredoc with variable assignment (quoted heredoc prevents expansion):
+   ```bash
+   BODY=$(cat <<'EOF'
    ## Summary
    Multi-line markdown content here, including:
    - bullet lists
    - code blocks
    - links and markdown formatting
-   PRBODY_EOF
+   EOF
+   )
    ```
 
-2. Create PR using --body-file:
+3. Create PR using `--body` with the variable:
    ```bash
-   gh pr create --title "Title" --body-file /tmp/pr_body.md --base main --head mybranch
+   set -e
+   OUTPUT=$(gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH" 2>&1) || { echo "GH_CREATE_FAILED: $OUTPUT"; exit 3; }
+   echo "GH_CREATE_OUTPUT:
+   $OUTPUT"
    ```
 
-3. Verify and repair:
+4. Extract and verify PR URL:
    ```bash
-   # Verify body was applied
-   gh pr view <number> --json body --jq '.body'
-
-   # Repair if verification shows empty body
-   gh pr edit <number> --body-file /tmp/pr_body.md
+   PR_URL=$(gh pr view --json url --jq .url 2>/dev/null || true)
+   if [ -n "$PR_URL" ]; then
+     echo "PR_URL: $PR_URL"
+   else
+     echo "$OUTPUT" | sed -n 's#\(https://github\.com/[^ ]*pull/[0-9]*\).*#\1#p' | head -n1 || true
+   fi
    ```
 
-**Why prefer `--body-file` over `--body "$(cat file)"`?**
-- Handles newlines and special characters without shell quoting complexity
-- Avoids silent truncation or expansion issues in shells or programmatic environments
-- Easier to inspect and debug before PR creation (open the file locally)
-- gh CLI explicitly supports `--body-file` which is the intended API for file-based bodies
+### Complete Example
+
+```bash
+set -e
+TITLE="feat: add new feature"
+BRANCH="feature/my-new-feature"
+BASE="main"
+# Use heredoc for exact body
+BODY=$(cat <<'EOF'
+## Summary
+Adds a new feature to the application.
+
+## What was added
+- New component `Feature.tsx`
+- Unit tests for the new feature
+- Documentation updates
+
+## Test results
+- ✅ All unit tests pass
+- ✅ Integration tests pass
+EOF
+)
+# Create the pull request
+OUTPUT=$(gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH" 2>&1) || { echo "GH_CREATE_FAILED: $OUTPUT"; exit 3; }
+echo "GH_CREATE_OUTPUT:
+$OUTPUT"
+PR_URL=$(gh pr view --json url --jq .url 2>/dev/null || true)
+echo "PR_URL: $PR_URL"
+```
+
+**Why use heredoc variable assignment + `--body`?**
+- **Quoted heredoc (`<<'EOF'`)** prevents shell variable expansion and preserves exact content
+- **Variable assignment (`BODY=$(cat <<'EOF' ...)`)** keeps the body in memory without temp files
+- **`--body "$BODY"`** with proper quoting handles newlines and special characters correctly
+- **No temp files** — cleaner, no cleanup needed, works in any environment
+- **`set -e`** ensures the script fails fast on errors
+
+### ❌ NEVER do this
+
+```bash
+# WRONG: Inline body with quotes/escaping issues
+gh pr create --title "Title" --body "Multi-line
+content with 'quotes' and \"escapes\""
+
+# WRONG: Using --body-file (creates unnecessary temp files)
+cat > /tmp/pr_body.md <<'EOF'
+content
+EOF
+gh pr create --title "Title" --body-file /tmp/pr_body.md
+```
+
+### ✅ ALWAYS do this
+
+```bash
+# CORRECT: Heredoc variable assignment + --body pattern
+TITLE="Title"
+BRANCH="feature/my-branch"
+BASE="main"
+BODY=$(cat <<'EOF'
+Multi-line
+content with 'quotes' and "escapes"
+EOF
+)
+gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH"
+```
 
 ### List Pull Requests
 
