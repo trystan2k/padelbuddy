@@ -2593,12 +2593,77 @@
         "description": "Implement utils/layout-engine.js with a declarative layout system that resolves schemas to pixel coordinates, supporting sections and elements with percentage, pixel, and reference-based positioning.",
         "details": "Create a new file at `utils/layout-engine.js` that exports the following functionality:\n\n**Main Function**:\n- `resolveLayout(schema, metrics)` - Takes a schema object and screen metrics, returns resolved coordinates\n\n**Input Schema Structure**:\n```javascript\n{\n  sections: {\n    [sectionName]: {\n      top: string | number,      // '10%', 'header.bottom', 'header.bottom + 2%', 50\n      bottom: string | number,   // percentage from bottom (optional)\n      after: string,             // section name to position after (optional)\n      gap: number,               // gap after previous section in pixels (optional)\n      height: string | number,   // '10%', 'fill', or pixels (optional)\n      sideInset: string | number, // percentage or pixels (optional)\n      roundSafeInset: boolean    // default true (optional)\n    }\n  },\n  elements: {\n    [elementName]: {\n      section: string,           // parent section name\n      x: string | number,        // percentage or pixels (optional)\n      y: string | number,        // percentage or pixels (optional)\n      width: string | number,    // percentage or pixels (optional)\n      height: string | number,   // percentage or pixels (optional)\n      align: 'center' | 'left' | 'right' (optional)\n    }\n  }\n}\n```\n\n**Return Structure**:\n```javascript\n{\n  sections: {\n    [sectionName]: { x, y, w, h }\n  },\n  elements: {\n    [elementName]: { x, y, w, h }\n  }\n}\n```\n\n**Position Resolution Logic**:\n- Parse string values ending with '%' and convert using: `Math.round(dimension * percentage / 100)`\n- Parse section references (e.g., 'header.bottom'): `sections.header.y + sections.header.h`\n- Parse expressions with references and offsets (e.g., 'header.bottom + 2%')\n- Handle 'fill' height by calculating remaining space to next section or bottom\n- Literal numbers are treated as pixel values\n\n**Element Alignment**:\n- 'center': center horizontally within section bounds\n- 'left': position at section x (default)\n- 'right': position at `section.x + section.w - element.w`\n\n**Error Handling (Graceful Fallbacks)**:\n- Invalid section references: fallback to 0\n- Missing sections in element properties: use full screen bounds\n- Invalid percentage values: clamp to 0-100% range\n- Any parsing errors: default to sensible defaults, never throw\n\n**Implementation Steps**:\n1. Import screen utilities from `utils/screen-utils.js` (getScreenMetrics, clamp)\n2. Create helper function `parseValue(value, dimension, sections)` to parse positioning values\n3. Create helper function `parsePercentage(value)` to extract numeric percentage\n4. Create helper function `resolveSectionRef(ref, sections)` to get referenced section bounds\n5. Implement section resolution pass: calculate all section positions first\n6. Implement element resolution pass: calculate element positions within their sections\n7. Apply roundSafeInset: round coordinates if true and screen is round\n8. Export the `resolveLayout` function\n\n**Code Example**:\n```javascript\nimport { getScreenMetrics, clamp } from './screen-utils.js';\n\nexport function resolveLayout(schema, metrics = getScreenMetrics()) {\n  const { width, height } = metrics;\n  const resolved = { sections: {}, elements: {} };\n  \n  // Resolve sections first\n  for (const [name, section] of Object.entries(schema.sections || {})) {\n    // ... section resolution logic\n  }\n  \n  // Then resolve elements\n  for (const [name, element] of Object.entries(schema.elements || {})) {\n    // ... element resolution logic\n  }\n  \n  return resolved;\n}\n```",
         "testStrategy": "1. **Syntax Verification**: Ensure the file compiles without syntax errors using Node.js or the Zepp build system.\n\n2. **Basic Resolution Test**: Import the file and test with a simple schema:\n   ```javascript\n   const schema = {\n     sections: {\n       header: { top: '0%', height: '10%' },\n       content: { after: 'header', gap: 5, height: 'fill' }\n     },\n     elements: {\n       title: { section: 'header', x: '50%', y: '0%', width: '50%', height: '100%', align: 'center' }\n     }\n   };\n   const result = resolveLayout(schema, { width: 400, height: 400, isRound: false });\n   ```\n   Verify result contains proper x, y, w, h values.\n\n3. **Reference Resolution Test**: Test that section references like 'header.bottom' correctly resolve to the bottom coordinate of the referenced section.\n\n4. **Fill Height Test**: Verify that 'fill' height correctly calculates remaining space between sections.\n\n5. **Error Handling Test**:\n   - Test with invalid section references - verify graceful fallback to 0\n   - Test with invalid percentages ('120%', '-5%') - verify clamping to 0-100%\n   - Test with missing parent sections - verify elements use full screen bounds\n\n6. **Expression Parsing Test**: Verify expressions like 'header.bottom + 2%' correctly calculate coordinates.\n\n7. **Alignment Test**: Test element alignment ('center', 'left', 'right') to ensure proper positioning within sections.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "41"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create file structure and main function skeleton",
+            "description": "Initialize utils/layout-engine.js with imports from screen-utils.js and set up the basic resolveLayout function structure that returns empty sections and elements objects.",
+            "dependencies": [],
+            "details": "Create the file utils/layout-engine.js and import getScreenMetrics and clamp from './screen-utils.js'. Define the resolveLayout function that accepts schema and metrics parameters. Extract width and height from metrics. Initialize and return a resolved object with empty sections and elements properties. Set up placeholder loops for sections and elements iteration.",
+            "status": "done",
+            "testStrategy": "Verify the file compiles without syntax errors and that calling resolveLayout({}, {}) returns { sections: {}, elements: {} }",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T16:41:28.787Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement value parsing helper functions",
+            "description": "Create parsePercentage, resolveSectionRef, and parseValue helper functions to handle percentage strings, section references, and complex positioning expressions.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement parsePercentage(value) to extract numeric values from strings ending with '%'. Implement resolveSectionRef(ref, sections) to parse references like 'header.bottom' and return the coordinate from resolved sections. Implement parseValue(value, dimension, sections) to handle: numeric pixel values, percentage strings (e.g., '10%'), section references (e.g., 'header.bottom'), and combined expressions (e.g., 'header.bottom + 2%'). All helpers should return 0 on parsing errors.",
+            "status": "done",
+            "testStrategy": "Test parsePercentage('10%') returns 10, parsePercentage('invalid') returns null. Test parseValue('50%', 100, {}) returns 50. Test resolveSectionRef('header.bottom', {header: {y: 0, h: 20}}) returns 20.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T16:41:30.170Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement section resolution pass",
+            "description": "Calculate all section positions by processing top, bottom, after, gap, and height properties, including support for 'fill' height and percentage-based positioning.",
+            "dependencies": [
+              2
+            ],
+            "details": "Iterate through schema.sections using Object.entries. For each section, calculate y position using parseValue on the 'top' property, or use the referenced section's bottom + gap if 'after' is specified. Calculate height using parseValue on 'height' property. Handle 'fill' height by calculating remaining space to the next section or screen bottom. Set x, w using sideInset if provided, defaulting to full width. Store resolved x, y, w, h in resolved.sections.",
+            "status": "done",
+            "testStrategy": "Test schema with header section {top: '0%', height: '10%'} resolves to correct pixel coordinates. Test 'after' property positions sections correctly with gaps. Test 'fill' height calculates remaining space correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T16:41:31.474Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement element resolution pass",
+            "description": "Calculate element positions within their parent sections, handling x, y, width, height properties and horizontal alignment (center, left, right).",
+            "dependencies": [
+              3
+            ],
+            "details": "Iterate through schema.elements using Object.entries. For each element, find its parent section from resolved.sections, defaulting to full screen bounds if missing. Calculate x using parseValue or section.x, y using parseValue or section.y. Calculate w and h using parseValue on width/height properties. Apply alignment: 'center' sets x to section.x + (section.w - w) / 2, 'right' sets x to section.x + section.w - w, 'left' uses section.x. Store resolved x, y, w, h in resolved.elements.",
+            "status": "done",
+            "testStrategy": "Test element with {section: 'header', width: '50%', align: 'center'} centers correctly within header. Test missing section defaults to full screen. Test all three alignment options produce correct positions.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T16:41:32.801Z"
+          },
+          {
+            "id": 5,
+            "title": "Add roundSafeInset handling and error fallbacks",
+            "description": "Implement roundSafeInset rounding for round screens, add graceful fallbacks for invalid references, clamp percentage values, and finalize the module export.",
+            "dependencies": [
+              4
+            ],
+            "details": "Check metrics.isRound or similar to detect round screens. When roundSafeInset is true (default), apply Math.round to section coordinates. Add error handling: invalid section references fallback to 0, missing sections default to full screen bounds, invalid percentage values clamp to 0-100 using the imported clamp function. Ensure no parsing errors throw exceptions - all fallback to sensible defaults. Return the fully resolved object.",
+            "status": "done",
+            "testStrategy": "Test with round screen metrics verifies coordinates are rounded. Test invalid section reference 'nonexistent.top' defaults to 0. Test percentage '150%' clamps to 100%, '-10%' clamps to 0%. Test malformed strings like 'abc%' don't throw errors.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T16:41:34.136Z"
+          }
+        ],
+        "updatedAt": "2026-02-25T16:41:34.136Z"
       },
       {
         "id": "43",
@@ -2744,9 +2809,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-25T15:35:04.560Z",
+      "lastModified": "2026-02-25T16:41:34.137Z",
       "taskCount": 51,
-      "completedCount": 39,
+      "completedCount": 40,
       "tags": [
         "master"
       ]
