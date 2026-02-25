@@ -127,10 +127,85 @@ Before proceeding with commit or file operations:
 
 This subagent must not delegate to other subagents.
 
-## Create a new branch
+## Create a Feature Branch
 
-1- Create a new branch using the name provided in the prompt
-2- Switch to the new branch
+Creates a new feature branch from the latest remote main, with optional local main update. This approach supports parallel work with git worktrees.
+
+### Parameters
+
+- `branch_name`: Name of the feature branch to create (required)
+- `update_local_main`: (optional) `true` to also update local main branch (default: `false`)
+
+### Default Workflow (Remote-Only, Worktree-Safe)
+
+Use this approach by default. It works in all scenarios including when main is checked out in another worktree.
+
+1. Check for uncommitted changes and stash if present
+2. Fetch origin/main to update the remote tracking branch (does NOT checkout main)
+3. Create and checkout new branch from origin/main
+4. Restore stashed changes to the new branch (if any)
+
+```bash
+# Check for uncommitted changes and stash if needed
+STASHED=false
+if [ -n "$(git status --porcelain)" ]; then
+  git stash push -m "pre-branch-creation-$(date +%s)"
+  STASHED=true
+fi
+
+# Fetch remote (doesn't touch local main)
+git fetch origin main
+
+# Create branch from updated remote tracking branch
+git checkout -b <branch_name> origin/main
+
+# Restore stash if we stashed
+if [ "$STASHED" = true ]; then
+  git stash pop
+fi
+```
+
+### Alternative Workflow (With Local Main Update)
+
+Use this only when explicitly requested via `update_local_main=true`. This requires checking out main and will fail if main is checked out in another worktree.
+
+1. Fetch origin/main
+2. If currently on main: pull latest, create new branch
+3. If NOT on main: stash, checkout main, pull, create new branch, restore stash
+
+```bash
+# Fetch remote
+git fetch origin main
+
+# Check current branch
+CURRENT_BRANCH=$(git branch --show-current)
+
+if [ "$CURRENT_BRANCH" = "main" ]; then
+  # Already on main, just pull and create branch
+  git pull origin main
+  git checkout -b <branch_name>
+else
+  # Not on main, need to stash and switch
+  STASHED=false
+  if [ -n "$(git status --porcelain)" ]; then
+    git stash push -m "pre-branch-creation-$(date +%s)"
+    STASHED=true
+  fi
+  
+  git checkout main
+  git pull origin main
+  git checkout -b <branch_name>
+  
+  if [ "$STASHED" = true ]; then
+    git stash pop
+  fi
+fi
+```
+
+### Decision Logic
+
+- If `update_local_main=true` → Use Alternative Workflow
+- Otherwise → Use Default Workflow (remote-only)
 
 ## Pull update
 

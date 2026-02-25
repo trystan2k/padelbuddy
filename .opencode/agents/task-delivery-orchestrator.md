@@ -112,16 +112,18 @@ Follow these steps in order.
    - **DO NOT proceed to Step 1.2 until you have received the task title from taskmaster-specialist.**
    
    **Step 1.2: Create Feature Branch (MUST WAIT FOR STEP 1.1)**
-   - Ask `git-specialist` to ensure repository is on `main` and it is up-to-date and then create a feature branch:
-      - If current branch is not `main`, switch to `main`.
-      - If uncommitted changes exist, stash changes, checkout `main`, pull latest, then restore stashed changes.
-      - Create a new feature branch from `main`:
-          - Use the task title obtained from Step 1.1 to construct the branch name.
-          - Use the pattern defined in the AGENTS.md file (e.g., `feature/PAD-[id]-[title-slug]`).
-          - One feature branch per task ID.
-          - All subtasks of that task use the same branch.
-          - If no pattern is found, pause and ask user for naming guidance.
-   - **Wait for branch creation confirmation before moving to Step 1.3.**
+    - Ask `git-specialist` to create a feature branch using the remote-only approach (worktree-safe):
+       - Fetch `origin/main` to update the remote tracking branch (does NOT checkout main).
+       - If uncommitted changes exist, stash them before branch creation.
+       - Create a new feature branch directly from `origin/main`:
+           - Use the task title obtained from Step 1.1 to construct the branch name.
+           - Use the pattern defined in the AGENTS.md file (e.g., `feature/PAD-[id]-[title-slug]`).
+           - One feature branch per task ID.
+           - All subtasks of that task use the same branch.
+           - If no pattern is found, pause and ask user for naming guidance.
+       - Restore any stashed changes to the new branch.
+       - This approach works in all scenarios including git worktrees where main may be checked out elsewhere.
+    - **Wait for branch creation confirmation before moving to Step 1.3.**
    
    **Step 1.3: Get Full Task Details (MUST WAIT FOR STEP 1.2)**
    - Ask `taskmaster-specialist`:
