@@ -34,12 +34,17 @@ function ensureNumber(value, fallback) {
 export const TOKENS = Object.freeze({
   colors: {
     background: 0x000000,
+    cardBackground: 0x111318,
     text: 0xffffff,
     mutedText: 0x888888,
     accent: 0x1eb98c,
     danger: 0xff6d78,
     primaryButton: 0x1eb98c,
+    primaryButtonPressed: 0x1aa07a,
     secondaryButton: 0x24262b,
+    secondaryButtonPressed: 0x2d3036,
+    dangerButton: 0xff6d78,
+    dangerButtonPressed: 0xcc575f,
     disabled: 0x444444,
     divider: 0x333333
   },
