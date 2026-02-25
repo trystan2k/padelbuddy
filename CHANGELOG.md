@@ -2,6 +2,70 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0 (2026-02-25)
+
+### Features
+
+* add clear app data button with double-tap confirmation ([ce74725](https://github.com/trystan2k/padelbuddy/commit/ce74725fcd471d1b087856433f75ac4296139c8e))
+* add declarative layout engine with resolution system ([f0e1c98](https://github.com/trystan2k/padelbuddy/commit/f0e1c988d66cc8df766a968ce22587792a45c987)), closes [#42](https://github.com/trystan2k/padelbuddy/issues/42) [#42](https://github.com/trystan2k/padelbuddy/issues/42)
+* add delete match functionality to match details page ([f74f215](https://github.com/trystan2k/padelbuddy/commit/f74f215678007c44338f6e79b5b9ad8527e9908e))
+* add game navigation and lifecycle autosave ([55415ba](https://github.com/trystan2k/padelbuddy/commit/55415ba0a6cf68a492784893c9222018f20e952d))
+* add GitHub Actions CI/CD workflow ([29c5509](https://github.com/trystan2k/padelbuddy/commit/29c5509aa593b481d2c9a4fbd1b26748b7cc679b))
+* add local storage persistence for match state ([c920308](https://github.com/trystan2k/padelbuddy/commit/c920308100cbe51a24e39aab273881966671d33d))
+* add match state model, scoring constants, and history stack ([1e23ecb](https://github.com/trystan2k/padelbuddy/commit/1e23ecbe787072a3a8850fb53242d370797df286))
+* add match summary screen and completion flow ([7e63ce5](https://github.com/trystan2k/padelbuddy/commit/7e63ce51acb3a0a17010441e78507cede567ca94))
+* add multi-language support for Portuguese and Spanish ([6b9aa33](https://github.com/trystan2k/padelbuddy/commit/6b9aa33f7b30f1a48279c6f4598e98bc44a095ba))
+* add padel scoring logic engine with tests ([ff31374](https://github.com/trystan2k/padelbuddy/commit/ff31374dfb84d364cd6e47b3900d8ffcbb4f2862))
+* add QA controls task to master task list ([75d55e6](https://github.com/trystan2k/padelbuddy/commit/75d55e629d0b38b6ed5f2bc27b0b7369676a8c47))
+* add QA controls with Husky, Biome, and Commitlint ([dd8bf15](https://github.com/trystan2k/padelbuddy/commit/dd8bf1542125b2254b38407d6bc119ff5bc703d8))
+* add screen utilities with round screen handling ([fefec67](https://github.com/trystan2k/padelbuddy/commit/fefec6759cd42290054cbeb2ad1aa55072bf7dc9)), closes [#41](https://github.com/trystan2k/padelbuddy/issues/41)
+* add sets won indicators to game screen ([45658c0](https://github.com/trystan2k/padelbuddy/commit/45658c04f454e6c6ddd013e498d01743730c4b7d))
+* add settings page with scroll list and clear app data flow ([f8380df](https://github.com/trystan2k/padelbuddy/commit/f8380df3e596ff28c36637ec4e134e2d507fe957))
+* add UI enhancements for navigation icons and background refinements ([7481f0a](https://github.com/trystan2k/padelbuddy/commit/7481f0a6e904605e880f5921f2530980575e3e2b))
+* **agents:** enable plan file generation and integration across agents ([186a4e5](https://github.com/trystan2k/padelbuddy/commit/186a4e518e450264fa9ba5c397e7e45d3bdb410e))
+* create centralized design tokens utility ([19d12d6](https://github.com/trystan2k/padelbuddy/commit/19d12d63e83a0e14fb1ffddca624a18b174e5f08))
+* create layout presets utility with common page structure schemas ([3990f0e](https://github.com/trystan2k/padelbuddy/commit/3990f0e0c9aa6d0791a738655595f83ca7fa21c2))
+* enhance home screen UI with button resizing and settings navigation ([fe14f73](https://github.com/trystan2k/padelbuddy/commit/fe14f73f7b3604deb57ec598ac53235c08b00b99))
+* **game:** redesign UI for better readability and touch targets ([8bebbf1](https://github.com/trystan2k/padelbuddy/commit/8bebbf19511db7c91d3e4ca0be0c11c13fbd73b1))
+* **history:** use watch local time for match timestamps ([9144253](https://github.com/trystan2k/padelbuddy/commit/9144253d40563f3771b277c5e80c8f1dfe23cdbb))
+* implement game screen interaction binding and autosave flow ([6de572e](https://github.com/trystan2k/padelbuddy/commit/6de572ef80ad3c0d9ce9db67d3b72f2e6cc801f0))
+* implement game screen layout and responsive controls ([a0f9a0f](https://github.com/trystan2k/padelbuddy/commit/a0f9a0f2fdc1af54fd215065c8c132eb929b1a6a))
+* implement home screen resume game flow ([7e26f77](https://github.com/trystan2k/padelbuddy/commit/7e26f7719af060efc359f74ab3d5f4bc04d76d58))
+* implement home screen start and resume game flow ([7be4671](https://github.com/trystan2k/padelbuddy/commit/7be4671355772728fd1a48e3995add76a78f6572))
+* implement match history storage and viewing ([1fa888d](https://github.com/trystan2k/padelbuddy/commit/1fa888da91f6bbbca247d13f013e47d3f1425a0a)), closes [#29](https://github.com/trystan2k/padelbuddy/issues/29)
+* implement match state persistence save/load service ([ab065c9](https://github.com/trystan2k/padelbuddy/commit/ab065c9fd4c501be512622c162b0726faee32f7e))
+* implement match state schema and persistence utilities ([4e69fa0](https://github.com/trystan2k/padelbuddy/commit/4e69fa0f20a15a57efbc42c7ebd83b8db55ba092))
+* implement new match reset and cleanup flow ([dcdcec3](https://github.com/trystan2k/padelbuddy/commit/dcdcec319f4f25f0527ffe1c59a535e7987e3bbe))
+* implement pre-match setup flow and access guard ([4e13992](https://github.com/trystan2k/padelbuddy/commit/4e13992d8735a9a5091e4a576f7397cd9b40b867))
+* implement release and changelog generation with GitHub Actions ([8c08113](https://github.com/trystan2k/padelbuddy/commit/8c08113d673c7a33ddf06815343d7fb629c21585)), closes [#39](https://github.com/trystan2k/padelbuddy/issues/39)
+* implement set and match completion flow ([4d59bfe](https://github.com/trystan2k/padelbuddy/commit/4d59bfed32fca4d6e85d25be909cb23e9b01547a))
+* implement undo point restoration and UI integration ([13af5d7](https://github.com/trystan2k/padelbuddy/commit/13af5d7bba0b51b0104c6754486fc969a54c7d70))
+* initialize Zepp OS padel score app project structure ([c43c83b](https://github.com/trystan2k/padelbuddy/commit/c43c83b130e9c5a9763499f1520f8aedaccd322f))
+* integrate lifecycle persistence triggers for match state ([17d2380](https://github.com/trystan2k/padelbuddy/commit/17d23805ac5a4e5765c819c846f492fa733b0759))
+* keep screen on during game to prevent watchface return ([8dcc9f3](https://github.com/trystan2k/padelbuddy/commit/8dcc9f33cf2a1c0941ec2820ad13947f024ce1e0))
+* refine game styling and add scoring debounce ([cb8b093](https://github.com/trystan2k/padelbuddy/commit/cb8b093055031a76f002331d2a1a5c91bd99a0c2))
+* remove invalid plan file ([f498de4](https://github.com/trystan2k/padelbuddy/commit/f498de44addcb8238aedf754a128bfe1c6c6fdce))
+* **settings:** add app version display to settings page ([8b6b58c](https://github.com/trystan2k/padelbuddy/commit/8b6b58c787e70f93ba9b67f378055ebcbb43aa8c))
+* **settings:** improve data clearing with toast feedback and reliable file overwrites ([dc9a9b9](https://github.com/trystan2k/padelbuddy/commit/dc9a9b9f8392aa00262705b71c356c34b2fd8905))
+
+### Bug Fixes
+
+* **assets:** update icon assets and references for consistency ([b0532f8](https://github.com/trystan2k/padelbuddy/commit/b0532f8a6cd235a793068bbfc54a01e77bdac393))
+* change task id fields from string to integer for consistency ([441408d](https://github.com/trystan2k/padelbuddy/commit/441408d67484eb01a30bce192975a9a56d092d40))
+* edge case handling and data validation ([75f0810](https://github.com/trystan2k/padelbuddy/commit/75f0810a1657d13beb27f698538fafa5d9a0e443))
+* position settings icon consistently at bottom ([78897a5](https://github.com/trystan2k/padelbuddy/commit/78897a54cb7047b2c33df18a3c2b84338b6f417d))
+* resolve storage adapter stale cache causing flaky guard test in CI ([ba09d9c](https://github.com/trystan2k/padelbuddy/commit/ba09d9c426bf23aec5ef3e6d43b2f0a43c460fde))
+* **ZeppOsStorageAdapter:** initialize storage to null to prevent runtime errors ([698e869](https://github.com/trystan2k/padelbuddy/commit/698e869e3eb7f633f64e2b9f59fd1af7a84b27cc))
+
+### Code Refactoring
+
+* **agents:** simplify taskmaster integration and reorder preparation steps ([818e362](https://github.com/trystan2k/padelbuddy/commit/818e36215e35b198a5119aac1e85e71ba0dfdd7d))
+* remove debug console logs from production code ([a5e7be6](https://github.com/trystan2k/padelbuddy/commit/a5e7be6bb646e0533bf77338b8796be5a38553e1))
+* remove hard reset confirmation for starting new game ([b18e8e8](https://github.com/trystan2k/padelbuddy/commit/b18e8e80cab73c4c946f9d0f9c521f6e3e90c310))
+* remove invalid onShow lifecycle methods for Zepp OS v1.0 compatibility ([32fac7e](https://github.com/trystan2k/padelbuddy/commit/32fac7edcc355e2dec1a37248a1499c2bc254b33))
+* **storage:** replace async storage with synchronous hmFS API ([3fc3aba](https://github.com/trystan2k/padelbuddy/commit/3fc3aba915db3278b608a881c0ee49d235a532e5))
+* **summary:** replace static history list with scrollable view and remove new game button ([97488a0](https://github.com/trystan2k/padelbuddy/commit/97488a04785cb72cee5a26e3a0186d8aa0ad8107))
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
