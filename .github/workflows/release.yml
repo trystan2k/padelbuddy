@@ -2,8 +2,17 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths-ignore:
+      - '.opencode/**'
+      - '.taskmaster/**'
+      - '.husky/**'
+      - '.github/**'
+      - 'docs/**'
+      - '*.md'
+      - 'LICENSE'
+      - '.gitignore'
 
 permissions:
   contents: write
@@ -14,8 +23,9 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-
+    # Only run if there are actual code changes (double-check)
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,24 +51,38 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Verify release branch
+      - name: Check for releasable changes
+        id: check-changes
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            BRANCHES=$(git branch -r --contains ${{ github.sha }})
-            if ! echo "$BRANCHES" | grep -qE 'origin/(main|v[0-9]+)$'; then
-              echo "Error: Tags must be created from main or a version branch (v1, v2, etc.)"
-              exit 1
-            fi
-            echo "Tag is from a valid release branch, proceeding with release"
+          # Get list of changed files in this commit
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          
+          # Define releasable paths (code that affects the app)
+          RELEASABLE="page/|app.js|app.json|app-side/|setting/|utils/|assets/|shared/"
+          
+          # Check if any releasable files changed
+          if echo "$CHANGED_FILES" | grep -qE "^($RELEASABLE)"; then
+            echo "Releasable changes detected"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No releasable changes - skipping release"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Run tests
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: npm run test
 
       - name: Run lint
+        if: steps.check-changes.outputs.has_changes == 'true'
         run: npm run lint
 
+      - name: Build project
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: npm run build:all
+
       - name: Create Release
+        if: steps.check-changes.outputs.has_changes == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run release

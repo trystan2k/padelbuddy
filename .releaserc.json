@@ -13,7 +13,7 @@
           { "type": "style", "release": false },
           { "type": "refactor", "release": "patch" },
           { "type": "test", "release": false },
-          { "type": "chore", "release": "minor" },
+          { "type": "chore", "release": false },
           { "breaking": true, "release": "major" }
         ]
       }
@@ -27,8 +27,7 @@
             { "type": "feat", "section": "Features" },
             { "type": "fix", "section": "Bug Fixes" },
             { "type": "perf", "section": "Performance" },
-            { "type": "refactor", "section": "Code Refactoring" },
-            { "type": "chore", "section": "Chore" }
+            { "type": "refactor", "section": "Code Refactoring" }
           ]
         }
       }
