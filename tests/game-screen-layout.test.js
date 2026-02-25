@@ -1498,7 +1498,6 @@ test('game access guard allows render when persisted session is valid and active
     async ({ page, navigationCalls, createdWidgets, getVisibleWidgets }) => {
       // Initialize page state like onInit does
       page.widgets = []
-      page.isSessionAccessCheckInFlight = false
       page.isSessionAccessGranted = false
 
       // Mock the hasValidActiveSession to return true for valid active session
@@ -1530,7 +1529,6 @@ test('game access guard caches session access after successful validation', asyn
   await runSessionGuardTest(activeState, async ({ page, navigationCalls }) => {
     // Initialize page state like onInit does
     page.widgets = []
-    page.isSessionAccessCheckInFlight = false
     page.isSessionAccessGranted = false
 
     // Mock the hasValidActiveSession to return true for valid active session
@@ -1557,16 +1555,6 @@ test('game access guard build is no-op when session not yet validated', async ()
       assert.equal(buttons.length, 0)
     }
   )
-})
-
-test('game access guard does not re-check session when already in flight', async () => {
-  await runSessionGuardTest(null, async ({ page }) => {
-    page.isSessionAccessCheckInFlight = true
-
-    // When already in flight, return false immediately
-    const result = page.validateSessionAccess()
-    assert.equal(result, false)
-  })
 })
 
 // ============================================================================
