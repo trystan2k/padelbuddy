@@ -149,7 +149,13 @@ This subagent must not delegate to other subagents.
 7- Do not include any task number information in the commit message, unless it is explicitly requested
 8- Never include any information that is not related to the changes made in the code
 9- Never skip git hooks
-10- **IMPORTANT**: Add all files to the commit, including any new files created by the task
+10- **CRITICAL - DISCOVER AND COMMIT ALL TASK-RELATED FILES**:
+    - **ALWAYS** run `git status --porcelain` FIRST to discover ALL files (modified, added, untracked)
+    - **ALWAYS** use `git add -A` to stage ALL files - do NOT cherry-pick individual files
+    - This includes: implementation files, plan files (`docs/plan/*.md`), development logs (`docs/development-logs/*.md`), and taskmaster state (`.taskmaster/tasks/tasks.json`)
+    - **NEVER** only commit files explicitly mentioned in the prompt if there are other task-related files
+    - If you see files that seem unrelated to the task, ask the user before excluding them
+    - The only exception is if the user explicitly requests to commit specific files only (rare)
 
 ## Push changes
 

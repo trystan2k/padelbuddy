@@ -179,8 +179,10 @@ Follow these steps in order.
     - **Stop timer** and record Development Logging phase time.
 
 10. Mandatory User Approval Before Commit
+    - **CRITICAL**: Discover ALL task-related files before presenting to user:
+      - Run `git status --porcelain` to find all modified and untracked files
     - Present the user with:
-      - files changed or created
+      - **ALL** files changed or created (not just implementation files)
       - brief description of changes
       - proposed commit message
     - Ask for explicit approval.
@@ -189,11 +191,12 @@ Follow these steps in order.
 
 11. Commit/Push Cycle
     - **Start timer** for Commit/Push phase.
-    - Ask `git-specialist`
+    - Ask `git-specialist`:
       - To refresh working tree state before commit to detect manual user edits, with user approval
-      - To commit all approved changes, with user approval
+      - **To commit ALL task-related files** (use `git add -A`), with user approval - DO NOT specify individual files
       - To push commits, with user approval
       - To create a pull request (PR) or merge request (MR) with the committed changes, with user approval, with a comprehensive and accurate implementation description
+    - **IMPORTANT**: When calling git-specialist, do NOT restrict files - let it discover and commit all task-related files
     - **Stop timer** and record Commit/Push phase time.
 
 12. Completion Notification

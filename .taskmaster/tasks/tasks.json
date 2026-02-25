@@ -2520,10 +2520,72 @@
         "description": "Implement utils/screen-utils.js providing essential screen measurement utilities and round screen geometry calculations to support adaptive layouts across different device shapes.",
         "details": "Create a new file at `utils/screen-utils.js` with the following utility functions:\n\n1. **getScreenMetrics()**: Returns an object with screen properties:\n   - `width`: Screen width from hmUI.getScreenMetrics()\n   - `height`: Screen height from hmUI.getScreenMetrics()\n   - `isRound`: Boolean calculated as `Math.abs(width - height) <= Math.round(width * 0.04)`\n\n2. **clamp(value, min, max)**: Constrains a value within a specified range.\n   - Return `Math.max(min, Math.min(max, value))`\n   - Useful for keeping positions within screen bounds\n\n3. **ensureNumber(value, fallback)**: Validates that a value is a valid number.\n   - Return `value` if typeof is 'number' and not NaN\n   - Otherwise return `fallback` (default to 0 if not provided)\n\n4. **pct(screenDimension, percentage)**: Converts percentage to pixels.\n   - Calculate `screenDimension * percentage`\n   - `percentage` can be 0-1 or 0-100 (handle both)\n\n5. **getRoundSafeInset(width, height, y, padding)**: Calculates safe inset for round screens at specific Y position.\n   - Use circle geometry to find chord at Y position\n   - Algorithm: \n     - `centerX = width / 2`\n     - `radius = width / 2`\n     - `yFromCenter = y - (height / 2)`\n     - `halfChord = Math.sqrt(radius * radius - yFromCenter * yFromCenter)`\n     - Return `Math.max(0, centerX - halfChord + padding)`\n\n6. **getRoundSafeSectionInset(width, height, sectionTop, sectionHeight, padding)**: Calculates safe inset for an entire section.\n   - Call getRoundSafeInset for both top and bottom of section\n   - Return the maximum inset value to ensure full section fits\n\nAll functions should be exported for use in pages and other utility files.",
         "testStrategy": "As a foundation utility file, verify:\n1. The file compiles without syntax errors using Node.js or the Zepp build system\n2. Import the file in a test script and verify all exported functions exist\n3. Test getScreenMetrics() returns valid numbers and correct isRound detection\n4. Verify clamp() handles edge cases (value below min, above max, within range)\n5. Test ensureNumber() with NaN, undefined, strings, and valid numbers\n6. Verify pct() correctly converts percentages (both 0-1 and 0-100 formats)\n7. Validate getRoundSafeInset() returns 0 for square screens and positive values for round screens\n8. Confirm getRoundSafeSectionInset() returns the maximum inset across the section bounds\nNo full UI QA required as this is a standalone utility with no direct user interface.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create screen-utils.js file with basic utility functions",
+            "description": "Create the utils/screen-utils.js file and implement the three foundational utility functions: clamp(), ensureNumber(), and pct(). These are independent helper functions that don't depend on screen metrics or round screen logic.",
+            "dependencies": [],
+            "details": "Create utils/screen-utils.js file. Implement clamp(value, min, max) returning Math.max(min, Math.min(max, value)). Implement ensureNumber(value, fallback) returning value if typeof is 'number' and not NaN, otherwise return fallback (default 0). Implement pct(screenDimension, percentage) calculating screenDimension * percentage, handling both 0-1 and 0-100 ranges. Export all three functions.",
+            "status": "done",
+            "testStrategy": "Test clamp() with values below min, above max, and within range. Test ensureNumber() with valid numbers, NaN, strings, and undefined to verify fallback behavior. Test pct() with both decimal (0.5) and percentage (50) formats to confirm they produce the same pixel result.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T15:35:04.549Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement getScreenMetrics function",
+            "description": "Implement the getScreenMetrics() function that retrieves screen dimensions from the Zepp OS API and determines whether the screen is round based on the aspect ratio tolerance formula.",
+            "dependencies": [],
+            "details": "Add getScreenMetrics() function to screen-utils.js. Call hmUI.getScreenMetrics() to retrieve width and height. Calculate isRound as Math.abs(width - height) <= Math.round(width * 0.04). Return object with width, height, and isRound properties. Export the function.",
+            "status": "done",
+            "testStrategy": "Verify function returns object with width, height (numbers), and isRound (boolean). Test with round screen dimensions (equal width/height) expecting isRound=true. Test with square rectangular screens expecting isRound=false when difference exceeds 4% threshold.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T15:35:04.553Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement getRoundSafeInset function",
+            "description": "Implement the getRoundSafeInset() function using circle geometry to calculate the horizontal inset needed at a specific Y position on a round screen to prevent content from being clipped.",
+            "dependencies": [],
+            "details": "Add getRoundSafeInset(width, height, y, padding) function. Calculate centerX = width / 2, radius = width / 2, yFromCenter = y - (height / 2). Calculate halfChord = Math.sqrt(radius * radius - yFromCenter * yFromCenter). Return Math.max(0, centerX - halfChord + padding). Export the function.",
+            "status": "done",
+            "testStrategy": "Test at y=0 (top edge) expecting minimum inset. Test at y=height/2 (center) expecting inset=padding or 0. Test at y=height (bottom edge) expecting minimum inset. Verify negative values are never returned (Math.max(0, ...)).",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T15:35:04.555Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement getRoundSafeSectionInset function",
+            "description": "Implement getRoundSafeSectionInset() function that calculates the maximum safe inset needed for an entire vertical section on a round screen by checking both top and bottom boundaries.",
+            "dependencies": [],
+            "details": "Add getRoundSafeSectionInset(width, height, sectionTop, sectionHeight, padding) function. Call getRoundSafeInset(width, height, sectionTop, padding) for top edge. Call getRoundSafeInset(width, height, sectionTop + sectionHeight, padding) for bottom edge. Return Math.max(topInset, bottomInset) to ensure entire section fits. Export the function.",
+            "status": "done",
+            "testStrategy": "Test with sections at top of screen expecting larger inset. Test with sections at center expecting smaller inset. Test with full-height section expecting inset based on most constrained edge (top or bottom). Verify returned value is never negative.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T15:35:04.557Z"
+          },
+          {
+            "id": 5,
+            "title": "Test and validate all screen utility functions",
+            "description": "Perform comprehensive testing of the screen-utils.js module to ensure all functions work correctly together, the file compiles without errors, and all exports are properly accessible.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Import all functions from screen-utils.js in a test script. Verify file compiles using Node.js or Zepp build system. Confirm all 6 functions are exported and callable. Test getScreenMetrics() with mock hmUI.getScreenMetrics() return values. Test round screen calculations with various screen dimensions. Validate edge cases for all utility functions including boundary values and invalid inputs.",
+            "status": "done",
+            "testStrategy": "1. Syntax verification: ensure no compilation errors. 2. Export verification: confirm getScreenMetrics, clamp, ensureNumber, pct, getRoundSafeInset, getRoundSafeSectionInset are all exported. 3. Integration test: call getRoundSafeSectionInset which internally uses getRoundSafeInset to verify function interaction works correctly. 4. Test with real hmUI.getScreenMetrics() if available in simulator.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-25T15:35:04.560Z"
+          }
+        ],
+        "updatedAt": "2026-02-25T15:35:04.560Z"
       },
       {
         "id": "42",
@@ -2682,9 +2744,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-25T14:37:52.890Z",
+      "lastModified": "2026-02-25T15:35:04.560Z",
       "taskCount": 51,
-      "completedCount": 38,
+      "completedCount": 39,
       "tags": [
         "master"
       ]
