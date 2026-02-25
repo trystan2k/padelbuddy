@@ -100,24 +100,29 @@ Follow these steps in order.
 
 1. Preparation
    - **Start timer** for Preparation phase.
+   - Ask `taskmaster-specialist`
+      - To validate the provided task or subtask ID exists and retrieve current status.
+      - If task appears already implemented or completed, ask the user for clarification before proceeding.
+      - Get basic task details, like title and description and return
+   Only continue after you have the basic task details.
    - Ask `git-specialist` to ensure repository is on `main` and it is up-to-date and then create a feature branch:
      - If current branch is not `main`, switch to `main`.
      - If uncommitted changes exist, stash changes, checkout `main`, pull latest, then restore stashed changes.
      - Create a new feature branch from `main`
+         - Use the pattern defined in the AGENTS.md file.
          - One feature branch per task ID.
          - All subtasks of that task use the same branch.
          - Branch naming must follow pattern in project `AGENTS.md`.
          - If no pattern is found, pause and ask user for naming guidance.
+   - Wait branch creation before moving to next step.
    - Ask `taskmaster-specialist`
-      - To validate the provided task or subtask ID exists and retrieve current status.
-      - If task appears already implemented or completed, ask the user for clarification before proceeding.
       - Check expansion state.
-      - If task is not expanded, ask `taskmaster-specialist` to expand it before implementation.
+      - If task is not expanded, expand it before implementation.
       - Once created, return the full task details, subtasks, dependencies, and acceptance criteria. Always pass the necessary information that the specification requires.
    - **Stop timer** and record Preparation phase time.
 
 2. Planning with Deepthink
-   - Using the information provided by `taskmaster-specialist` from previous step, interview the user (using brainstorming skill) to understand the requirements and constraints, solve any ambiguity, and clarify any missing information.
+   - Using the information provided by `taskmaster-specialist` from previous step, interview the user (using brainstorming skill and question tool) to understand the requirements and constraints, solve any ambiguity, and clarify any missing information.
    - Ask `execution-planner-specialist` to generate the detailed action plan using deepthink principles using the task details and user requirements obtained from task details and user interview.
    - Capture the plan file path returned by `execution-planner-specialist` and store it for use in implementation.
    - Ask user explicit approval to proceed with the plan. DO NOT proceed without user approval.

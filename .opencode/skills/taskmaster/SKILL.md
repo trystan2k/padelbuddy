@@ -21,10 +21,12 @@ metadata:
 Use this skill when an agent needs to execute any Taskmaster workflow through Taskmaster MCP first, with Taskmaster CLI fallback only when MCP is unavailable or fails.
 
 MCP scope for this skill:
+
 - Allowed MCP integration: `mcp_task-master-ai` only.
 - Do not use any other MCP tool while executing this skill.
 
 Typical triggers:
+
 - Initialize Taskmaster in a repository.
 - Parse a PRD and generate tasks.
 - Expand tasks into subtasks.
@@ -39,6 +41,7 @@ Do not use this skill for source-code implementation or git workflows.
 ## Inputs
 
 Inputs:
+
 - Repository absolute path.
 - Requested action intent (for example: `init`, `parse-prd`, `expand`, `set-status`, `add-dependency`, `next-task`).
 - Action parameters (task IDs, PRD path, status values, dependency IDs, tag/context names, and flags).
@@ -51,47 +54,37 @@ If any required input is missing, stop and return a structured input error.
 ## Procedure
 
 Procedure:
-1. Attempt Taskmaster MCP first (`mcp_task-master-ai`) for the requested intent.
-2. If MCP succeeds, continue with MCP for execution and verification.
-3. If MCP is unavailable or fails (missing tool, unsupported operation, transport error, timeout, permission error, or execution failure), record the failure reason and fallback to CLI.
-4. Resolve the CLI executable in this order:
+
+1. Resolve the CLI executable (test one by one and only test the next if first fails) in this order:
    - `task-master`
    - `taskmaster`
    - `npx -y task-master-ai`
    Try to run the first one and if it fails, try the next one, but if one of them succeeds, continue with that one.
-5. Verify availability with `--version`. If missing and `allow_install` is false, fail with install guidance.
-6. Set repository context and validate whether `.taskmaster/` exists.
-7. Build a version-specific command map:
-   - Run `<tm> --help`.
-   - For the target intent, run `<tm> <subcommand> --help` before execution.
-   - Use discovered command names and flags from the installed version.
-8. Route the intent using the command catalog below.
-9. If the exact command is not available in the installed version, use the closest official alias shown in `<tm> --help`.
-10. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
-11. Execute only Taskmaster CLI commands in fallback mode.
-12. Run post-action verification with one read command (`list`, `show`, or equivalent) on the same channel used for execution (MCP or CLI).
-13. Return a structured execution report with exact commands/methods, outcomes, and an explicit `Execution Path` note (`MCP` or `CLI fallback`).
-
-MCP invocation requirements:
-- Use MCP tool calls (for example, task/list/get methods exposed by `mcp_task-master-ai`) for MCP execution.
-- Never execute `mcp_task-master-ai` in shell (`bash`) as if it were a binary.
-- If MCP tooling is unavailable in runtime, report the MCP tool error directly, then proceed with CLI fallback if allowed.
+2. Route the intent using the command catalog below.
+3. If the exact command is not available in the installed version, use the closest official alias shown in `<tm> --help`.
+4. For destructive operations (delete, clear, overwrite, force replace), require `confirmed=true`.
+5. Execute only Taskmaster CLI commands, do not edit tasks.json manually or with any other tool.
+6. Run post-action verification with one read command (`list`, `show`, or equivalent) on the same channel used for execution (CLI).
+7. Return a structured execution report with exact commands/methods, outcomes
 
 ### Command Catalog (CLI Reference)
 
 Use these commands as the default reference. Always confirm with `--help` before execution.
 
 Project bootstrap and setup:
+
 - `task-master init`
 - `task-master init --rules cursor,windsurf,vscode`
 - `task-master migrate` (when present in installed version)
 
 PRD and planning:
+
 - `task-master parse-prd <prd-file.txt>`
 - `task-master parse-prd <prd-file.txt> --num-tasks=5`
 - `task-master parse-prd <prd-file.txt> --num-tasks=0`
 
 Task inspection:
+
 - `task-master list`
 - `task-master list --status=<status>`
 - `task-master list --with-subtasks` // Shows all tasks with their subtasks
@@ -103,6 +96,7 @@ Task inspection:
 - `task-master show 1.2`
 
 Task creation and updates:
+
 - `task-master add-task --prompt="<description>"`
 - `task-master add-task --prompt="<description>" --research`
 - `task-master add-task --prompt="<description>" --dependencies=1,2,3`
@@ -115,11 +109,13 @@ Task creation and updates:
 - `task-master update-subtask --id=<parentId.subtaskId> --prompt="<prompt>" --research`
 
 Task lifecycle and status:
+
 - `task-master set-status --id=<id> --status=<status>`
 - `task-master set-status --id=1,2,3 --status=<status>`
 - `task-master set-status --id=1.1,1.2 --status=<status>`
 
 Task expansion and decomposition:
+
 - `task-master expand --id=<id> --num=<number>`
 - `task-master expand --id=<id> --num=0`
 - `task-master expand --id=<id> --prompt="<context>"`
@@ -132,6 +128,7 @@ Task expansion and decomposition:
 - `task-master clear-subtasks --all`
 
 Complexity analysis:
+
 - `task-master analyze-complexity`
 - `task-master analyze-complexity --output=my-report.json`
 - `task-master analyze-complexity --model=<model>`
@@ -142,12 +139,14 @@ Complexity analysis:
 - `task-master complexity-report --file=my-report.json`
 
 Dependencies:
+
 - `task-master add-dependency --id=<id> --depends-on=<id>`
 - `task-master remove-dependency --id=<id> --depends-on=<id>`
 - `task-master validate-dependencies`
 - `task-master fix-dependencies`
 
 Task moves and restructuring:
+
 - `task-master move --from=<id> --to=<id>`
 - `task-master move --from=5.2 --to=7.3`
 - `task-master move --from=10,11,12 --to=16,17,18`
@@ -156,6 +155,7 @@ Task moves and restructuring:
 - `task-master move --from=5 --from-tag=backlog --to-tag=in-progress --ignore-dependencies`
 
 Tag and context management:
+
 - `task-master tags`
 - `task-master tags --show-metadata`
 - `task-master add-tag <tag-name>`
@@ -171,12 +171,14 @@ Tag and context management:
 - `task-master delete-tag <tag-name> --yes`
 
 Rules management:
+
 - `task-master rules add <profile1,profile2,...>`
 - `task-master rules remove <profile1,profile2,...>`
 - `task-master rules remove <profile1,profile2,...> --force`
 - `task-master rules setup`
 
 Model configuration:
+
 - `task-master models`
 - `task-master models --set-main=<model>`
 - `task-master models --set-research=<model>`
@@ -188,6 +190,7 @@ Model configuration:
 - `task-master models --setup`
 
 Research:
+
 - `task-master research "<query>"`
 - `task-master research "<query>" --id=15,16`
 - `task-master research "<query>" --files=src/a.js,src/b.js`
@@ -200,11 +203,13 @@ Research:
 - `task-master research "<query>" --save-to=15.2`
 
 Task file generation:
+
 - `task-master generate`
 
 ### Intent-to-Command Routing Hints
 
 Use this mapping when parent agents provide high-level intent:
+
 - `initialize taskmaster` -> `init`
 - `create tasks from PRD` -> `parse-prd`
 - `expand task` -> `expand --id=<id>`
@@ -221,6 +226,7 @@ Use this mapping when parent agents provide high-level intent:
 ## Outputs
 
 Outputs:
+
 - Markdown report with these sections:
   - `Preconditions`
   - `Command Resolution`
@@ -230,6 +236,7 @@ Outputs:
   - `Final Status`
 
 `Final Status` must be one of:
+
 - `success`
 - `partial`
 - `failed`
@@ -237,11 +244,13 @@ Outputs:
 ## Examples
 
 Input:
+
 - Repository: `/repo/app`
 - Action: `set-status`
 - Params: `task_id=12`, `status=in-progress`
 
 Output:
+
 - `Preconditions`: Taskmaster executable resolved to `task-master`; repository contains `.taskmaster/`.
 - `Command Resolution`: intent `set-status` mapped to installed version command `<tm> set-status`.
 - `Executed Commands`: `<tm> set-status --id=12 --status=in-progress`.
@@ -250,11 +259,13 @@ Output:
 - `Final Status`: `success`.
 
 Input:
+
 - Repository: `/repo/app`
 - Action: `parse-prd`
 - Params: `input=.taskmaster/docs/prd.md`, `num_tasks=20`, `research=true`
 
 Output:
+
 - `Preconditions`: Taskmaster initialized.
 - `Command Resolution`: intent `parse-prd` mapped to `<tm> parse-prd`.
 - `Executed Commands`: `<tm> parse-prd .taskmaster/docs/prd.md --num-tasks=20 --research`.
@@ -265,11 +276,6 @@ Output:
 ## Notes and Edge Cases
 
 Notes:
-- Always attempt MCP first; do not start with CLI unless MCP is unavailable or has already failed for the request.
-- Treat requests that require Taskmaster MCP as valid; do not reject solely because MCP is requested.
-- Shell errors like `command not found: mcp_task-master-ai` indicate incorrect invocation style, not a valid MCP availability check.
-- Command names can vary by Taskmaster version; always read `--help` first and adapt.
-- If `.taskmaster/` is missing for non-bootstrap actions, fail with actionable init guidance.
-- When status value is unsupported in the installed version, return supported statuses from help output.
+
 - Do not execute source-code changes, git writes, or unrelated shell commands in this skill.
 - **NEVER** manipulate the tasks.json file directly or using any other tool except the task-master CLI. Use the provided commands to manage tasks.
