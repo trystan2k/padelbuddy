@@ -1,5 +1,8 @@
 import { gettext } from 'i18n'
+
+import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { createHistoryStack, deepCopyState } from '../utils/history-stack.js'
+import { resolveLayout } from '../utils/layout-engine.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import {
   createDefaultMatchState as createDefaultPersistedMatchState,
@@ -9,40 +12,15 @@ import {
 import { loadMatchState, saveMatchState } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { addPoint, removePoint } from '../utils/scoring-engine.js'
+import { getScreenMetrics } from '../utils/screen-utils.js'
 import { loadState, saveState } from '../utils/storage.js'
+import {
+  createBackground,
+  createButton,
+  createDivider,
+  createText
+} from '../utils/ui-components.js'
 import { createScoreViewModel } from './score-view-model.js'
-
-const GAME_TOKENS = Object.freeze({
-  colors: {
-    accent: 0x1eb98c,
-    accentPressed: 0x1aa07a,
-    background: 0x000000,
-    buttonText: 0x000000,
-    buttonSecondary: 0x24262b,
-    buttonSecondaryPressed: 0x2d3036,
-    buttonSecondaryText: 0xffffff,
-    cardBackground: 0x000000,
-    dangerText: 0xff6d78,
-    divider: 0x2a2d34,
-    mutedText: 0x7d8289,
-    text: 0xffffff
-  },
-  fontScale: {
-    button: 0.038,
-    headerLabel: 0.06,
-    headerValue: 0.048,
-    minusButton: 0.08,
-    points: 0.28,
-    teamLabel: 0.038
-  },
-  spacingScale: {
-    headerTop: 0.04,
-    bottomInset: 0.07,
-    bottomInsetRound: 0.11,
-    headerToScore: 0.06,
-    sectionGap: 0.03
-  }
-})
 
 const INTERACTION_LATENCY_TARGET_MS = 100
 const SCORING_DEBOUNCE_WINDOW_MS = 300
@@ -58,6 +36,155 @@ const REGULAR_GAME_POINT_VALUES = new Set([
   SCORE_POINTS.FORTY
 ])
 
+/**
+ * Layout schema for the game screen.
+ * Uses declarative positioning resolved by layout-engine.
+ * Two-column layout: Team A (left) | Team B (right)
+ */
+const GAME_LAYOUT = {
+  sections: {
+    // Header: SETS and GAMES rows
+    header: {
+      top: toPercentage(TOKENS.spacing.headerTop), // '4%'
+      height: '11%', // Two rows of ~5.5% each
+      roundSafeInset: true // Enable round screen safe insets for header
+    },
+    // Score area: fills between header and footer
+    scoreArea: {
+      height: 'fill',
+      after: 'header',
+      gap: toPercentage(TOKENS.spacing.headerToContent), // '6%'
+      roundSafeInset: false
+    },
+    // Footer: home button
+    footer: {
+      bottom: toPercentage(TOKENS.spacing.footerBottom), // '7%'
+      height: '5%',
+      roundSafeInset: false
+    }
+  },
+  elements: {
+    // ── Header elements: SETS row ─────────────────────────────────────────
+    setsLabel: {
+      section: 'header',
+      x: '5%',
+      y: '0%',
+      width: '42%',
+      height: '50%',
+      align: 'left',
+      _meta: { type: 'text', style: 'body', colorKey: 'mutedText' }
+    },
+    setsValue: {
+      section: 'header',
+      x: '48%',
+      y: '0%',
+      width: '52%',
+      height: '50%',
+      align: 'left',
+      _meta: { type: 'text', style: 'body', colorKey: 'accent' }
+    },
+    // ── Header elements: GAMES row ────────────────────────────────────────
+    gamesLabel: {
+      section: 'header',
+      x: '5%',
+      y: '50%',
+      width: '42%',
+      height: '50%',
+      align: 'left',
+      _meta: { type: 'text', style: 'body', colorKey: 'mutedText' }
+    },
+    gamesValue: {
+      section: 'header',
+      x: '48%',
+      y: '50%',
+      width: '52%',
+      height: '50%',
+      align: 'left',
+      _meta: { type: 'text', style: 'body', colorKey: 'accent' }
+    },
+    // ── Score area: Team labels ───────────────────────────────────────────
+    teamALabel: {
+      section: 'scoreArea',
+      x: '0%',
+      y: '0%',
+      width: '50%',
+      height: '10%',
+      align: 'left',
+      _meta: { type: 'text', style: 'body', colorKey: 'mutedText', text: 'A' }
+    },
+    teamBLabel: {
+      section: 'scoreArea',
+      x: '50%',
+      y: '0%',
+      width: '50%',
+      height: '10%',
+      align: 'left',
+      _meta: { type: 'text', style: 'body', colorKey: 'mutedText', text: 'B' }
+    },
+    // ── Score area: Score buttons (large tappable area) ───────────────────
+    teamAScore: {
+      section: 'scoreArea',
+      x: '0%',
+      y: '10%',
+      width: '50%',
+      height: '50%',
+      align: 'left',
+      _meta: { type: 'scoreButton', team: 'teamA' }
+    },
+    teamBScore: {
+      section: 'scoreArea',
+      x: '50%',
+      y: '10%',
+      width: '50%',
+      height: '50%',
+      align: 'left',
+      _meta: { type: 'scoreButton', team: 'teamB' }
+    },
+    // ── Score area: Vertical divider ──────────────────────────────────────
+    divider: {
+      section: 'scoreArea',
+      x: 'center',
+      y: '5%',
+      width: 1,
+      height: '55%',
+      _meta: { type: 'divider', orientation: 'vertical' }
+    },
+    // ── Score area: Minus buttons ─────────────────────────────────────────
+    teamAMinus: {
+      section: 'scoreArea',
+      x: '5%',
+      y: '65%',
+      width: '20%',
+      height: '13%',
+      align: 'center',
+      _meta: { type: 'minusButton', team: 'teamA' }
+    },
+    teamBMinus: {
+      section: 'scoreArea',
+      x: '75%',
+      y: '65%',
+      width: '20%',
+      height: '13%',
+      align: 'center',
+      _meta: { type: 'minusButton', team: 'teamB' }
+    },
+    // ── Footer: Home button ───────────────────────────────────────────────
+    homeButton: {
+      section: 'footer',
+      x: 'center',
+      y: 'center',
+      width: TOKENS.sizing.iconLarge,
+      height: TOKENS.sizing.iconLarge,
+      align: 'center',
+      _meta: {
+        type: 'iconButton',
+        icon: 'home-icon.png',
+        onClick: 'handleBackToHome'
+      }
+    }
+  }
+}
+
 function cloneMatchState(matchState) {
   try {
     return JSON.parse(JSON.stringify(matchState))
@@ -68,50 +195,6 @@ function cloneMatchState(matchState) {
 
 function ensureNumber(value, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
-}
-
-function calculateRoundSafeSideInset(
-  width,
-  height,
-  yPosition,
-  horizontalPadding
-) {
-  const radius = Math.min(width, height) / 2
-  const centerX = width / 2
-  const centerY = height / 2
-  const boundedY = clamp(yPosition, 0, height)
-  const distanceFromCenter = Math.abs(boundedY - centerY)
-  const halfChord = Math.sqrt(
-    Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter)
-  )
-
-  return Math.max(0, Math.ceil(centerX - halfChord + horizontalPadding))
-}
-
-function calculateRoundSafeSectionSideInset(
-  width,
-  height,
-  sectionTop,
-  sectionHeight,
-  horizontalPadding
-) {
-  const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(
-    sectionTop + Math.max(sectionHeight, 0),
-    0,
-    height
-  )
-  const middleY = (boundedTop + boundedBottom) / 2
-
-  return Math.max(
-    calculateRoundSafeSideInset(width, height, boundedTop, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, middleY, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, boundedBottom, horizontalPadding)
-  )
 }
 
 function isRecord(value) {
@@ -488,46 +571,6 @@ function isSameMatchState(leftState, rightState) {
   }
 }
 
-function getLeadingTeamId(viewModel) {
-  if (!isRecord(viewModel)) {
-    return null
-  }
-
-  if (isTeamIdentifier(viewModel.winnerTeam)) {
-    return viewModel.winnerTeam
-  }
-
-  if (!isRecord(viewModel.currentSetGames)) {
-    return null
-  }
-
-  if (viewModel.currentSetGames.teamA > viewModel.currentSetGames.teamB) {
-    return 'teamA'
-  }
-
-  if (viewModel.currentSetGames.teamB > viewModel.currentSetGames.teamA) {
-    return 'teamB'
-  }
-
-  return null
-}
-
-function getFinishedMessage(viewModel) {
-  const leadingTeamId = getLeadingTeamId(viewModel)
-
-  if (leadingTeamId === 'teamA' || leadingTeamId === 'teamB') {
-    const winningTeam = viewModel[leadingTeamId]
-    const winningLabel =
-      isRecord(winningTeam) && typeof winningTeam.label === 'string'
-        ? winningTeam.label
-        : gettext('game.matchFinished')
-
-    return `${winningLabel} ${gettext('game.winsSuffix')}`
-  }
-
-  return gettext('game.matchFinished')
-}
-
 function getScoringTeamForTransition(previousState, nextState) {
   const nextStateAfterTeamA = addPoint(previousState, 'teamA')
   if (isSameMatchState(nextStateAfterTeamA, nextState)) {
@@ -595,7 +638,7 @@ Page({
           y: 0,
           w: this.getScreenMetrics().width,
           h: this.getScreenMetrics().height,
-          color: GAME_TOKENS.colors.background
+          color: TOKENS.colors.background
         })
       }
       return
@@ -1335,13 +1378,18 @@ Page({
       nextState
     )
 
-    this.persistAndRender(nextState, interactionStartedAt, {
-      forcePersistence: didFinishMatch
-    })
-
+    // When match finishes, skip rendering and navigate directly to summary
+    // This avoids the brief flash of the finished state screen
     if (didFinishMatch) {
+      this.updateRuntimeMatchState(nextState)
+      this.saveCurrentRuntimeState({ force: true })
       this.handleMatchFinishedTransition()
+      return
     }
+
+    this.persistAndRender(nextState, interactionStartedAt, {
+      forcePersistence: false
+    })
   },
 
   handleAddPointForTeam(team) {
@@ -1376,296 +1424,248 @@ Page({
       persistedMatchState: this.persistedSessionState
     })
     const isMatchFinished = viewModel.status === 'finished'
-    const _leadingTeamId = getLeadingTeamId(viewModel)
-    const { width, height } = this.getScreenMetrics()
-    const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
 
-    // ── Header: compact card with SETS and GAMES rows ──────────────────────
-    const headerSideInset = Math.round(width * 0.06)
-    const headerTop = Math.round(height * GAME_TOKENS.spacingScale.headerTop)
-    const headerRowHeight = Math.round(height * 0.055)
-    const headerHeight = headerRowHeight * 2
-    let headerX = headerSideInset
-    let headerWidth = Math.max(1, width - headerSideInset * 2)
-    if (isRoundScreen) {
-      const safeInset = calculateRoundSafeSectionSideInset(
-        width,
-        height,
-        headerTop,
-        headerHeight,
-        Math.round(width * 0.01)
-      )
-      headerX = Math.max(headerX, safeInset)
-      headerWidth = Math.max(1, width - headerX * 2)
-    }
-    const setsRowY = headerTop
-    const gamesRowY = setsRowY + headerRowHeight
-
-    // ── Bottom: home icon area ───────────────────────────────────────────
-    const homeIconSize = 48
-    const backHomeButtonHeight = clamp(Math.round(height * 0.15), 48, 68)
-    const baseBottomInset = Math.round(
-      height * GAME_TOKENS.spacingScale.bottomInset
-    )
-    const bottomInset = isRoundScreen
-      ? Math.max(
-          baseBottomInset,
-          Math.round(height * GAME_TOKENS.spacingScale.bottomInsetRound)
-        )
-      : baseBottomInset
-    const backHomeButtonY = height - bottomInset - backHomeButtonHeight
-
-    // ── Score area: fills space between header and back button ─────────────
-    const sectionGap = Math.round(height * GAME_TOKENS.spacingScale.sectionGap)
-    const scoreAreaTop =
-      headerTop +
-      headerHeight +
-      Math.round(height * GAME_TOKENS.spacingScale.headerToScore)
-    const scoreAreaBottom = backHomeButtonY - sectionGap
-    const scoreAreaHeight = Math.max(0, scoreAreaBottom - scoreAreaTop)
-
-    // Team label (A / B): top portion of score area
-    const teamLabelHeight = Math.round(scoreAreaHeight * 0.18)
-    const teamLabelY = scoreAreaTop
-
-    // Score number: large, tappable — centre of score area
-    const scoreHeight = Math.round(scoreAreaHeight * 0.5)
-    const scoreY = teamLabelY + teamLabelHeight
-
-    // Minus button: small, below score
-    const minusButtonHeight = clamp(Math.round(height * 0.11), 50, 70)
-    const minusButtonWidth = clamp(Math.round(width * 0.18), 54, 88)
-    const minusButtonY =
-      scoreY + scoreHeight + Math.round(scoreAreaHeight * 0.08)
-
-    // Half-widths for left (teamA) and right (teamB) columns
-    const halfWidth = Math.round(width / 2)
-    const leftColX = 0
-    const rightColX = halfWidth
-
-    // Divider line
-    const dividerX = halfWidth - 1
-    const dividerTop = scoreAreaTop + Math.round(scoreAreaHeight * 0.1)
-    const dividerBottom = minusButtonY + minusButtonHeight
-    const dividerHeight = Math.max(1, dividerBottom - dividerTop)
-
-    // Finished-state layout
-    const pointsValueTextSize = isMatchFinished
-      ? clamp(Math.round(width * 0.114), 36, 56)
-      : clamp(Math.round(width * GAME_TOKENS.fontScale.points), 72, 140)
+    // Get screen metrics and resolve layout
+    const metrics = getScreenMetrics()
+    const layout = resolveLayout(GAME_LAYOUT, metrics)
 
     this.clearWidgets()
 
     // Background
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0,
-      y: 0,
-      w: width,
-      h: height,
-      color: GAME_TOKENS.colors.background
-    })
+    const bg = createBackground()
+    this.createWidget(bg.widgetType, bg.config)
 
-    // ── Header ────────────────────────────────────────────────────────────
-    // Each row: [LABEL (muted, right-align)] [VALUE (accent, left-align)]
-    // The pair is centred as a group within headerWidth.
-    const headerTextSize = Math.round(width * GAME_TOKENS.fontScale.headerLabel)
-    const headerLabelWidth = Math.round(headerWidth * 0.42)
-    const headerValueWidth = Math.round(headerWidth * 0.52)
-    const headerPairWidth = headerLabelWidth + headerValueWidth
-    const headerPairX =
-      headerX + Math.round((headerWidth - headerPairWidth) / 2)
-    const headerValueX = headerPairX + headerLabelWidth
+    // Render header elements (SETS and GAMES rows)
+    this.renderHeaderElements(layout, viewModel)
 
-    // SETS row
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerPairX,
-      y: setsRowY,
-      w: headerLabelWidth,
-      h: headerRowHeight,
-      color: GAME_TOKENS.colors.mutedText,
-      text: gettext('game.setsLabel'),
-      text_size: headerTextSize,
-      align_h: hmUI.align.RIGHT,
-      align_v: hmUI.align.CENTER_V
-    })
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerValueX,
-      y: setsRowY,
-      w: headerValueWidth,
-      h: headerRowHeight,
-      color: GAME_TOKENS.colors.accent,
-      text: `  ${viewModel.setsWon.teamA} – ${viewModel.setsWon.teamB}`,
-      text_size: headerTextSize,
-      align_h: hmUI.align.LEFT,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    // GAMES row
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerPairX,
-      y: gamesRowY,
-      w: headerLabelWidth,
-      h: headerRowHeight,
-      color: GAME_TOKENS.colors.mutedText,
-      text: gettext('game.gamesLabel'),
-      text_size: headerTextSize,
-      align_h: hmUI.align.RIGHT,
-      align_v: hmUI.align.CENTER_V
-    })
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerValueX,
-      y: gamesRowY,
-      w: headerValueWidth,
-      h: headerRowHeight,
-      color: GAME_TOKENS.colors.accent,
-      text: `  ${viewModel.currentSetGames.teamA} – ${viewModel.currentSetGames.teamB}`,
-      text_size: headerTextSize,
-      align_h: hmUI.align.LEFT,
-      align_v: hmUI.align.CENTER_V
-    })
-
+    // If match is already finished, navigate directly to summary page
+    // This handles edge cases where the game page is opened with a finished match
     if (isMatchFinished) {
-      // ── Finished state: centred winner message ──────────────────────────
-      const finishedLabelHeight = Math.round(scoreAreaHeight * 0.25)
-      const finishedValueHeight = scoreAreaHeight - finishedLabelHeight
-
-      this.createWidget(hmUI.widget.TEXT, {
-        x: 0,
-        y: scoreAreaTop,
-        w: width,
-        h: finishedLabelHeight,
-        color: GAME_TOKENS.colors.mutedText,
-        text: gettext('game.finishedLabel'),
-        text_size: Math.round(width * GAME_TOKENS.fontScale.headerLabel),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-
-      this.createWidget(hmUI.widget.TEXT, {
-        x: 0,
-        y: scoreAreaTop + finishedLabelHeight,
-        w: width,
-        h: finishedValueHeight,
-        color: GAME_TOKENS.colors.accent,
-        text: getFinishedMessage(viewModel),
-        text_size: pointsValueTextSize,
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-    } else {
-      // ── Active state ────────────────────────────────────────────────────
-
-      // Team A label
-      this.createWidget(hmUI.widget.TEXT, {
-        x: leftColX,
-        y: teamLabelY,
-        w: halfWidth,
-        h: teamLabelHeight,
-        color: GAME_TOKENS.colors.mutedText,
-        text: 'A',
-        text_size: Math.round(width * GAME_TOKENS.fontScale.teamLabel),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-
-      // Team B label
-      this.createWidget(hmUI.widget.TEXT, {
-        x: rightColX,
-        y: teamLabelY,
-        w: halfWidth,
-        h: teamLabelHeight,
-        color: GAME_TOKENS.colors.mutedText,
-        text: 'B',
-        text_size: Math.round(width * GAME_TOKENS.fontScale.teamLabel),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-
-      // Team A score (tappable — adds point)
-      this.createWidget(hmUI.widget.BUTTON, {
-        x: leftColX,
-        y: scoreY,
-        w: halfWidth,
-        h: scoreHeight,
-        radius: 0,
-        normal_color: GAME_TOKENS.colors.background,
-        press_color: GAME_TOKENS.colors.cardBackground,
-        color: GAME_TOKENS.colors.text,
-        text_size: pointsValueTextSize,
-        text: String(viewModel.teamA.points),
-        click_func: () => this.handleAddPointForTeam('teamA')
-      })
-
-      // Team B score (tappable — adds point)
-      this.createWidget(hmUI.widget.BUTTON, {
-        x: rightColX,
-        y: scoreY,
-        w: halfWidth,
-        h: scoreHeight,
-        radius: 0,
-        normal_color: GAME_TOKENS.colors.background,
-        press_color: GAME_TOKENS.colors.cardBackground,
-        color: GAME_TOKENS.colors.text,
-        text_size: pointsValueTextSize,
-        text: String(viewModel.teamB.points),
-        click_func: () => this.handleAddPointForTeam('teamB')
-      })
-
-      // Vertical divider
-      this.createWidget(hmUI.widget.FILL_RECT, {
-        x: dividerX,
-        y: dividerTop,
-        w: 1,
-        h: dividerHeight,
-        color: GAME_TOKENS.colors.divider
-      })
-
-      // Team A minus button
-      const minusAX = Math.round(leftColX + (halfWidth - minusButtonWidth) / 2)
-      this.createWidget(hmUI.widget.BUTTON, {
-        x: minusAX,
-        y: minusButtonY,
-        w: minusButtonWidth,
-        h: minusButtonHeight,
-        radius: Math.round(minusButtonHeight / 2),
-        normal_color: GAME_TOKENS.colors.buttonSecondary,
-        press_color: GAME_TOKENS.colors.buttonSecondaryPressed,
-        color: GAME_TOKENS.colors.dangerText,
-        text_size: Math.round(width * GAME_TOKENS.fontScale.minusButton),
-        text: '−',
-        click_func: () => this.handleRemovePointForTeam('teamA')
-      })
-
-      // Team B minus button
-      const minusBX = Math.round(rightColX + (halfWidth - minusButtonWidth) / 2)
-      this.createWidget(hmUI.widget.BUTTON, {
-        x: minusBX,
-        y: minusButtonY,
-        w: minusButtonWidth,
-        h: minusButtonHeight,
-        radius: Math.round(minusButtonHeight / 2),
-        normal_color: GAME_TOKENS.colors.buttonSecondary,
-        press_color: GAME_TOKENS.colors.buttonSecondaryPressed,
-        color: GAME_TOKENS.colors.dangerText,
-        text_size: Math.round(width * GAME_TOKENS.fontScale.minusButton),
-        text: '−',
-        click_func: () => this.handleRemovePointForTeam('teamB')
-      })
+      this.handleMatchFinishedTransition()
+      return
     }
 
-    // ── Home icon button (always shown at bottom centre) ───────────────────
-    const homeIconX = Math.round((width - homeIconSize) / 2)
-    const homeIconY =
-      backHomeButtonY + Math.round((backHomeButtonHeight - homeIconSize) / 2)
+    // Render active state (score buttons, minus buttons)
+    this.renderActiveState(layout, viewModel)
+
+    // Render footer (home button)
+    this.renderFooterElements(layout)
+  },
+
+  renderHeaderElements(layout, viewModel) {
+    const headerSection = layout.sections.header
+    if (!headerSection) return
+
+    // Calculate header text sizing
+    const labelWidth = Math.round(headerSection.w * 0.42)
+    const valueWidth = Math.round(headerSection.w * 0.52)
+    const rowHeight = Math.round(headerSection.h / 2)
+    const pairX =
+      headerSection.x +
+      Math.round((headerSection.w - (labelWidth + valueWidth)) / 2)
+    const valueX = pairX + labelWidth
+
+    // SETS row - Label
+    const setsLabelConfig = createText({
+      text: gettext('game.setsLabel'),
+      style: 'body',
+      x: pairX,
+      y: headerSection.y,
+      w: labelWidth,
+      h: rowHeight,
+      color: TOKENS.colors.mutedText,
+      align_h: hmUI.align.RIGHT,
+      align_v: hmUI.align.CENTER_V
+    })
+    this.createWidget(setsLabelConfig.widgetType, setsLabelConfig.config)
+
+    // SETS row - Value
+    const setsValueConfig = createText({
+      text: `  ${viewModel.setsWon.teamA} – ${viewModel.setsWon.teamB}`,
+      style: 'body',
+      x: valueX,
+      y: headerSection.y,
+      w: valueWidth,
+      h: rowHeight,
+      color: TOKENS.colors.accent,
+      align_h: hmUI.align.LEFT,
+      align_v: hmUI.align.CENTER_V
+    })
+    this.createWidget(setsValueConfig.widgetType, setsValueConfig.config)
+
+    // GAMES row - Label
+    const gamesLabelConfig = createText({
+      text: gettext('game.gamesLabel'),
+      style: 'body',
+      x: pairX,
+      y: headerSection.y + rowHeight,
+      w: labelWidth,
+      h: rowHeight,
+      color: TOKENS.colors.mutedText,
+      align_h: hmUI.align.RIGHT,
+      align_v: hmUI.align.CENTER_V
+    })
+    this.createWidget(gamesLabelConfig.widgetType, gamesLabelConfig.config)
+
+    // GAMES row - Value
+    const gamesValueConfig = createText({
+      text: `  ${viewModel.currentSetGames.teamA} – ${viewModel.currentSetGames.teamB}`,
+      style: 'body',
+      x: valueX,
+      y: headerSection.y + rowHeight,
+      w: valueWidth,
+      h: rowHeight,
+      color: TOKENS.colors.accent,
+      align_h: hmUI.align.LEFT,
+      align_v: hmUI.align.CENTER_V
+    })
+    this.createWidget(gamesValueConfig.widgetType, gamesValueConfig.config)
+  },
+
+  renderActiveState(layout, viewModel) {
+    const scoreArea = layout.sections.scoreArea
+    if (!scoreArea) return
+
+    const { width } = getScreenMetrics()
+    const halfWidth = Math.round(width / 2)
+
+    // Team A Label - centered within left column
+    const teamALabelEl = layout.elements.teamALabel
+    if (teamALabelEl) {
+      const teamALabelConfig = createText({
+        text: 'A',
+        style: 'body',
+        x: teamALabelEl.x,
+        y: teamALabelEl.y,
+        w: teamALabelEl.w,
+        h: teamALabelEl.h,
+        color: TOKENS.colors.mutedText,
+        align_h: hmUI.align.CENTER_H
+      })
+      this.createWidget(teamALabelConfig.widgetType, teamALabelConfig.config)
+    }
+
+    // Team B Label - centered within right column
+    const teamBLabelEl = layout.elements.teamBLabel
+    if (teamBLabelEl) {
+      const teamBLabelConfig = createText({
+        text: 'B',
+        style: 'body',
+        x: teamBLabelEl.x,
+        y: teamBLabelEl.y,
+        w: teamBLabelEl.w,
+        h: teamBLabelEl.h,
+        color: TOKENS.colors.mutedText,
+        align_h: hmUI.align.CENTER_H
+      })
+      this.createWidget(teamBLabelConfig.widgetType, teamBLabelConfig.config)
+    }
+
+    // Team A Score Button
+    const teamAScoreEl = layout.elements.teamAScore
+    if (teamAScoreEl) {
+      this.renderScoreButton(teamAScoreEl, viewModel.teamA.points, 'teamA')
+    }
+
+    // Team B Score Button
+    const teamBScoreEl = layout.elements.teamBScore
+    if (teamBScoreEl) {
+      this.renderScoreButton(teamBScoreEl, viewModel.teamB.points, 'teamB')
+    }
+
+    // Divider
+    const dividerEl = layout.elements.divider
+    if (dividerEl) {
+      const dividerConfig = createDivider({
+        x: Math.round(width / 2) - 1,
+        y: dividerEl.y,
+        h: dividerEl.h,
+        orientation: 'vertical',
+        color: TOKENS.colors.divider
+      })
+      this.createWidget(dividerConfig.widgetType, dividerConfig.config)
+    }
+
+    // Team A Minus Button
+    const teamAMinusEl = layout.elements.teamAMinus
+    if (teamAMinusEl) {
+      this.renderMinusButton(teamAMinusEl, 'teamA', halfWidth, 0)
+    }
+
+    // Team B Minus Button
+    const teamBMinusEl = layout.elements.teamBMinus
+    if (teamBMinusEl) {
+      this.renderMinusButton(teamBMinusEl, 'teamB', halfWidth, halfWidth)
+    }
+  },
+
+  renderScoreButton(element, points, team) {
+    if (!element) return
+
+    // Score button - uses custom styling (flat, large text)
+    const scoreTextSize = getFontSize('scoreDisplay')
 
     this.createWidget(hmUI.widget.BUTTON, {
-      x: homeIconX,
-      y: homeIconY,
-      w: -1,
-      h: -1,
-      normal_src: 'home-icon.png',
-      press_src: 'home-icon.png',
-      click_func: () => this.handleBackToHome()
+      x: element.x,
+      y: element.y,
+      w: element.w,
+      h: element.h,
+      radius: 0,
+      normal_color: TOKENS.colors.background,
+      press_color: TOKENS.colors.background,
+      color: TOKENS.colors.text,
+      text_size: scoreTextSize,
+      text: String(points),
+      click_func: () => this.handleAddPointForTeam(team)
     })
+  },
+
+  renderMinusButton(element, team, halfWidth, columnOffset) {
+    if (!element) return
+
+    // Ensure minimum 48x48 touch target for accessibility
+    const MIN_TOUCH_SIZE = 48
+    const buttonWidth = Math.max(element.w, MIN_TOUCH_SIZE)
+    const buttonHeight = Math.max(element.h, MIN_TOUCH_SIZE)
+
+    // Center the button horizontally within the column
+    const buttonX = columnOffset + Math.round((halfWidth - buttonWidth) / 2)
+    // Center the button vertically within the original allocated space
+    const buttonY = element.y + Math.round((element.h - buttonHeight) / 2)
+
+    const minusBtn = createButton({
+      x: buttonX,
+      y: buttonY,
+      w: buttonWidth,
+      h: buttonHeight,
+      variant: 'secondary',
+      text: '−',
+      onClick: () => this.handleRemovePointForTeam(team)
+    })
+
+    // Override for minus button styling - use visual height for radius to maintain pill shape
+    const visualRadius = Math.round(Math.min(element.w, element.h) / 2)
+    minusBtn.config.radius = visualRadius
+    minusBtn.config.color = TOKENS.colors.danger
+    // Use a slightly lighter shade for press state (matching original GAME_TOKENS.buttonSecondaryPressed)
+    minusBtn.config.press_color = 0x2d3036
+
+    this.createWidget(minusBtn.widgetType, minusBtn.config)
+  },
+
+  renderFooterElements(layout) {
+    const homeButtonEl = layout.elements.homeButton
+    const homeButtonMeta = GAME_LAYOUT.elements.homeButton._meta
+
+    if (homeButtonEl && homeButtonMeta) {
+      const homeBtn = createButton({
+        x: homeButtonEl.x,
+        y: homeButtonEl.y,
+        variant: 'icon',
+        normal_src: homeButtonMeta.icon,
+        onClick: () => this.handleBackToHome()
+      })
+      this.createWidget(homeBtn.widgetType, homeBtn.config)
+    }
   }
 })

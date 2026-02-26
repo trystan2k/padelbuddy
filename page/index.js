@@ -36,7 +36,7 @@ const INDEX_LAYOUT = {
     },
     footer: {
       bottom: 0,
-      height: '15%',
+      height: '5%',
       roundSafeInset: false
     }
   },
