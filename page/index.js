@@ -1,58 +1,117 @@
 import { gettext } from 'i18n'
+import { TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { createHistoryStack } from '../utils/history-stack.js'
+import { resolveLayout } from '../utils/layout-engine.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { loadMatchState } from '../utils/match-storage.js'
+import { getScreenMetrics } from '../utils/screen-utils.js'
 import { startNewMatchFlow } from '../utils/start-new-match-flow.js'
+import {
+  createBackground,
+  createButton,
+  createText
+} from '../utils/ui-components.js'
 
 const PERSISTED_ADVANTAGE_POINT_VALUE = 50
 const PERSISTED_GAME_POINT_VALUE = 60
 const TIE_BREAK_ENTRY_GAMES = 6
 const REGULAR_GAME_POINT_VALUES = new Set([0, 15, 30, 40])
 
-const HOME_TOKENS = Object.freeze({
-  colors: {
-    background: 0x000000,
-    buttonText: 0x000000,
-    primaryButton: 0x1eb98c,
-    primaryButtonPressed: 0x1aa07a,
-    secondaryButton: 0x24262b,
-    secondaryButtonPressed: 0x2d3036,
-    secondaryButtonText: 0xffffff,
-    dangerButton: 0x3a1a1c,
-    dangerButtonArmed: 0x7a1f28,
-    dangerButtonPressed: 0x4a2022,
-    dangerButtonArmedPressed: 0x9a2530,
-    dangerButtonText: 0xff6d78,
-    logo: 0x1eb98c,
-    title: 0xffffff,
-    settingsIcon: 0x888888,
-    settingsIconPressed: 0xaaaaaa
+/**
+ * Layout schema for the home screen.
+ * Uses declarative positioning resolved by layout-engine.
+ */
+const INDEX_LAYOUT = {
+  sections: {
+    header: {
+      top: 0,
+      height: '22%',
+      roundSafeInset: false
+    },
+    body: {
+      height: 'fill',
+      after: 'header',
+      roundSafeInset: false
+    },
+    footer: {
+      bottom: 0,
+      height: '15%',
+      roundSafeInset: false
+    }
   },
-  fontScale: {
-    button: 0.055,
-    logo: 0.068,
-    title: 0.0825
-  },
-  spacingScale: {
-    contentTop: 0.1,
-    logoToTitle: 0.012,
-    titleToPrimaryButton: 0.05,
-    primaryToSecondaryButton: 0.04,
-    tertiaryToClearButton: 0.025,
-    buttonToSettingsIcon: 0.04
-  },
-  buttonSize: {
-    height: 0.2,
-    width: 0.7,
-    radiusRatio: 0.5,
-    gap: 0.04
-  },
-  settingsIcon: {
-    size: 48,
-    yOffset: 0.15
+  elements: {
+    logo: {
+      section: 'header',
+      x: 'center',
+      y: '10%',
+      width: '100%',
+      height: '40%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'sectionTitle',
+        text: 'home.logo',
+        color: TOKENS.colors.accent
+      }
+    },
+    pageTitle: {
+      section: 'header',
+      x: 'center',
+      y: '55%',
+      width: '100%',
+      height: '40%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'pageTitle',
+        text: 'home.title'
+      }
+    },
+    primaryButton: {
+      section: 'body',
+      x: 'center',
+      y: '15%',
+      width: toPercentage(TOKENS.sizing.buttonWidth), // '85%'
+      height: toPercentage(TOKENS.sizing.buttonHeight), // '15%'
+      align: 'center',
+      _meta: {
+        type: 'button',
+        variant: 'primary',
+        text: 'home.startNewGame',
+        onClick: 'handleStartNewGame'
+      }
+    },
+    secondaryButton: {
+      section: 'body',
+      x: 'center',
+      y: '55%',
+      width: toPercentage(TOKENS.sizing.buttonWidth), // '85%'
+      height: toPercentage(TOKENS.sizing.buttonHeight), // '15%'
+      align: 'center',
+      _meta: {
+        type: 'button',
+        variant: 'secondary',
+        text: 'home.resumeGame',
+        onClick: 'handleResumeGame',
+        conditional: 'hasSavedGame'
+      }
+    },
+    settingsButton: {
+      section: 'footer',
+      x: 'center',
+      y: '20%',
+      width: TOKENS.sizing.iconLarge,
+      height: TOKENS.sizing.iconLarge,
+      align: 'center',
+      _meta: {
+        type: 'iconButton',
+        icon: 'setting-icon.png',
+        onClick: 'navigateToSettings'
+      }
+    }
   }
-})
+}
 
 function cloneMatchState(matchState) {
   try {
@@ -60,10 +119,6 @@ function cloneMatchState(matchState) {
   } catch {
     return matchState
   }
-}
-
-function ensureNumber(value, fallback) {
-  return Number.isFinite(value) && value > 0 ? value : fallback
 }
 
 function isRecord(value) {
@@ -276,18 +331,6 @@ Page({
     }
   },
 
-  getScreenMetrics() {
-    if (typeof hmSetting === 'undefined') {
-      return { width: 390, height: 450 }
-    }
-
-    const { width, height } = hmSetting.getDeviceInfo()
-    return {
-      width: ensureNumber(width, 390),
-      height: ensureNumber(height, 450)
-    }
-  },
-
   clearWidgets() {
     if (typeof hmUI === 'undefined') {
       this.widgets = []
@@ -364,109 +407,93 @@ Page({
       return
     }
 
-    const { width, height } = this.getScreenMetrics()
-    const logoY = Math.round(height * HOME_TOKENS.spacingScale.contentTop)
-    const logoHeight = Math.round(height * 0.08)
-    const titleY =
-      logoY +
-      logoHeight +
-      Math.round(height * HOME_TOKENS.spacingScale.logoToTitle)
-    const titleHeight = Math.round(height * 0.11)
-
-    // Use unified button sizing from design tokens
-    const buttonWidth = Math.round(width * HOME_TOKENS.buttonSize.width)
-    const buttonHeight = Math.round(height * HOME_TOKENS.buttonSize.height)
-    const buttonX = Math.round((width - buttonWidth) / 2)
-    const startButtonY =
-      titleY +
-      titleHeight +
-      Math.round(height * HOME_TOKENS.spacingScale.titleToPrimaryButton)
-    const secondaryButtonGap = Math.round(height * HOME_TOKENS.buttonSize.gap)
-    const resumeButtonY = startButtonY + buttonHeight + secondaryButtonGap
-    const startNewGameButtonText = gettext('home.startNewGame')
-
-    // Settings icon positioning - always at bottom, as if resume button is always visible
-    const settingsIconSize = HOME_TOKENS.settingsIcon.size
-    const settingsIconX = Math.round((width - settingsIconSize) / 2)
-    const settingsIconY =
-      resumeButtonY +
-      buttonHeight +
-      Math.round(height * HOME_TOKENS.spacingScale.buttonToSettingsIcon)
+    const metrics = getScreenMetrics()
+    const layout = resolveLayout(INDEX_LAYOUT, metrics)
 
     this.clearWidgets()
 
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0,
-      y: 0,
-      w: width,
-      h: height,
-      color: HOME_TOKENS.colors.background
-    })
+    // Background
+    const bg = createBackground()
+    this.createWidget(bg.widgetType, bg.config)
 
-    this.createWidget(hmUI.widget.TEXT, {
-      x: 0,
-      y: logoY,
-      w: width,
-      h: logoHeight,
-      color: HOME_TOKENS.colors.logo,
-      text: gettext('home.logo'),
-      text_size: Math.round(width * HOME_TOKENS.fontScale.logo),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: 0,
-      y: titleY,
-      w: width,
-      h: titleHeight,
-      color: HOME_TOKENS.colors.title,
-      text: gettext('home.title'),
-      text_size: Math.round(width * HOME_TOKENS.fontScale.title),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    this.createWidget(hmUI.widget.BUTTON, {
-      x: buttonX,
-      y: startButtonY,
-      w: buttonWidth,
-      h: buttonHeight,
-      radius: Math.round(buttonHeight * HOME_TOKENS.buttonSize.radiusRatio),
-      normal_color: HOME_TOKENS.colors.primaryButton,
-      press_color: HOME_TOKENS.colors.primaryButtonPressed,
-      color: HOME_TOKENS.colors.buttonText,
-      text_size: Math.round(width * HOME_TOKENS.fontScale.button),
-      text: startNewGameButtonText,
-      click_func: () => this.handleStartNewGame()
-    })
-
-    if (this.hasSavedGame) {
-      this.createWidget(hmUI.widget.BUTTON, {
-        x: buttonX,
-        y: resumeButtonY,
-        w: buttonWidth,
-        h: buttonHeight,
-        radius: Math.round(buttonHeight * HOME_TOKENS.buttonSize.radiusRatio),
-        normal_color: HOME_TOKENS.colors.secondaryButton,
-        press_color: HOME_TOKENS.colors.secondaryButtonPressed,
-        color: HOME_TOKENS.colors.secondaryButtonText,
-        text_size: Math.round(width * HOME_TOKENS.fontScale.button),
-        text: gettext('home.resumeGame'),
-        click_func: () => this.handleResumeGame()
+    // Logo text
+    const logoEl = layout.elements.logo
+    const logoMeta = INDEX_LAYOUT.elements.logo._meta
+    if (logoEl) {
+      const logoConfig = createText({
+        text: gettext(logoMeta.text),
+        style: logoMeta.style,
+        x: logoEl.x,
+        y: logoEl.y,
+        w: logoEl.w,
+        h: logoEl.h,
+        color: logoMeta.color
       })
+      this.createWidget(logoConfig.widgetType, logoConfig.config)
     }
 
-    // Settings icon button (gear icon using BUTTON widget with image)
-    this.createWidget(hmUI.widget.BUTTON, {
-      x: settingsIconX,
-      y: settingsIconY,
-      w: -1,
-      h: -1,
-      normal_src: 'setting-icon.png',
-      press_src: 'setting-icon.png',
-      click_func: () => this.navigateToSettings()
-    })
+    // Page title
+    const titleEl = layout.elements.pageTitle
+    const titleMeta = INDEX_LAYOUT.elements.pageTitle._meta
+    if (titleEl) {
+      const titleConfig = createText({
+        text: gettext(titleMeta.text),
+        style: titleMeta.style,
+        x: titleEl.x,
+        y: titleEl.y,
+        w: titleEl.w,
+        h: titleEl.h
+      })
+      this.createWidget(titleConfig.widgetType, titleConfig.config)
+    }
+
+    // Primary button - Start New Game
+    const primaryEl = layout.elements.primaryButton
+    const primaryMeta = INDEX_LAYOUT.elements.primaryButton._meta
+    if (primaryEl) {
+      const primaryBtn = createButton({
+        x: primaryEl.x,
+        y: primaryEl.y,
+        w: primaryEl.w,
+        h: primaryEl.h,
+        variant: primaryMeta.variant,
+        text: gettext(primaryMeta.text),
+        onClick: () => this.handleStartNewGame()
+      })
+      this.createWidget(primaryBtn.widgetType, primaryBtn.config)
+    }
+
+    // Secondary button - Resume Game (conditional)
+    if (this.hasSavedGame) {
+      const secondaryEl = layout.elements.secondaryButton
+      const secondaryMeta = INDEX_LAYOUT.elements.secondaryButton._meta
+      if (secondaryEl) {
+        const secondaryBtn = createButton({
+          x: secondaryEl.x,
+          y: secondaryEl.y,
+          w: secondaryEl.w,
+          h: secondaryEl.h,
+          variant: secondaryMeta.variant,
+          text: gettext(secondaryMeta.text),
+          onClick: () => this.handleResumeGame()
+        })
+        this.createWidget(secondaryBtn.widgetType, secondaryBtn.config)
+      }
+    }
+
+    // Settings icon button
+    const settingsEl = layout.elements.settingsButton
+    const settingsMeta = INDEX_LAYOUT.elements.settingsButton._meta
+    if (settingsEl) {
+      const settingsBtn = createButton({
+        x: settingsEl.x,
+        y: settingsEl.y,
+        variant: 'icon',
+        normal_src: settingsMeta.icon,
+        onClick: () => this.navigateToSettings()
+      })
+      this.createWidget(settingsBtn.widgetType, settingsBtn.config)
+    }
   },
 
   handleStartNewGame() {
