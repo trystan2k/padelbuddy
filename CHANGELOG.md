@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0](https://github.com/trystan2k/padelbuddy/compare/v1.3.0...v1.4.0) (2026-02-26)
+
+### Features
+
+* **game:** migrate game screen to new layout system ([6ce975e](https://github.com/trystan2k/padelbuddy/commit/6ce975e308e5ddbca516267da8d549ea2ca13eb1)), closes [#47](https://github.com/trystan2k/padelbuddy/issues/47)
+
 ## [1.3.0](https://github.com/trystan2k/padelbuddy/compare/v1.2.0...v1.3.0) (2026-02-26)
 
 ### Features
