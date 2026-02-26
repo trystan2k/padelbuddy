@@ -39,6 +39,7 @@ export const TOKENS = Object.freeze({
     accent: 0x1eb98c,
     danger: 0xff6d78,
     primaryButton: 0x1eb98c,
+    primaryButtonText: 0x000000,
     secondaryButton: 0x24262b,
     cardBackground: 0x1a1c20,
     disabled: 0x444444,
@@ -53,7 +54,7 @@ export const TOKENS = Object.freeze({
     scoreDisplay: 0.28,
     caption: 0.036,
     button: 0.05,
-    buttonLarge: 0.055
+    buttonLarge: 0.075
   },
   spacing: {
     pageTop: 0.05,
@@ -69,8 +70,10 @@ export const TOKENS = Object.freeze({
     iconSmall: 24,
     iconMedium: 32,
     iconLarge: 48,
-    buttonHeight: 0.105,
+    buttonHeight: 35, // 15% of parent section height (for layout engine)
+    buttonHeightRatio: 0.105, // Ratio of screen height (for ui-components.js)
     buttonHeightLarge: 0.15,
+    buttonWidth: 85, // 85% of parent section width
     buttonRadiusRatio: 0.5,
     cardRadiusRatio: 0.07,
     minTouchTarget: 48
@@ -143,4 +146,22 @@ export function getFontSize(typographyKey) {
 
   const ratio = TOKENS.typography[typographyKey]
   return Math.round(screenWidth * ratio)
+}
+
+/**
+ * Converts a numeric value to a percentage string for layout engine compatibility.
+ * Handles both decimal (0.15) and percentage (15) formats.
+ *
+ * @param {number} value - The value to convert (e.g., 0.15 or 15)
+ * @returns {string} Percentage string (e.g., '15%')
+ *
+ * @example
+ * toPercentage(0.15)   // Returns '15%'
+ * toPercentage(15)     // Returns '15%'
+ * toPercentage(85)     // Returns '85%'
+ */
+export function toPercentage(value) {
+  // If value is a decimal (< 1), multiply by 100
+  const percentage = value < 1 ? value * 100 : value
+  return `${percentage}%`
 }

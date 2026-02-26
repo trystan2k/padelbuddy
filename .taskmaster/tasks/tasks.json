@@ -2830,7 +2830,7 @@
         "description": "Refactor page/index.js to use the new declarative layout system, replacing HOME_TOKENS and inline position calculations with design tokens, layout engine resolution, and reusable UI components.",
         "details": "Migrate the Home Screen (page/index.js) from the legacy token-based positioning system to the new layout architecture defined in the PRD. This task is part of Phase 4 of the migration plan.\n\n**Implementation Steps:**\n\n1. **Remove Legacy Dependencies:**\n   - Delete the HOME_TOKENS constant from page/index.js\n   - Remove all inline position calculations from renderHomeScreen()\n\n2. **Add New Imports:**\n   ```javascript\n   import { TOKENS, getFontSize } from '../utils/design-tokens.js';\n   import { getScreenMetrics } from '../utils/screen-utils.js';\n   import { resolveLayout } from '../utils/layout-engine.js';\n   import { createBackground, createButton, createText } from '../utils/ui-components.js';\n   ```\n\n3. **Define INDEX_LAYOUT Schema:**\n   - Create a layout schema with three sections: header, body, footer\n   - Header section: Contains logo and pageTitle elements\n   - Body section: Contains primaryButton and secondaryButton (conditional)\n   - Footer section: Contains settingsButton icon\n\n4. **Implement Layout Elements:**\n   - **logo**: TEXT element with style 'pageTitle', color TOKENS.colors.accent\n   - **pageTitle**: TEXT element with style 'pageTitle'\n   - **primaryButton**: BUTTON variant 'primary' for 'Start New Game'\n   - **secondaryButton**: BUTTON variant 'secondary' for 'Resume Game', visible only when hasSavedGame is true\n   - **settingsButton**: BUTTON variant 'icon' with icon='setting-icon.png'\n\n5. **Refactor renderHomeScreen():**\n   - Call getScreenMetrics() to obtain screen dimensions\n   - Use resolveLayout(INDEX_LAYOUT, metrics) to calculate positions\n   - Replace inline math with layout engine results\n   - Use createBackground(), createButton(), and createText() factory functions\n\n6. **Preserve Existing Functionality:**\n   - Maintain click handlers for Start New Game and Resume Game\n   - Keep the conditional display logic for Resume Game (based on hasSavedGame)\n   - Preserve settings icon navigation to Settings page\n   - Ensure all navigation logic remains intact\n\n7. **Reference Implementations:**\n   - Follow the pattern established in Task 34 for button sizing and placement\n   - Use design tokens from Task 40 for consistent styling\n   - Apply round-safe positioning from Task 41\n\n**Technical Considerations:**\n- The settings icon button was added in Task 34; ensure it's properly positioned in the footer section\n- The Resume Game button conditionality from Task 17 must be preserved\n- Visual appearance should match the current implementation exactly\n- All spacing and sizing should derive from TOKENS constants",
         "testStrategy": "1. **Build Verification:** Run npm run complete-check after migration to ensure no compilation errors\n\n2. **Visual QA:**\n   - Compare the migrated Home Screen with the current implementation side-by-side\n   - Verify logo position and accent color match exactly\n   - Confirm pageTitle text styling is unchanged\n   - Check that Start New Game button appears in the correct position with primary styling\n   - Verify Resume Game button appears (with saved data) and matches secondary button styling\n   - Confirm settings icon button is positioned in footer area\n   - Test on both round and square screen simulators\n\n3. **Functional Tests:**\n   - Tap 'Start New Game' and verify it clears storage and navigates to Game Screen\n   - With no saved data, verify only 'Start New Game' button is visible\n   - With saved data, verify both 'Start New Game' and 'Resume Game' buttons appear\n   - Tap 'Resume Game' and verify it navigates to Game Screen without clearing state\n   - Tap settings icon and verify it navigates to Settings page\n   - Verify restored game state matches expected values when resuming\n\n4. **Regression Tests:**\n   - Complete a match, return to home, and verify 'Resume Game' button is hidden\n   - Test button tap responsiveness (should complete action within 100ms)\n   - Verify no console errors during page load and interaction",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40",
           "41",
@@ -2838,7 +2838,72 @@
           "44"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove Legacy Dependencies and Add New Imports",
+            "description": "Delete HOME_TOKENS constant and inline position calculations, then import new layout system dependencies",
+            "dependencies": [],
+            "details": "Remove the HOME_TOKENS constant from page/index.js and delete all inline position calculations from renderHomeScreen(). Add new imports: TOKENS and getFontSize from '../utils/design-tokens.js', getScreenMetrics from '../utils/screen-utils.js', resolveLayout from '../utils/layout-engine.js', and createBackground, createButton, createText from '../utils/ui-components.js'.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T11:57:09.753Z"
+          },
+          {
+            "id": 2,
+            "title": "Define INDEX_LAYOUT Schema Structure",
+            "description": "Create declarative layout schema with header, body, and footer sections",
+            "dependencies": [
+              1
+            ],
+            "details": "Define the INDEX_LAYOUT constant with three sections: header (contains logo and pageTitle elements), body (contains primaryButton and secondaryButton elements), and footer (contains settingsButton element). Follow the schema pattern established in reference implementations.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T11:57:24.990Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Layout Elements Configuration",
+            "description": "Configure all UI elements with proper styles, variants, and design tokens",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement logo as TEXT element with style 'pageTitle' and color TOKENS.colors.accent. pageTitle as TEXT element with style 'pageTitle'. primaryButton as BUTTON variant 'primary' for 'Start New Game'. secondaryButton as BUTTON variant 'secondary' for 'Resume Game' with conditional visibility based on hasSavedGame. settingsButton as BUTTON variant 'icon' with icon='setting-icon.png'.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T11:57:32.746Z"
+          },
+          {
+            "id": 4,
+            "title": "Refactor renderHomeScreen() Function",
+            "description": "Replace inline math with layout engine resolution and UI component factories",
+            "dependencies": [
+              3
+            ],
+            "details": "Refactor renderHomeScreen() to call getScreenMetrics() for screen dimensions, use resolveLayout(INDEX_LAYOUT, metrics) to calculate positions, and replace all inline positioning math with layout engine results. Use createBackground(), createButton(), and createText() factory functions to build UI elements based on resolved layout positions.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T11:57:45.626Z"
+          },
+          {
+            "id": 5,
+            "title": "Preserve Functionality and Verify Visual Consistency",
+            "description": "Maintain existing behavior, click handlers, and ensure visual appearance matches current implementation",
+            "dependencies": [
+              4
+            ],
+            "details": "Maintain all click handlers for Start New Game and Resume Game. Keep conditional display logic for Resume Game based on hasSavedGame. Preserve settings icon navigation to Settings page. Verify visual appearance matches current implementation exactly: logo position and accent color, pageTitle text styling, button sizing and placement following Task 34 patterns, spacing derived from TOKENS constants, and round-safe positioning from Task 41.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T11:57:51.466Z"
+          }
+        ],
+        "updatedAt": "2026-02-26T11:57:51.466Z"
       },
       {
         "id": "46",
@@ -2941,9 +3006,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-26T00:04:46.987Z",
+      "lastModified": "2026-02-26T11:57:51.467Z",
       "taskCount": 51,
-      "completedCount": 42,
+      "completedCount": 43,
       "tags": [
         "master"
       ]

@@ -282,7 +282,7 @@ const BUTTON_VARIANTS = {
   primary: {
     normalColor: 'primaryButton',
     pressColor: 'primaryButton',
-    textColor: 'text'
+    textColor: 'primaryButtonText'
   },
   secondary: {
     normalColor: 'secondaryButton',
@@ -312,7 +312,7 @@ const BUTTON_VARIANTS = {
  * @param {number} [config.x] - X position (default: centered)
  * @param {number} [config.y] - Y position (required)
  * @param {number} [config.w] - Width (default: 85% of screen width)
- * @param {number} [config.h] - Height (default: screen height * TOKENS.sizing.buttonHeight)
+ * @param {number} [config.h] - Height (default: screen height * TOKENS.sizing.buttonHeightRatio)
  * @param {number} [config.radius] - Corner radius (default: h * TOKENS.sizing.buttonRadiusRatio)
  * @param {boolean} [config.disabled] - Whether button is disabled
  * @param {string} [config.normal_src] - Normal state image for icon variant
@@ -371,7 +371,7 @@ export function createButton(config) {
 
   // Calculate default dimensions
   const buttonHeight =
-    config.h ?? Math.round(height * TOKENS.sizing.buttonHeight)
+    config.h ?? Math.round(height * TOKENS.sizing.buttonHeightRatio)
   const buttonWidth = config.w ?? Math.round(width * 0.85)
   const radius =
     config.radius ?? Math.round(buttonHeight * TOKENS.sizing.buttonRadiusRatio)
