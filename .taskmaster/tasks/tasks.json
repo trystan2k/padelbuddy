@@ -2752,7 +2752,7 @@
         "description": "Implement utils/ui-components.js containing reusable widget factory functions for common UI elements including backgrounds, cards, buttons, dividers, and text components, all using design tokens for consistent styling.",
         "details": "Create a new file at `utils/ui-components.js` that exports the following widget factory functions. All components must use TOKENS from utils/design-tokens.js for styling, accept standardized parameters (widget, bounds, options), and return the created widget.\n\n**1. createBackground(widget, metrics, color?)**\n- Creates a full-screen FILL_RECT widget\n- Default color: TOKENS.colors.background\n- Uses metrics.width and metrics.height for bounds\n\n**2. createCard(widget, bounds, options?)**\n- Creates a rounded FILL_RECT container\n- Default color: TOKENS.colors.cardBackground or TOKENS.colors.background\n- Options: color (default cardBackground), radiusRatio (default 0.07)\n- Radius calculation: bounds.h * radiusRatio\n\n**3. createDivider(widget, bounds, color?)**\n- Creates a FILL_RECT for horizontal or vertical dividers\n- Default color: TOKENS.colors.divider\n- Bounds determine orientation (width > height = horizontal, else vertical)\n\n**4. createButton(widget, bounds, options)**\n- Unified button factory supporting multiple variants\n- Required options: text, onClick\n- Optional options: variant ('primary', 'secondary', 'icon', 'danger'), visible (default true), disabled (default false), icon\n- Variant styling:\n  - Primary: color=TOKENS.colors.primaryButton, press_color=TOKENS.colors.primaryButtonPressed\n  - Secondary: color=TOKENS.colors.secondaryButton, press_color=TOKENS.colors.secondaryButtonPressed\n  - Icon: uses normal_src/press_src with icon option, no text\n  - Danger: color=TOKENS.colors.dangerButton, press_color=TOKENS.colors.dangerButtonPressed\n- Text size: getFontSize('buttonLarge', bounds.w)\n- Radius: bounds.h * TOKENS.sizing.buttonRadiusRatio (or default 0.2 if not in tokens)\n- Handle disabled state with grayed-out appearance\n\n**5. createText(widget, bounds, options)**\n- Generic text element factory\n- Required options: text\n- Optional options: style (typography key), color, align (default CENTER_H)\n- Uses getFontSize(style, bounds.w) for text_size\n- Default color: TOKENS.colors.text\n\n**6. createPageTitle(widget, bounds, text, options?)**\n- Helper for page-level titles\n- Style: 'pageTitle'\n- Default color: TOKENS.colors.text\n- Wraps createText with predefined style\n\n**7. createSectionTitle(widget, bounds, text, options?)**\n- Helper for section headers\n- Style: 'sectionTitle'\n- Default color: TOKENS.colors.mutedText\n- Wraps createText with predefined style\n\n**8. createBodyText(widget, bounds, text, options?)**\n- Helper for body paragraph text\n- Style: 'body'\n- Default color: TOKENS.colors.text\n- Wraps createText with predefined style\n\nAll functions must:\n- Import TOKENS from '../utils/design-tokens.js'\n- Use hmUI widget creation API\n- Return the created widget for chaining or reference\n- Validate required parameters",
         "testStrategy": "1. **Syntax Verification**: Ensure the file compiles without syntax errors using Node.js or the Zepp build system.\n\n2. **Import Test**: Create a test script that imports all 8 factory functions and verifies they exist.\n\n3. **TOKENS Integration**: Mock TOKENS object and verify each component correctly references TOKENS values for colors and typography.\n\n4. **Parameter Validation Test**: For each factory, test:\n   - Minimal required parameters work correctly\n   - Optional parameters properly apply defaults\n   - Missing required parameters throw appropriate errors\n\n5. **Component Output Test**: Mock hmUI.createWidget to verify:\n   - createBackground creates FILL_RECT with full-screen bounds\n   - createCard creates FILL_RECT with correct radius\n   - createButton creates TEXT widget with correct variant colors\n   - createText and helpers create TEXT widgets with proper styling\n\n6. **Button Variants Test**: Test all four button variants (primary, secondary, icon, danger) produce correct color configurations.\n\n7. **Helper Function Test**: Verify createPageTitle, createSectionTitle, and createBodyText call createText with correct style presets.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40"
         ],
@@ -2764,9 +2764,10 @@
             "description": "Create the utils/ui-components.js file with proper imports from design tokens and module export structure",
             "dependencies": [],
             "details": "Create new file at utils/ui-components.js. Import TOKENS from ../utils/design-tokens.js. Set up ES module export structure to export all factory functions. Include any necessary helper functions like getFontSize if not already imported.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify file compiles without syntax errors and TOKENS imports correctly",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T00:04:41.559Z"
           },
           {
             "id": 2,
@@ -2776,9 +2777,10 @@
               1
             ],
             "details": "Create three factory functions: createBackground uses metrics.width/height for full-screen fill; createCard creates rounded containers with configurable radiusRatio defaulting to 0.07; createDivider creates horizontal or vertical lines based on bounds dimensions. All must use TOKENS colors as defaults.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test each function creates correct hmUI.FILL_RECT widget with expected bounds and colors from TOKENS",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T00:04:42.908Z"
           },
           {
             "id": 3,
@@ -2788,9 +2790,10 @@
               1
             ],
             "details": "Create createText function accepting text (required), style (typography key), color, and align options (default CENTER_H). Use getFontSize(style, bounds.w) for responsive sizing. Default color to TOKENS.colors.text. Validate required text parameter and return created widget.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify text renders correctly with different styles, colors, alignments, and responsive sizing",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T00:04:44.254Z"
           },
           {
             "id": 4,
@@ -2800,9 +2803,10 @@
               3
             ],
             "details": "Create three helper functions: createPageTitle uses 'pageTitle' style with TOKENS.colors.text; createSectionTitle uses 'sectionTitle' style with TOKENS.colors.mutedText; createBodyText uses 'body' style with TOKENS.colors.text. Each wraps createText with predefined style and color values.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test each helper produces correctly styled text elements matching their intended use case",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T00:04:45.654Z"
           },
           {
             "id": 5,
@@ -2812,11 +2816,13 @@
               1
             ],
             "details": "Create createButton function requiring text and onClick options. Support variant types: primary (TOKENS.colors.primaryButton), secondary, icon (uses icon option with normal_src/press_src), danger. Each variant has press_color state. Handle disabled state with grayed appearance. Text size from getFontSize('buttonLarge', bounds.w). Radius from bounds.h * TOKENS.sizing.buttonRadiusRatio (default 0.2).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test all button variants with correct colors, press states, disabled appearance, and icon rendering",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T00:04:46.987Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-02-26T00:04:46.987Z"
       },
       {
         "id": "45",
@@ -2935,9 +2941,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-25T23:44:40.102Z",
+      "lastModified": "2026-02-26T00:04:46.987Z",
       "taskCount": 51,
-      "completedCount": 41,
+      "completedCount": 42,
       "tags": [
         "master"
       ]

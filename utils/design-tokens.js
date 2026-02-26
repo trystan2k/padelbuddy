@@ -40,6 +40,7 @@ export const TOKENS = Object.freeze({
     danger: 0xff6d78,
     primaryButton: 0x1eb98c,
     secondaryButton: 0x24262b,
+    cardBackground: 0x1a1c20,
     disabled: 0x444444,
     divider: 0x333333
   },
@@ -71,6 +72,7 @@ export const TOKENS = Object.freeze({
     buttonHeight: 0.105,
     buttonHeightLarge: 0.15,
     buttonRadiusRatio: 0.5,
+    cardRadiusRatio: 0.07,
     minTouchTarget: 48
   }
 })
