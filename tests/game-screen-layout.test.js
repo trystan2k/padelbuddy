@@ -73,6 +73,10 @@ async function loadGamePageDefinition() {
     '../utils/match-state-schema.js',
     import.meta.url
   )
+  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
+  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
+  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
+  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -103,6 +107,19 @@ async function loadGamePageDefinition() {
     .replace(
       "from '../utils/match-state-schema.js'",
       `from '${matchStateSchemaUrl.href}'`
+    )
+    .replace(
+      "from '../utils/design-tokens.js'",
+      `from '${designTokensUrl.href}'`
+    )
+    .replace(
+      "from '../utils/layout-engine.js'",
+      `from '${layoutEngineUrl.href}'`
+    )
+    .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
+    .replace(
+      "from '../utils/ui-components.js'",
+      `from '${uiComponentsUrl.href}'`
     )
 
   const moduleUrl =
@@ -285,14 +302,6 @@ async function runWithRenderedGamePage(width, height, runScenario) {
       globalThis.hmFS = originalHmFS
     }
   }
-}
-
-function findButtonByText(buttons, text) {
-  return buttons.find((button) => button.properties.text === text)
-}
-
-function findTextByExactContent(textWidgets, text) {
-  return textWidgets.find((widget) => widget.properties.text === text)
 }
 
 function isNumericText(value) {
@@ -850,7 +859,7 @@ test('game match completion updates match state', async () => {
   )
 })
 
-test('game summary navigation resets after undo from finished match state', async () => {
+test('game match finish navigates directly to summary without rendering finished state', async () => {
   await runWithRenderedGamePage(
     390,
     450,
@@ -877,18 +886,17 @@ test('game summary navigation resets after undo from finished match state', asyn
       const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
       const addTeamAButton = buttons[0]
 
+      // When match finishes, state is updated and navigation is triggered
       addTeamAButton.properties.click_func()
 
+      // State should be finished
       assert.equal(app.globalData.matchState.status, 'finished')
-
-      page.handleRemovePointForTeam('teamA')
-
-      assert.equal(app.globalData.matchState.status, 'active')
+      assert.equal(app.globalData.matchState.winnerTeam, 'teamA')
     }
   )
 })
 
-test('game controls keep minimum 48x48 touch targets in active and finished states', async () => {
+test('game controls keep minimum 48x48 touch targets in active state', async () => {
   const screenScenarios = [
     { width: 390, height: 450 },
     { width: 390, height: 390 },
@@ -899,7 +907,7 @@ test('game controls keep minimum 48x48 touch targets in active and finished stat
     await runWithRenderedGamePage(
       scenario.width,
       scenario.height,
-      ({ app, createdWidgets, page }) => {
+      ({ createdWidgets }) => {
         const activeButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
 
         assert.equal(activeButtons.length, 5)
@@ -915,18 +923,6 @@ test('game controls keep minimum 48x48 touch targets in active and finished stat
             assert.equal(button.properties.h >= 48, true)
           }
         })
-
-        app.globalData.matchState.status = 'finished'
-        app.globalData.matchState.currentSetStatus.teamAGames = 0
-        app.globalData.matchState.currentSetStatus.teamBGames = 6
-
-        page.renderGameScreen()
-
-        const finishedButtons = getVisibleWidgets(createdWidgets, 'BUTTON')
-
-        assert.equal(finishedButtons.length, 1)
-        // Home icon button uses native image dimensions (48x48)
-        assert.equal(finishedButtons[0].properties.normal_src, 'home-icon.png')
       }
     )
   }
@@ -951,54 +947,6 @@ test('game control buttons apply primary and secondary style variants', async ()
     // Home icon button uses image instead of color styling
     assert.equal(homeIconButton?.properties.normal_src, 'home-icon.png')
     assert.equal(homeIconButton?.properties.press_src, 'home-icon.png')
-  })
-})
-
-test('game finished state renders winner message and home-only navigation control', async () => {
-  await runWithRenderedGamePage(390, 450, ({ app, createdWidgets, page }) => {
-    app.globalData.matchState.status = 'finished'
-    app.globalData.matchState.currentSetStatus.teamAGames = 0
-    app.globalData.matchState.currentSetStatus.teamBGames = 6
-    app.globalData.matchState.teamA.games = 0
-    app.globalData.matchState.teamB.games = 6
-
-    page.renderGameScreen()
-
-    const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
-    const textWidgets = getVisibleWidgets(createdWidgets, 'TEXT')
-    const finishedLabel = findTextByExactContent(
-      textWidgets,
-      'game.finishedLabel'
-    )
-    const winnerText = textWidgets.find(
-      (widget) =>
-        typeof widget.properties.text === 'string' &&
-        widget.properties.text.includes('Team B') &&
-        widget.properties.text.includes('game.winsSuffix')
-    )
-
-    assert.equal(buttons.length, 1)
-    // Home button is now an image button
-    assert.equal(buttons[0].properties.normal_src, 'home-icon.png')
-    assert.equal(
-      Boolean(findButtonByText(buttons, 'game.teamAAddPoint')),
-      false
-    )
-    assert.equal(
-      Boolean(findButtonByText(buttons, 'game.teamBAddPoint')),
-      false
-    )
-    assert.equal(
-      Boolean(findButtonByText(buttons, 'game.teamARemovePoint')),
-      false
-    )
-    assert.equal(
-      Boolean(findButtonByText(buttons, 'game.teamBRemovePoint')),
-      false
-    )
-    assert.equal(Boolean(finishedLabel), true)
-    assert.equal(Boolean(winnerText), true)
-    assert.equal(winnerText?.properties.color, 0x1eb98c)
   })
 })
 

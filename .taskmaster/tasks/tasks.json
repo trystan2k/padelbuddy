@@ -2993,7 +2993,7 @@
         "description": "Refactor page/game.js to use the new declarative layout system, replacing GAME_TOKENS and complex inline position calculations with design tokens, layout engine resolution, and reusable UI components. This is the most complex page migration involving two-column layouts and dynamic match state handling.",
         "details": "Migrate the Game Screen (page/game.js) from the legacy token-based positioning system to the new layout architecture defined in the PRD (Section 9: Migration Plan, Phase 6). The Game Screen is the most complex page requiring special handling for round screens, two-column team layouts, and dynamic finished state UI.\n\n**Implementation Steps:**\n\n1. **Remove Legacy Dependencies:**\n   - Delete the GAME_TOKENS constant from page/game.js\n   - Remove calculateRoundSafeSideInset() and calculateRoundSafeSectionSideInset() functions (now in screen-utils.js)\n   - Remove all inline position calculations from renderGameScreen()\n\n2. **Add New Imports:**\n   ```javascript\n   import { TOKENS, getFontSize } from '../utils/design-tokens.js';\n   import { getScreenMetrics, calculateRoundSafeSideInset, calculateRoundSafeSectionSideInset } from '../utils/screen-utils.js';\n   import { resolveLayout, createTwoColumnLayout } from '../utils/layout-engine.js';\n   import { createBackground, createText, createButton, createDivider, createIcon } from '../utils/ui-components.js';\n   ```\n\n3. **Define GAME_LAYOUT Schema:**\n   ```javascript\n   const GAME_LAYOUT = {\n     sections: {\n       header: {\n         top: 'headerTop',\n         height: '11%',\n         roundSafeInset: true\n       },\n       scoreArea: {\n         after: 'header',\n         gap: 'headerToContent',\n         height: 'fill',\n         roundSafeInset: false\n       },\n       footer: {\n         bottom: 'footerBottom',\n         height: '15%'\n       }\n     },\n     elements: {\n       // Header elements: setsLabel, setsValue, gamesLabel, gamesValue\n       // Score area elements with two-column: teamALabel, teamAScore, teamAMinusButton, teamBLabel, teamBScore, teamBMinusButton, divider\n       // Footer element: homeButton\n     }\n   };\n   ```\n\n4. **Refactor renderGameScreen():**\n   - Get screen metrics using getScreenMetrics()\n   - Resolve layout using resolveLayout(GAME_LAYOUT, metrics)\n   - Use createTwoColumnLayout for the score area section\n   - Create UI elements using ui-components factories\n   - Apply scoreDisplay typography to score buttons using getFontSize('scoreDisplay')\n   - Handle isMatchFinished state to show finishedLabel + winner message instead of active game UI\n\n5. **Round Screen Handling:**\n   - Header section uses roundSafeInset: true (automatically applies calculateRoundSafeSectionSideInset)\n   - Score area uses roundSafeInset: false for full-width content\n   - Ensure divider positioning respects round screen geometry\n\n6. **Two-Column Score Area Pattern:**\n   ```javascript\n   const columns = createTwoColumnLayout({\n     left: { width: '45%', elements: [teamALabel, teamAScore, teamAMinusButton] },\n     right: { width: '45%', elements: [teamBLabel, teamBScore, teamBMinusButton] },\n     divider: { width: '10%' }\n   }, scoreAreaBounds);\n   ```\n\n7. **Button Handling:**\n   - teamAScore and teamBScore remain buttons for incrementing scores\n   - teamAMinusButton and teamBMinusButton for decrementing\n   - homeButton in footer uses icon factory\n   - Preserve all existing click handlers and event bindings\n\n8. **Dynamic UI State:**\n   - If isMatchFinished is true: render finishedLabel with winner message\n   - If isMatchFinished is false: render standard score UI with buttons\n   - Ensure UI state updates immediately when match state changes",
         "testStrategy": "1. **Build Verification:** Run npm run complete-check after migration to ensure no compilation errors.\n\n2. **Visual QA - Round Screen:**\n   - Test on round simulator, verify header elements (sets/games) are not cut off by screen edges\n   - Confirm two-column layout maintains proper spacing in the score area\n   - Verify divider is centered and visible\n\n3. **Visual QA - Square Screen:**\n   - Test on square simulator, verify layout fills available space appropriately\n   - Confirm header, score area, and footer proportions are correct\n\n4. **Functionality Verification:**\n   - Tap teamAScore/teamBScore buttons - verify score increments and UI updates\n   - Tap teamAMinusButton/teamBMinusButton buttons - verify score decrements\n   - Tap homeButton - verify navigation to home screen works\n   - Complete a match and verify isMatchFinished UI appears with winner message\n\n5. **Typography Verification:**\n   - Confirm score buttons use scoreDisplay typography (largest font)\n   - Verify sets/games labels use appropriate font sizes\n   - Check all text is readable and properly aligned\n\n6. **Round Screen Edge Cases:**\n   - Verify safe insets prevent header text clipping on smallest round screens\n   - Confirm footer home button icon is fully visible and tappable\n\n7. **State Preservation:**\n   - Navigate away and back to game screen - verify score state persists\n   - Resume a game - verify UI correctly displays saved state\n\n8. **Regression Test:**\n   - Compare visual appearance with pre-migration implementation\n   - Ensure all existing functionality (scoring, set tracking, match completion) works identically",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40",
           "41",
@@ -3001,7 +3001,72 @@
           "44"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove legacy dependencies and add new imports",
+            "description": "Clean up legacy code and import new layout system utilities for the Game Screen migration.",
+            "dependencies": [],
+            "details": "Delete the GAME_TOKENS constant from page/game.js. Remove calculateRoundSafeSideInset() and calculateRoundSafeSectionSideInset() functions (now in screen-utils.js). Remove all inline position calculations from renderGameScreen(). Add new imports: TOKENS and getFontSize from design-tokens.js; getScreenMetrics, calculateRoundSafeSideInset, calculateRoundSafeSectionSideInset from screen-utils.js; resolveLayout, createTwoColumnLayout from layout-engine.js; createBackground, createText, createButton, createDivider, createIcon from ui-components.js.",
+            "status": "done",
+            "testStrategy": "Verify file compiles without errors after removing legacy code and adding new imports. Run npm run build to confirm no import errors.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T19:40:13.880Z"
+          },
+          {
+            "id": 2,
+            "title": "Define GAME_LAYOUT declarative schema",
+            "description": "Create the layout schema defining sections and elements for the Game Screen using the new declarative format.",
+            "dependencies": [
+              1
+            ],
+            "details": "Define GAME_LAYOUT constant with sections object containing header (top: 'headerTop', height: '11%', roundSafeInset: true), scoreArea (after: 'header', gap: 'headerToContent', height: 'fill', roundSafeInset: false), and footer (bottom: 'footerBottom', height: '15%'). Define elements object with header elements (setsLabel, setsValue, gamesLabel, gamesValue), score area elements (teamALabel, teamAScore, teamAMinusButton, teamBLabel, teamBScore, teamBMinusButton, divider), and footer element (homeButton).",
+            "status": "done",
+            "testStrategy": "Verify GAME_LAYOUT schema structure is valid and contains all required sections and element definitions.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T19:40:17.166Z"
+          },
+          {
+            "id": 3,
+            "title": "Refactor renderGameScreen() with layout resolution",
+            "description": "Update the main render function to use the new layout engine and UI component factories.",
+            "dependencies": [
+              2
+            ],
+            "details": "Modify renderGameScreen() to get screen metrics using getScreenMetrics(). Resolve layout using resolveLayout(GAME_LAYOUT, metrics). Create background using createBackground factory. Create UI elements using ui-components factories (createText for labels, createButton for score buttons). Apply scoreDisplay typography to score buttons using getFontSize('scoreDisplay'). Create homeButton in footer using createIcon factory. Replace all inline positioning with layout-resolved bounds.",
+            "status": "done",
+            "testStrategy": "Test basic rendering on both rectangular and round screens. Verify all elements appear and are positioned correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T19:40:20.396Z"
+          },
+          {
+            "id": 4,
+            "title": "Implement two-column score area layout",
+            "description": "Implement the two-column layout pattern for team scores with proper divider and element positioning.",
+            "dependencies": [
+              3
+            ],
+            "details": "Within the score area section, implement createTwoColumnLayout with configuration: left column (width: '45%', elements: [teamALabel, teamAScore, teamAMinusButton]), right column (width: '45%', elements: [teamBLabel, teamBScore, teamBMinusButton]), and divider (width: '10%'). Pass scoreAreaBounds from resolved layout. Ensure vertical stacking within each column and proper spacing between elements.",
+            "status": "done",
+            "testStrategy": "Verify two-column layout displays correctly with proper alignment, spacing, and divider positioning on both screen types.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T19:40:23.873Z"
+          },
+          {
+            "id": 5,
+            "title": "Handle round screen geometry, dynamic state, and button events",
+            "description": "Implement round-safe insets, match finished state handling, and preserve all interactive button functionality.",
+            "dependencies": [
+              4
+            ],
+            "details": "Ensure header section uses roundSafeInset: true (automatically applies calculateRoundSafeSectionSideInset). Verify score area uses roundSafeInset: false for full-width content. Handle isMatchFinished state: if true, render finishedLabel with winner message instead of active game UI; if false, render standard score UI with buttons. Preserve all existing click handlers for teamAScore, teamBScore (increment), teamAMinusButton, teamBMinusButton (decrement), and homeButton. Ensure UI state updates immediately when match state changes.",
+            "status": "done",
+            "testStrategy": "Run npm run complete-check to ensure no compilation errors. Test on round simulator verifying header elements are not cut off. Test both active and finished match states. Verify all buttons retain functionality and score updates work correctly.",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T19:40:27.861Z"
+          }
+        ],
+        "updatedAt": "2026-02-26T19:40:27.861Z"
       },
       {
         "id": "48",
@@ -3072,9 +3137,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-26T13:49:39.388Z",
+      "lastModified": "2026-02-26T19:40:27.861Z",
       "taskCount": 51,
-      "completedCount": 44,
+      "completedCount": 45,
       "tags": [
         "master"
       ]
