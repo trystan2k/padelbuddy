@@ -2911,7 +2911,7 @@
         "description": "Refactor page/setup.js to use the new declarative layout system, replacing SETUP_TOKENS and inline position calculations with design tokens, layout engine resolution, and reusable UI components.",
         "details": "Migrate the Setup Screen (page/setup.js) from the legacy token-based positioning system to the new layout architecture defined in the PRD (Section 9: Migration Plan, Phase 5).\n\n**Implementation Steps:**\n\n1. **Remove Legacy Dependencies:**\n   - Delete the SETUP_TOKENS constant from page/setup.js\n   - Remove all inline position calculations from renderSetupScreen()\n\n2. **Add New Imports:**\n   ```javascript\n   import { TOKENS, getFontSize } from '../utils/design-tokens.js';\n   import { getScreenMetrics } from '../utils/screen-utils.js';\n   import { resolveLayout } from '../utils/layout-engine.js';\n   import {\n     createCard,\n     createSectionTitle,\n     createBodyText,\n     createButton\n   } from '../utils/ui-components.js';\n   ```\n\n3. **Define Layout Schema:**\n   ```javascript\n   const SETUP_LAYOUT = {\n     sections: {\n       header: { top: '5%', height: '10%' },\n       body: { top: 'header.bottom', bottom: '0%' }\n     }\n   };\n   ```\n\n4. **Refactor renderSetupScreen():**\n   - Get screen metrics using getScreenMetrics()\n   - Call resolveLayout(SETUP_LAYOUT, metrics) to get resolved bounds\n   - Create card container inside body section using createCard()\n   - Add title to card using createSectionTitle()\n   - Add helper text using createBodyText() with TOKENS.colors.mutedText\n   - Create 3 option buttons (1, 3, 5 sets) using createButton()\n     - Use variant 'secondary' for unselected, 'primary' for selected\n   - Create start button using createButton() variant 'primary'\n     - Apply disabled styling when no selection is made\n   - Add error message using createBodyText() with TOKENS.colors.danger (conditional)\n\n5. **Update State Management:**\n   - Maintain selectedOption state (1, 3, or 5)\n   - Pass selected state to button variant logic\n   - Pass disabled state to start button\n\n6. **Constants:**\n   - Define MATCH_SET_OPTIONS = [1, 3, 5] for option button generation\n\n**Layout Structure:**\n- Header section: Empty spacer (title moves inside card)\n- Body section: Contains the card element\n  - Card contains: title, helperText, 3 option buttons, start button, errorMessage\n- Footer: None (no footer buttons on this page)",
         "testStrategy": "1. **Build Verification:** Run npm run complete-check after migration to ensure no compilation errors\n\n2. **Visual QA:**\n   - Compare the migrated Setup Screen with the current implementation side-by-side\n   - Verify card styling (rounded corners, padding) matches exactly\n   - Confirm title, helper text, and buttons are positioned correctly\n   - Verify spacing between elements is consistent\n\n3. **Functional Tests:**\n   - Tap each option button (1, 3, 5 sets) and verify selected state changes button variant to 'primary'\n   - Verify only one option can be selected at a time\n   - Verify start button is disabled when no option is selected\n   - Verify start button becomes enabled after selecting an option\n   - Test error message display condition and styling\n\n4. **Cross-Device Validation:**\n   - Test on both round and square screen simulators\n   - Verify layout adapts correctly to different screen shapes\n\n5. **Regression Test:**\n   - Ensure all existing Setup Screen functionality is preserved\n   - Verify navigation and state management work as expected",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40",
           "41",
@@ -2919,7 +2919,73 @@
           "44"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove Legacy Dependencies from Setup Screen",
+            "description": "Delete the legacy SETUP_TOKENS constant and remove all inline position calculations from the renderSetupScreen() function in page/setup.js",
+            "dependencies": [],
+            "details": "Locate and delete the SETUP_TOKENS constant definition from page/setup.js. Remove all inline position calculations (e.g., manual top/left/width/height calculations) from within the renderSetupScreen() function to prepare for the new layout system integration.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T13:49:34.235Z"
+          },
+          {
+            "id": 2,
+            "title": "Add New Layout System Imports",
+            "description": "Import design tokens, screen utilities, layout engine, and reusable UI component functions at the top of page/setup.js",
+            "dependencies": [
+              1
+            ],
+            "details": "Add the following import statements at the top of page/setup.js: import { TOKENS, getFontSize } from '../utils/design-tokens.js'; import { getScreenMetrics } from '../utils/screen-utils.js'; import { resolveLayout } from '../utils/layout-engine.js'; import { createCard, createSectionTitle, createBodyText, createButton } from '../utils/ui-components.js';",
+            "status": "done",
+            "testStrategy": "Verify no compilation errors after adding imports using npm run complete-check",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T13:49:35.525Z"
+          },
+          {
+            "id": 3,
+            "title": "Define SETUP_LAYOUT Schema Constant",
+            "description": "Create the SETUP_LAYOUT constant with declarative section definitions for header and body areas",
+            "dependencies": [
+              2
+            ],
+            "details": "Define the SETUP_LAYOUT constant object with a sections property containing header (top: '5%', height: '10%') and body (top: 'header.bottom', bottom: '0%') configurations. This schema will be used by the layout engine to calculate resolved bounds.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T13:49:36.816Z"
+          },
+          {
+            "id": 4,
+            "title": "Refactor renderSetupScreen() Function",
+            "description": "Rewrite renderSetupScreen() to use the layout engine, screen metrics, and reusable UI components",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Update renderSetupScreen() to call getScreenMetrics(), pass metrics to resolveLayout(SETUP_LAYOUT, metrics), use createCard() for the container, createSectionTitle() for the title, createBodyText() for helper text, createButton() for 3 option buttons (1, 3, 5 sets) with appropriate variants, and createButton() for the start button with disabled state handling. Add conditional error message using createBodyText() with TOKENS.colors.danger.",
+            "status": "done",
+            "testStrategy": "Run npm run complete-check to verify build, then perform visual QA comparing migrated screen with original implementation",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T13:49:38.094Z"
+          },
+          {
+            "id": 5,
+            "title": "Update State Management for Option Selection",
+            "description": "Implement selectedOption state management and integrate with button variant and disabled state logic",
+            "dependencies": [
+              4
+            ],
+            "details": "Define MATCH_SET_OPTIONS = [1, 3, 5] constant. Maintain selectedOption state variable that tracks whether 1, 3, or 5 sets is selected. Pass the selected state to determine button variant logic ('primary' for selected, 'secondary' for unselected). Pass disabled state to the start button based on whether a selection has been made.",
+            "status": "done",
+            "testStrategy": "Test option button selection behavior, verify primary/secondary variant switching, and confirm start button enables/disables correctly",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T13:49:39.388Z"
+          }
+        ],
+        "updatedAt": "2026-02-26T13:49:39.388Z"
       },
       {
         "id": "47",
@@ -3006,9 +3072,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-26T11:57:51.467Z",
+      "lastModified": "2026-02-26T13:49:39.388Z",
       "taskCount": 51,
-      "completedCount": 43,
+      "completedCount": 44,
       "tags": [
         "master"
       ]

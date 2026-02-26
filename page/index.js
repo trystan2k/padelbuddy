@@ -73,7 +73,7 @@ const INDEX_LAYOUT = {
       x: 'center',
       y: '15%',
       width: toPercentage(TOKENS.sizing.buttonWidth), // '85%'
-      height: toPercentage(TOKENS.sizing.buttonHeight), // '15%'
+      // height calculated in render using screen height ratio
       align: 'center',
       _meta: {
         type: 'button',
@@ -87,7 +87,7 @@ const INDEX_LAYOUT = {
       x: 'center',
       y: '55%',
       width: toPercentage(TOKENS.sizing.buttonWidth), // '85%'
-      height: toPercentage(TOKENS.sizing.buttonHeight), // '15%'
+      // height calculated in render using screen height ratio
       align: 'center',
       _meta: {
         type: 'button',
@@ -455,7 +455,6 @@ Page({
         x: primaryEl.x,
         y: primaryEl.y,
         w: primaryEl.w,
-        h: primaryEl.h,
         variant: primaryMeta.variant,
         text: gettext(primaryMeta.text),
         onClick: () => this.handleStartNewGame()
@@ -472,7 +471,6 @@ Page({
           x: secondaryEl.x,
           y: secondaryEl.y,
           w: secondaryEl.w,
-          h: secondaryEl.h,
           variant: secondaryMeta.variant,
           text: gettext(secondaryMeta.text),
           onClick: () => this.handleResumeGame()

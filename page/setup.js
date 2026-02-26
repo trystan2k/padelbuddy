@@ -1,53 +1,133 @@
 import { gettext } from 'i18n'
 
+import { TOKENS, toPercentage } from '../utils/design-tokens.js'
+import { resolveLayout } from '../utils/layout-engine.js'
 import { initializeMatchState } from '../utils/match-session-init.js'
 import { MATCH_STATUS } from '../utils/match-state-schema.js'
 import { clearMatchState, saveMatchState } from '../utils/match-storage.js'
+import { getScreenMetrics } from '../utils/screen-utils.js'
 import { clearState } from '../utils/storage.js'
+import {
+  createBackground,
+  createButton,
+  createText
+} from '../utils/ui-components.js'
 
 const MATCH_SET_OPTIONS = Object.freeze([1, 3, 5])
 
-const SETUP_TOKENS = Object.freeze({
-  colors: {
-    background: 0x000000,
-    buttonText: 0x000000,
-    cardBackground: 0x000000,
-    disabledButton: 0x2a2d34,
-    disabledButtonText: 0x7d8289,
-    errorText: 0xff6d78,
-    mutedText: 0x7d8289,
-    optionButton: 0x24262b,
-    optionButtonPressed: 0x2d3036,
-    optionButtonText: 0xffffff,
-    optionSelectedButton: 0x1eb98c,
-    optionSelectedButtonPressed: 0x1aa07a,
-    optionSelectedButtonText: 0x000000,
-    startButton: 0x1eb98c,
-    startButtonPressed: 0x1aa07a,
-    title: 0xffffff
+/**
+ * Layout schema for the setup screen.
+ * Direct rendering on background with title in header and go back in footer.
+ */
+const SETUP_LAYOUT = {
+  sections: {
+    header: {
+      top: 0,
+      height: '15%', // Reduced from 22% to give more space to body
+      roundSafeInset: false
+    },
+    body: {
+      height: 'fill',
+      after: 'header',
+      roundSafeInset: false,
+      sideInset: '7%'
+    },
+    footer: {
+      bottom: 0,
+      height: '5%', // Reduced from 15% to give more space to body
+      roundSafeInset: false
+    }
   },
-  fontScale: {
-    helper: 0.04,
-    option: 0.05,
-    start: 0.052,
-    title: 0.1
-  },
-  spacingScale: {
-    cardTop: 0.1,
-    cardHorizontalInset: 0.07,
-    helperToOptions: 0.03,
-    optionsToStart: 0.08,
-    startToError: 0.025,
-    titleToHelper: 0.03
+  elements: {
+    // Title text (in header section)
+    title: {
+      section: 'header',
+      x: 'center',
+      y: '30%',
+      width: '100%',
+      height: '50%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'pageTitle',
+        text: 'setup.title'
+      }
+    },
+    // Helper text
+    helperText: {
+      section: 'body',
+      x: 0,
+      y: '5%',
+      width: '100%',
+      height: '10%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'bodyLarge',
+        text: 'setup.selectSetsHint',
+        color: 'colors.mutedText'
+      }
+    },
+    // Option buttons row - container for the 3 option buttons
+    optionsRow: {
+      section: 'body',
+      x: 0,
+      y: '22%',
+      width: '100%',
+      // height calculated in render using screen height ratio
+      align: 'center',
+      _meta: {
+        type: 'optionsRow',
+        options: [1, 3, 5],
+        gap: '2.2%'
+      }
+    },
+    // Start button
+    startButton: {
+      section: 'body',
+      x: 'center',
+      y: '55%',
+      width: toPercentage(TOKENS.sizing.buttonWidth), // '85%' - same as index page
+      // height calculated in render using screen height ratio
+      align: 'center',
+      _meta: {
+        type: 'button',
+        variant: 'primary',
+        text: 'setup.startMatch',
+        onClick: 'handleStartMatch'
+      }
+    },
+    // Error message (conditional)
+    errorMessage: {
+      section: 'body',
+      x: 0,
+      y: '78%',
+      width: '100%',
+      height: '10%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'body',
+        text: 'dynamic',
+        color: 'colors.danger',
+        conditional: 'hasError'
+      }
+    },
+    // Go back button (in footer section)
+    goBackButton: {
+      section: 'footer',
+      x: 'center',
+      y: '20%',
+      width: TOKENS.sizing.iconLarge,
+      height: TOKENS.sizing.iconLarge,
+      align: 'center',
+      _meta: {
+        type: 'iconButton',
+        icon: 'goback-icon.png',
+        onClick: 'navigateBack'
+      }
+    }
   }
-})
-
-function ensureNumber(value, fallback) {
-  return Number.isFinite(value) && value > 0 ? value : fallback
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
 }
 
 function isValidSetsOption(setsToPlay) {
@@ -82,19 +162,6 @@ Page({
 
   onDestroy() {
     this.clearWidgets()
-  },
-
-  getScreenMetrics() {
-    if (typeof hmSetting === 'undefined') {
-      return { width: 390, height: 450 }
-    }
-
-    const { width, height } = hmSetting.getDeviceInfo()
-
-    return {
-      width: ensureNumber(width, 390),
-      height: ensureNumber(height, 450)
-    }
   },
 
   clearWidgets() {
@@ -257,156 +324,147 @@ Page({
     }
   },
 
+  navigateBack() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.goBack !== 'function') {
+      return false
+    }
+
+    try {
+      hmApp.goBack()
+      return true
+    } catch {
+      return false
+    }
+  },
+
   renderSetupScreen() {
     if (typeof hmUI === 'undefined') {
       return
     }
 
-    const { width, height } = this.getScreenMetrics()
-    const cardInset = Math.round(
-      width * SETUP_TOKENS.spacingScale.cardHorizontalInset
-    )
-    const cardWidth = Math.max(1, width - cardInset * 2)
-    const cardHeight = Math.round(height * 0.54)
-    const cardY = Math.round(height * SETUP_TOKENS.spacingScale.cardTop)
-    const titleHeight = Math.round(height * 0.09)
-    const helperY =
-      cardY +
-      titleHeight +
-      Math.round(height * SETUP_TOKENS.spacingScale.titleToHelper)
-    const helperHeight = Math.round(height * 0.05)
-    const optionButtonHeight = clamp(Math.round(height * 0.216), 48, 130)
-    const optionColumnGap = Math.round(width * 0.022)
-    const optionsRowY =
-      helperY +
-      helperHeight +
-      Math.round(height * SETUP_TOKENS.spacingScale.helperToOptions)
-    const optionsTotalGap = optionColumnGap * (MATCH_SET_OPTIONS.length - 1)
-    const optionButtonWidth = Math.max(
-      1,
-      Math.round((cardWidth - optionsTotalGap) / MATCH_SET_OPTIONS.length)
-    )
-    const startButtonHeight = clamp(Math.round(height * 0.216), 50, 130)
-    const startButtonY =
-      optionsRowY +
-      optionButtonHeight +
-      Math.round(height * SETUP_TOKENS.spacingScale.optionsToStart)
-    const startButtonWidth = Math.round(cardWidth * 0.78)
-    const startButtonX = Math.round((width - startButtonWidth) / 2)
-    const canStartMatch = this.isStartMatchEnabled()
-    const errorY =
-      startButtonY +
-      startButtonHeight +
-      Math.round(height * SETUP_TOKENS.spacingScale.startToError)
-    const errorHeight = Math.round(height * 0.06)
+    const metrics = getScreenMetrics()
+    const { width } = metrics
+    const layout = resolveLayout(SETUP_LAYOUT, metrics)
 
     this.clearWidgets()
 
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0,
-      y: 0,
-      w: width,
-      h: height,
-      color: SETUP_TOKENS.colors.background
-    })
+    // 1. Background
+    const bg = createBackground()
+    this.createWidget(bg.widgetType, bg.config)
 
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: cardInset,
-      y: cardY,
-      w: cardWidth,
-      h: cardHeight,
-      radius: Math.round(cardWidth * 0.07),
-      color: SETUP_TOKENS.colors.cardBackground
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: cardInset,
-      y: cardY,
-      w: cardWidth,
-      h: titleHeight,
-      color: SETUP_TOKENS.colors.title,
-      text: gettext('setup.title'),
-      text_size: Math.round(width * SETUP_TOKENS.fontScale.title),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: cardInset,
-      y: helperY,
-      w: cardWidth,
-      h: helperHeight,
-      color: SETUP_TOKENS.colors.mutedText,
-      text: gettext('setup.selectSetsHint'),
-      text_size: Math.round(width * SETUP_TOKENS.fontScale.helper),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    MATCH_SET_OPTIONS.forEach((setsToPlay, index) => {
-      const isSelected = this.selectedSetsToPlay === setsToPlay
-      const optionButtonX =
-        cardInset + (optionButtonWidth + optionColumnGap) * index
-
-      this.createWidget(hmUI.widget.BUTTON, {
-        x: optionButtonX,
-        y: optionsRowY,
-        w: optionButtonWidth,
-        h: optionButtonHeight,
-        radius: Math.round(optionButtonHeight / 2),
-        normal_color: isSelected
-          ? SETUP_TOKENS.colors.optionSelectedButton
-          : SETUP_TOKENS.colors.optionButton,
-        press_color: isSelected
-          ? SETUP_TOKENS.colors.optionSelectedButtonPressed
-          : SETUP_TOKENS.colors.optionButtonPressed,
-        color: isSelected
-          ? SETUP_TOKENS.colors.optionSelectedButtonText
-          : SETUP_TOKENS.colors.optionButtonText,
-        text_size: Math.round(width * SETUP_TOKENS.fontScale.option),
-        text: this.getOptionLabel(setsToPlay),
-        click_func: () => this.handleSelectSets(setsToPlay)
+    // 2. Title text (in header section)
+    const titleEl = layout.elements.title
+    const titleMeta = SETUP_LAYOUT.elements.title._meta
+    if (titleEl) {
+      const titleConfig = createText({
+        text: gettext(titleMeta.text),
+        style: titleMeta.style,
+        x: titleEl.x,
+        y: titleEl.y,
+        w: titleEl.w,
+        h: titleEl.h
       })
-    })
+      this.createWidget(titleConfig.widgetType, titleConfig.config)
+    }
 
-    this.createWidget(hmUI.widget.BUTTON, {
-      x: startButtonX,
-      y: startButtonY,
-      w: startButtonWidth,
-      h: startButtonHeight,
-      radius: Math.round(startButtonHeight / 2),
-      normal_color: canStartMatch
-        ? SETUP_TOKENS.colors.startButton
-        : SETUP_TOKENS.colors.disabledButton,
-      press_color: canStartMatch
-        ? SETUP_TOKENS.colors.startButtonPressed
-        : SETUP_TOKENS.colors.disabledButton,
-      color: canStartMatch
-        ? SETUP_TOKENS.colors.buttonText
-        : SETUP_TOKENS.colors.disabledButtonText,
-      text_size: Math.round(width * SETUP_TOKENS.fontScale.start),
-      text: gettext('setup.startMatch'),
-      click_func: () => {
-        if (!canStartMatch) {
-          return false
+    // 3. Helper text
+    const helperEl = layout.elements.helperText
+    const helperMeta = SETUP_LAYOUT.elements.helperText._meta
+    if (helperEl) {
+      const helperConfig = createText({
+        text: gettext(helperMeta.text),
+        style: helperMeta.style,
+        x: helperEl.x,
+        y: helperEl.y,
+        w: helperEl.w,
+        h: helperEl.h,
+        color: TOKENS.colors.mutedText
+      })
+      this.createWidget(helperConfig.widgetType, helperConfig.config)
+    }
+
+    // 4. Option buttons (1, 3, 5 sets) - circular buttons
+    const optionsEl = layout.elements.optionsRow
+    if (optionsEl) {
+      const optionGap = Math.round(width * 0.022)
+      const optionButtonWidth = Math.round(
+        (optionsEl.w - (MATCH_SET_OPTIONS.length - 1) * optionGap) /
+          MATCH_SET_OPTIONS.length
+      )
+
+      MATCH_SET_OPTIONS.forEach((setsToPlay, index) => {
+        const isSelected = this.selectedSetsToPlay === setsToPlay
+        const optionButtonX =
+          optionsEl.x + (optionButtonWidth + optionGap) * index
+
+        // Make buttons circular by using radius = half of width (or height)
+        const circularRadius = Math.round(optionButtonWidth / 2)
+
+        const optionBtn = createButton({
+          x: optionButtonX,
+          y: optionsEl.y,
+          w: optionButtonWidth,
+          radius: circularRadius,
+          variant: isSelected ? 'primary' : 'secondary',
+          text: this.getOptionLabel(setsToPlay),
+          onClick: () => this.handleSelectSets(setsToPlay)
+        })
+        this.createWidget(optionBtn.widgetType, optionBtn.config)
+      })
+    }
+
+    // 5. Start button
+    const startEl = layout.elements.startButton
+    const startMeta = SETUP_LAYOUT.elements.startButton._meta
+    const canStartMatch = this.isStartMatchEnabled()
+    if (startEl) {
+      const startBtn = createButton({
+        x: startEl.x,
+        y: startEl.y,
+        w: startEl.w,
+        variant: canStartMatch ? 'primary' : 'secondary',
+        text: gettext(startMeta.text),
+        disabled: !canStartMatch,
+        onClick: () => {
+          if (!canStartMatch) {
+            return false
+          }
+          return this.handleStartMatch()
         }
-
-        return this.handleStartMatch()
-      }
-    })
-
-    if (this.startErrorMessage.length > 0) {
-      this.createWidget(hmUI.widget.TEXT, {
-        x: cardInset,
-        y: errorY,
-        w: cardWidth,
-        h: errorHeight,
-        color: SETUP_TOKENS.colors.errorText,
-        text: this.startErrorMessage,
-        text_size: Math.round(width * SETUP_TOKENS.fontScale.helper),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
       })
+      this.createWidget(startBtn.widgetType, startBtn.config)
+    }
+
+    // 6. Error message (conditional)
+    if (this.startErrorMessage.length > 0) {
+      const errorEl = layout.elements.errorMessage
+      const errorMeta = SETUP_LAYOUT.elements.errorMessage._meta
+      if (errorEl) {
+        const errorConfig = createText({
+          text: this.startErrorMessage,
+          style: errorMeta.style,
+          x: errorEl.x,
+          y: errorEl.y,
+          w: errorEl.w,
+          h: errorEl.h,
+          color: TOKENS.colors.danger
+        })
+        this.createWidget(errorConfig.widgetType, errorConfig.config)
+      }
+    }
+
+    // 7. Go back button (in footer section)
+    const goBackEl = layout.elements.goBackButton
+    const goBackMeta = SETUP_LAYOUT.elements.goBackButton._meta
+    if (goBackEl) {
+      const goBackBtn = createButton({
+        x: goBackEl.x,
+        y: goBackEl.y,
+        variant: 'icon',
+        normal_src: goBackMeta.icon,
+        onClick: () => this.navigateBack()
+      })
+      this.createWidget(goBackBtn.widgetType, goBackBtn.config)
     }
   }
 })
