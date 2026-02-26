@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0](https://github.com/trystan2k/padelbuddy/compare/v1.0.0...v1.1.0) (2026-02-26)
+
+### Features
+
+* create UI components utility with reusable widget factories ([0d00537](https://github.com/trystan2k/padelbuddy/commit/0d00537191611a9424a1e69cc219c7919f81644d))
+
 ## 1.0.0 (2026-02-25)
 
 ### Features
