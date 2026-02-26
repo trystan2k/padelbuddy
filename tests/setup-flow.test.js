@@ -59,6 +59,10 @@ async function loadSetupPageDefinition() {
     import.meta.url
   )
   const storageUrl = new URL('../utils/storage.js', import.meta.url)
+  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
+  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
+  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
+  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -80,6 +84,19 @@ async function loadSetupPageDefinition() {
       `from '${matchStateSchemaUrl.href}'`
     )
     .replace("from '../utils/storage.js'", `from '${storageUrl.href}'`)
+    .replace(
+      "from '../utils/design-tokens.js'",
+      `from '${designTokensUrl.href}'`
+    )
+    .replace(
+      "from '../utils/layout-engine.js'",
+      `from '${layoutEngineUrl.href}'`
+    )
+    .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
+    .replace(
+      "from '../utils/ui-components.js'",
+      `from '${uiComponentsUrl.href}'`
+    )
 
   const moduleUrl =
     'data:text/javascript;charset=utf-8,' +
@@ -259,14 +276,14 @@ test('setup page renders three set selection buttons and disabled start button',
 
     const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
     const optionButtons = buttons.filter((button) =>
-      button.properties.text.startsWith('setup.option.')
+      button.properties.text?.startsWith('setup.option.')
     )
     const startButton = findButtonByText(buttons, 'setup.startMatch')
 
     assert.equal(optionButtons.length, 3)
     assert.equal(Boolean(startButton), true)
-    assert.equal(startButton.properties.normal_color, 0x2a2d34)
-    assert.equal(startButton.properties.color, 0x7d8289)
+    assert.equal(startButton.properties.normal_color, 0x444444)
+    assert.equal(startButton.properties.color, 0x888888)
   })
 })
 
@@ -277,7 +294,7 @@ test('setup page set selection buttons have expected labels', async () => {
 
     const buttons = getVisibleWidgets(createdWidgets, 'BUTTON')
     const optionLabels = buttons
-      .filter((button) => button.properties.text.startsWith('setup.option.'))
+      .filter((button) => button.properties.text?.startsWith('setup.option.'))
       .map((button) => button.properties.text)
 
     assert.deepEqual(optionLabels, [
@@ -319,7 +336,7 @@ test('setup page start button remains disabled without selection', async () => {
 
     assert.equal(page.hasSetSelection(), false)
     assert.equal(page.isStartMatchEnabled(), false)
-    assert.equal(startButton.properties.normal_color, 0x2a2d34)
+    assert.equal(startButton.properties.normal_color, 0x444444)
   })
 })
 

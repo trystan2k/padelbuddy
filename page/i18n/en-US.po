@@ -62,16 +62,16 @@ msgid "setup.title"
 msgstr "Match Setup"
 
 msgid "setup.selectSetsHint"
-msgstr "Choose number of sets"
+msgstr "Number of sets"
 
 msgid "setup.option.oneSet"
-msgstr "1 Set"
+msgstr "1"
 
 msgid "setup.option.threeSets"
-msgstr "3 Sets"
+msgstr "3"
 
 msgid "setup.option.fiveSets"
-msgstr "5 Sets"
+msgstr "5"
 
 msgid "setup.startMatch"
 msgstr "Start Match"

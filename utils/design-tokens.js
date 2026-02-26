@@ -71,7 +71,7 @@ export const TOKENS = Object.freeze({
     iconMedium: 32,
     iconLarge: 48,
     buttonHeight: 35, // 15% of parent section height (for layout engine)
-    buttonHeightRatio: 0.105, // Ratio of screen height (for ui-components.js)
+    buttonHeightRatio: 0.22, // Ratio of screen height (for ui-components.js)
     buttonHeightLarge: 0.15,
     buttonWidth: 85, // 85% of parent section width
     buttonRadiusRatio: 0.5,
