@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0](https://github.com/trystan2k/padelbuddy/compare/v1.4.0...v1.5.0) (2026-02-27)
+
+### Features
+
+* migrate summary screen to new layout system ([22a435c](https://github.com/trystan2k/padelbuddy/commit/22a435c0084c4f1dcdf49ac5cf8742176510061e)), closes [#49](https://github.com/trystan2k/padelbuddy/issues/49)
+
 ## [1.4.0](https://github.com/trystan2k/padelbuddy/compare/v1.3.0...v1.4.0) (2026-02-26)
 
 ### Features
