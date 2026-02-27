@@ -50,9 +50,9 @@ export const TOKENS = Object.freeze({
     sectionTitle: 0.068,
     body: 0.055,
     bodyLarge: 0.08,
-    score: 0.11,
+    score: 0.15,
     scoreDisplay: 0.28,
-    caption: 0.036,
+    caption: 0.05,
     button: 0.05,
     buttonLarge: 0.075
   },

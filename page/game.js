@@ -46,8 +46,8 @@ const GAME_LAYOUT = {
     // Header: SETS and GAMES rows
     header: {
       top: toPercentage(TOKENS.spacing.headerTop), // '4%'
-      height: '11%', // Two rows of ~5.5% each
-      roundSafeInset: true // Enable round screen safe insets for header
+      height: '15%', // Two rows of ~5.5% each
+      roundSafeInset: false
     },
     // Score area: fills between header and footer
     scoreArea: {
@@ -1482,7 +1482,7 @@ Page({
     // SETS row - Value
     const setsValueConfig = createText({
       text: `  ${viewModel.setsWon.teamA} – ${viewModel.setsWon.teamB}`,
-      style: 'body',
+      style: 'bodyLarge',
       x: valueX,
       y: headerSection.y,
       w: valueWidth,
@@ -1510,7 +1510,7 @@ Page({
     // GAMES row - Value
     const gamesValueConfig = createText({
       text: `  ${viewModel.currentSetGames.teamA} – ${viewModel.currentSetGames.teamB}`,
-      style: 'body',
+      style: 'bodyLarge',
       x: valueX,
       y: headerSection.y + rowHeight,
       w: valueWidth,

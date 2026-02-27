@@ -1,40 +1,121 @@
 import { gettext } from 'i18n'
+import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
+import { resolveLayout } from '../utils/layout-engine.js'
 import {
   loadMatchHistory,
   saveMatchToHistory
 } from '../utils/match-history-storage.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { loadMatchState } from '../utils/match-storage.js'
+import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
+import {
+  createBackground,
+  createButton,
+  createText
+} from '../utils/ui-components.js'
 
-const SUMMARY_TOKENS = Object.freeze({
-  colors: {
-    accent: 0x1eb98c,
-    accentPressed: 0x1aa07a,
-    background: 0x000000,
-    buttonText: 0x000000,
-    buttonSecondary: 0x24262b,
-    buttonSecondaryPressed: 0x2d3036,
-    buttonSecondaryText: 0xffffff,
-    cardBackground: 0x000000,
-    mutedText: 0x7d8289,
-    text: 0xffffff
+/**
+ * Declarative layout schema for the Summary screen.
+ *
+ * Structure:
+ * - header: Title only ("Match Summary")
+ * - body: Winner text, score label, score value, set history with SCROLL_LIST
+ * - footer: Home button
+ */
+const SUMMARY_LAYOUT = {
+  sections: {
+    // Header section: Contains only the page title
+    header: {
+      top: toPercentage(TOKENS.spacing.pageTop), // '5%'
+      height: '10%', // Just title
+      roundSafeInset: false // Enable round screen safe insets
+    },
+    // Body section: Winner, score, set history (fills remaining space)
+    body: {
+      height: 'fill',
+      after: 'header',
+      gap: toPercentage(TOKENS.spacing.sectionGap), // '2%'
+      roundSafeInset: false // Enable round screen safe insets
+    },
+    // Footer section: Home button (bottom-anchored)
+    footer: {
+      bottom: toPercentage(TOKENS.spacing.pageBottom), // '6%'
+      height: '10%', // Button area height
+      roundSafeInset: false // Centered icon doesn't need inset
+    }
   },
-  fontScale: {
-    body: 0.08,
-    button: 0.044,
-    score: 0.11,
-    subtitle: 0.036,
-    title: 0.068,
-    winner: 0.056
-  },
-  spacingScale: {
-    bottomInset: 0.06,
-    roundSideInset: 0.12,
-    sectionGap: 0.02,
-    sideInset: 0.07,
-    topInset: 0.05
+  elements: {
+    // ── Header Section Elements ────────────────────────────────────────────
+    // Title text ("Match Summary")
+    titleText: {
+      section: 'header',
+      x: 'center',
+      y: '30%',
+      width: '100%',
+      height: '50%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'pageTitle',
+        textKey: 'summary.title'
+      }
+    },
+
+    // ── Body Section Elements ───────────────────────────────────────────────
+    // Winner text (e.g., "Team A Wins!")
+    winnerText: {
+      section: 'body',
+      x: 0,
+      y: '0%',
+      width: '100%',
+      height: '15%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'bodyLarge', // Using bodyLarge for winner text
+        color: 'accent',
+        textKey: 'winnerText' // Dynamic: viewModel.winnerText
+      }
+    },
+    // Final score value (e.g., "2-1")
+    scoreValue: {
+      section: 'body',
+      x: 0,
+      y: '25%',
+      width: '100%',
+      height: '12%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'score',
+        color: 'text',
+        textKey: 'finalSetsScore' // Dynamic: viewModel.finalSetsScore
+      }
+    },
+    // Note: SCROLL_LIST is created programmatically within the body section
+    // Its bounds are derived from: historyBodyY and historyBodyHeight
+    // (starts at 47% of body section height)
+
+    // ── Footer Section Elements ──────────────────────────────────────────
+    homeButton: {
+      section: 'footer',
+      x: 'center',
+      y: 'center',
+      width: TOKENS.sizing.iconLarge, // 48
+      height: TOKENS.sizing.iconLarge, // 48
+      align: 'center',
+      _meta: {
+        type: 'iconButton',
+        icon: 'home-icon.png',
+        onClick: 'handleNavigateHome'
+      }
+    }
   }
-})
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
 function cloneMatchState(matchState) {
   try {
@@ -42,14 +123,6 @@ function cloneMatchState(matchState) {
   } catch {
     return matchState
   }
-}
-
-function ensureNumber(value, fallback) {
-  return Number.isFinite(value) && value > 0 ? value : fallback
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
 }
 
 function isRecord(value) {
@@ -144,45 +217,9 @@ function createSummaryViewModel(matchState) {
   }
 }
 
-function calculateRoundSafeSideInset(
-  width,
-  height,
-  yPosition,
-  horizontalPadding
-) {
-  const radius = Math.min(width, height) / 2
-  const centerX = width / 2
-  const centerY = height / 2
-  const boundedY = clamp(yPosition, 0, height)
-  const distanceFromCenter = Math.abs(boundedY - centerY)
-  const halfChord = Math.sqrt(
-    Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter)
-  )
-
-  return Math.max(0, Math.ceil(centerX - halfChord + horizontalPadding))
-}
-
-function calculateRoundSafeSectionSideInset(
-  width,
-  height,
-  sectionTop,
-  sectionHeight,
-  horizontalPadding
-) {
-  const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(
-    sectionTop + Math.max(sectionHeight, 0),
-    0,
-    height
-  )
-  const middleY = (boundedTop + boundedBottom) / 2
-
-  return Math.max(
-    calculateRoundSafeSideInset(width, height, boundedTop, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, middleY, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, boundedBottom, horizontalPadding)
-  )
-}
+// ============================================================================
+// PAGE DEFINITION
+// ============================================================================
 
 Page({
   onInit() {
@@ -237,19 +274,6 @@ Page({
       hmApp.unregisterGestureEvent()
     } catch {
       // Non-fatal: gesture unregistration failed
-    }
-  },
-
-  getScreenMetrics() {
-    if (typeof hmSetting === 'undefined') {
-      return { width: 390, height: 450 }
-    }
-
-    const { width, height } = hmSetting.getDeviceInfo()
-
-    return {
-      width: ensureNumber(width, 390),
-      height: ensureNumber(height, 450)
     }
   },
 
@@ -368,202 +392,130 @@ Page({
     return this.navigateToHomePage()
   },
 
+  // ============================================================================
+  // RENDER METHODS
+  // ============================================================================
+
   renderSummaryScreen() {
     if (typeof hmUI === 'undefined') {
       return
     }
 
-    const { width, height } = this.getScreenMetrics()
-    const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
+    // Get screen metrics and resolve layout
+    const metrics = getScreenMetrics()
+    const layout = resolveLayout(SUMMARY_LAYOUT, metrics)
+
+    // Create view model from match state
     const viewModel = createSummaryViewModel(this.finishedMatchState)
-    const topInset = Math.round(height * SUMMARY_TOKENS.spacingScale.topInset)
-    const bottomInset = Math.round(
-      height * SUMMARY_TOKENS.spacingScale.bottomInset
-    )
-    const sectionGap = Math.round(
-      height * SUMMARY_TOKENS.spacingScale.sectionGap
-    )
-    const baseSectionSideInset = Math.round(
-      width *
-        (isRoundScreen
-          ? SUMMARY_TOKENS.spacingScale.roundSideInset
-          : SUMMARY_TOKENS.spacingScale.sideInset)
-    )
-    const buttonHeight = clamp(Math.round(height * 0.105), 48, 58)
-    // Only one button now (Home)
-    const actionsSectionHeight = buttonHeight
-    const actionsSectionY = height - bottomInset - actionsSectionHeight
-    const minimumHistoryHeight = 72
-    const maxHeaderHeight = Math.max(
-      64,
-      actionsSectionY - topInset - sectionGap * 2 - minimumHistoryHeight
-    )
-    const headerHeight = clamp(Math.round(height * 0.36), 80, maxHeaderHeight)
-    const headerY = topInset
-    const historyGap = Math.round(height * 0.03)
-    const historyY = headerY + headerHeight + historyGap
-    const historyHeight = Math.max(1, actionsSectionY - sectionGap - historyY)
-    const maxSectionInset = Math.floor((width - 1) / 2)
 
-    const resolveSectionSideInset = (sectionY, sectionHeight) => {
-      if (!isRoundScreen) {
-        return clamp(baseSectionSideInset, 0, maxSectionInset)
-      }
+    this.clearWidgets()
 
-      const roundSafeInset = calculateRoundSafeSectionSideInset(
-        width,
-        height,
-        sectionY,
-        sectionHeight,
-        Math.round(width * 0.01)
-      )
+    // ── Background ────────────────────────────────────────────────────────
+    const bg = createBackground()
+    this.createWidget(bg.widgetType, bg.config)
 
-      return clamp(
-        Math.max(baseSectionSideInset, roundSafeInset),
-        0,
-        maxSectionInset
-      )
-    }
+    // ── Header Section ─────────────────────────────────────────────────────
+    this.renderHeaderSection(layout)
 
-    const headerSideInset = resolveSectionSideInset(headerY, headerHeight)
-    const historySideInset = resolveSectionSideInset(historyY, historyHeight)
-    const headerX = headerSideInset
-    const headerWidth = Math.max(1, width - headerSideInset * 2)
-    const historyX = historySideInset
-    const historyWidth = Math.max(1, width - historySideInset * 2)
-    const titleHeight = clamp(Math.round(headerHeight * 0.28), 24, 34)
-    const winnerHeight = clamp(Math.round(headerHeight * 0.36), 28, 44)
-    const scoreLabelHeight = clamp(Math.round(headerHeight * 0.18), 16, 24)
-    const scoreValueY = headerY + titleHeight + winnerHeight + scoreLabelHeight
-    const scoreValueHeight = Math.max(
-      1,
-      headerHeight - titleHeight - winnerHeight - scoreLabelHeight
-    )
+    // ── Body Section (Set History) ─────────────────────────────────────────
+    this.renderBodySection(layout, viewModel, metrics)
 
-    // History scroll list: each row height based on doubled font size
-    const historyTitleHeight = clamp(Math.round(historyHeight * 0.24), 24, 32)
-    const historyBodyY = historyY + historyTitleHeight
-    const historyBodyHeight = Math.max(1, historyHeight - historyTitleHeight)
+    // ── Footer Section ─────────────────────────────────────────────────────
+    this.renderFooterSection(layout)
+  },
+
+  /**
+   * Renders the header section with title only.
+   */
+  renderHeaderSection(layout) {
+    const headerSection = layout.sections.header
+    const elements = SUMMARY_LAYOUT.elements
+
+    // Title text ("Match Summary")
+    const titleMeta = elements.titleText._meta
+    const titleConfig = createText({
+      text: gettext(titleMeta.textKey),
+      style: titleMeta.style,
+      x: headerSection.x,
+      y: headerSection.y,
+      w: headerSection.w,
+      h: headerSection.h,
+      color: TOKENS.colors[titleMeta.color]
+    })
+    this.createWidget(titleConfig.widgetType, titleConfig.config)
+  },
+
+  /**
+   * Renders the body section with winner text, score, and set history scroll list.
+   */
+  renderBodySection(layout, viewModel, metrics) {
+    const bodySection = layout.sections.body
+    const elements = SUMMARY_LAYOUT.elements
+
+    // Winner text (dynamic)
+    const winnerMeta = elements.winnerText._meta
+    const winnerHeight = Math.round(bodySection.h * 0.15)
+    const winnerConfig = createText({
+      text: viewModel.winnerText,
+      style: winnerMeta.style,
+      x: bodySection.x,
+      y: bodySection.y,
+      w: bodySection.w,
+      h: winnerHeight,
+      color: TOKENS.colors[winnerMeta.color]
+    })
+    this.createWidget(winnerConfig.widgetType, winnerConfig.config)
+
+    // Score value (dynamic)
+    const scoreValueMeta = elements.scoreValue._meta
+    const scoreValueHeight = Math.round(bodySection.h * 0.2)
+    const scoreValueY = bodySection.y + winnerHeight
+    const scoreValueConfig = createText({
+      text: viewModel.finalSetsScore,
+      style: scoreValueMeta.style,
+      x: bodySection.x,
+      y: scoreValueY,
+      w: bodySection.w,
+      h: scoreValueHeight,
+      color: TOKENS.colors[scoreValueMeta.color]
+    })
+    this.createWidget(scoreValueConfig.widgetType, scoreValueConfig.config)
+
+    // SCROLL_LIST for set history
+    // Calculate bounds within the body section (below history title)
+    const historyBodyY =
+      scoreValueY + scoreValueHeight + Math.round(TOKENS.spacing.sectionGap * 5)
     const historyRowHeight = clamp(
-      Math.round(width * SUMMARY_TOKENS.fontScale.body * 2.2),
+      Math.round(metrics.width * TOKENS.typography.body * 2.2),
       28,
       56
     )
 
-    this.clearWidgets()
-
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0,
-      y: 0,
-      w: width,
-      h: height,
-      color: SUMMARY_TOKENS.colors.background
-    })
-
-    // ── Header card ───────────────────────────────────────────────────────
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: headerX,
-      y: headerY,
-      w: headerWidth,
-      h: headerHeight,
-      radius: Math.round(headerHeight * 0.2),
-      color: SUMMARY_TOKENS.colors.cardBackground
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerX,
-      y: headerY,
-      w: headerWidth,
-      h: titleHeight,
-      color: SUMMARY_TOKENS.colors.mutedText,
-      text: gettext('summary.title'),
-      text_size: Math.round(width * SUMMARY_TOKENS.fontScale.title),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerX,
-      y: headerY + titleHeight,
-      w: headerWidth,
-      h: winnerHeight,
-      color: SUMMARY_TOKENS.colors.accent,
-      text: viewModel.winnerText,
-      text_size: Math.round(width * SUMMARY_TOKENS.fontScale.winner),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerX,
-      y: headerY + titleHeight + winnerHeight,
-      w: headerWidth,
-      h: scoreLabelHeight,
-      color: SUMMARY_TOKENS.colors.mutedText,
-      text: gettext('summary.finalScoreLabel'),
-      text_size: Math.round(width * SUMMARY_TOKENS.fontScale.subtitle),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: headerX,
-      y: scoreValueY,
-      w: headerWidth,
-      h: scoreValueHeight,
-      color: SUMMARY_TOKENS.colors.text,
-      text: viewModel.finalSetsScore,
-      text_size: Math.round(width * SUMMARY_TOKENS.fontScale.score),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
-    // ── Set history card (scrollable) ─────────────────────────────────────
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: historyX,
-      y: historyY,
-      w: historyWidth,
-      h: historyHeight,
-      radius: Math.round(historyHeight * 0.18),
-      color: SUMMARY_TOKENS.colors.cardBackground
-    })
-
-    this.createWidget(hmUI.widget.TEXT, {
-      x: historyX,
-      y: historyY,
-      w: historyWidth,
-      h: historyTitleHeight,
-      color: SUMMARY_TOKENS.colors.mutedText,
-      text: gettext('summary.setHistoryTitle'),
-      text_size: Math.round(width * SUMMARY_TOKENS.fontScale.subtitle),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
-
     // Build data array for SCROLL_LIST
     const scrollDataArray = viewModel.historyLines.map((line) => ({ line }))
 
+    // Create SCROLL_LIST widget
     this.createWidget(hmUI.widget.SCROLL_LIST, {
-      x: historyX,
+      x: bodySection.x,
       y: historyBodyY,
-      w: historyWidth,
-      h: historyBodyHeight,
+      w: bodySection.w,
+      h: historyRowHeight * 3,
       item_space: 0,
       item_config: [
         {
           type_id: 1,
           item_height: historyRowHeight,
-          item_bg_color: SUMMARY_TOKENS.colors.cardBackground,
+          item_bg_color: TOKENS.colors.cardBackground,
           item_bg_radius: 0,
           text_view: [
             {
               x: 0,
               y: 0,
-              w: historyWidth,
+              w: bodySection.w,
               h: historyRowHeight,
               key: 'line',
-              color: SUMMARY_TOKENS.colors.text,
-              text_size: Math.round(width * SUMMARY_TOKENS.fontScale.body)
+              color: TOKENS.colors.text,
+              text_size: getFontSize('bodyLarge')
             }
           ],
           text_view_count: 1
@@ -573,21 +525,26 @@ Page({
       data_array: scrollDataArray,
       data_count: scrollDataArray.length
     })
+  },
 
-    // ── Home icon button ───────────────────────────────────────────────────────
-    const homeIconSize = 48
-    const homeIconX = Math.round((width - homeIconSize) / 2)
-    const homeIconY =
-      actionsSectionY + Math.round((buttonHeight - homeIconSize) / 2)
+  /**
+   * Renders the footer section with home button.
+   */
+  renderFooterSection(layout) {
+    const homeButtonEl = layout.elements.homeButton
+    const elements = SUMMARY_LAYOUT.elements
 
-    this.createWidget(hmUI.widget.BUTTON, {
-      x: homeIconX,
-      y: homeIconY,
-      w: -1,
-      h: -1,
-      normal_src: 'home-icon.png',
-      press_src: 'home-icon.png',
-      click_func: () => this.handleNavigateHome()
+    // Home icon button (centered in footer)
+    const homeButtonMeta = elements.homeButton._meta
+
+    const homeBtn = createButton({
+      x: homeButtonEl.x,
+      y: homeButtonEl.y,
+      variant: 'icon',
+      normal_src: homeButtonMeta.icon,
+      press_src: homeButtonMeta.icon,
+      onClick: () => this.handleNavigateHome()
     })
+    this.createWidget(homeBtn.widgetType, homeBtn.config)
   }
 })
