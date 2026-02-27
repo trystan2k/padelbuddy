@@ -80,7 +80,7 @@ msgid "setup.saveFailed"
 msgstr "Não foi possível salvar a configuração"
 
 msgid "summary.title"
-msgstr "Resumo da Partida"
+msgstr "Resumo"
 
 msgid "summary.teamAWins"
 msgstr "Time A Vence"

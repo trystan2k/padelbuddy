@@ -80,7 +80,7 @@ msgid "setup.saveFailed"
 msgstr "Could not save match setup"
 
 msgid "summary.title"
-msgstr "Match Summary"
+msgstr "Summary"
 
 msgid "summary.teamAWins"
 msgstr "Team A Wins"

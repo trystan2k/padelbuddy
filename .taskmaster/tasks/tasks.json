@@ -3092,7 +3092,7 @@
         "description": "Refactor page/summary.js to use the new declarative layout system, replacing SUMMARY_TOKENS and inline position calculations with design tokens, layout engine resolution, and reusable UI components while maintaining scrollable set history functionality.",
         "details": "Migrate the Summary Screen (page/summary.js) from the legacy token-based positioning system to the new layout architecture defined in the PRD (Section 9: Migration Plan, Phase 7). This migration involves removing the SUMMARY_TOKENS constant, eliminating inline round screen calculation functions (calculateRoundSafeSideInset, calculateRoundSafeSectionSideInset), and implementing a declarative layout schema with header, body, and footer sections.\n\n**Implementation Steps:**\n\n1. **Remove Legacy Dependencies:**\n   - Delete the SUMMARY_TOKENS constant from page/summary.js\n   - Remove all round screen calculation functions: calculateRoundSafeSideInset() and calculateRoundSafeSectionSideInset()\n   - Remove inline position calculations from renderSummaryScreen()\n\n2. **Add New Imports:**\n   ```javascript\n   import { TOKENS, getFontSize } from '../utils/design-tokens.js';\n   import { getScreenMetrics, getRoundSafeInsets, applyRoundSafeInset } from '../utils/screen-utils.js';\n   import { resolveLayout } from '../utils/layout-engine.js';\n   import { createCard, createButton, createText } from '../utils/ui-components.js';\n   import { createStandardPageLayout } from '../utils/layout-presets.js';\n   ```\n\n3. **Define SUMMARY_LAYOUT Schema:**\n   ```javascript\n   const SUMMARY_LAYOUT = {\n     sections: {\n       header: {\n         top: 'pageTop',\n         height: 'auto',\n         roundSafeInset: true\n       },\n       body: {\n         top: 'header.bottom',\n         bottom: 'footer.top',\n         roundSafeInset: true\n       },\n       footer: {\n         bottom: 'pageBottom',\n         height: TOKENS.typography.button * 2.5,\n         roundSafeInset: true\n       }\n     },\n     elements: {\n       headerCard: {\n         section: 'header',\n         top: 0,\n         height: '100%',\n         padding: TOKENS.spacing.md\n       },\n       titleText: {\n         section: 'header',\n         top: TOKENS.spacing.xs,\n         height: getFontSize('pageTitle')\n       },\n       winnerText: {\n         section: 'header',\n         top: 'titleText.bottom',\n         height: getFontSize('bodyLarge')\n       },\n       scoreText: {\n         section: 'header',\n         top: 'winnerText.bottom',\n         height: getFontSize('scoreDisplay')\n       },\n       historyCard: {\n         section: 'body',\n         top: 0,\n         height: '100%',\n         roundSafeInset: true\n       },\n       scrollList: {\n         section: 'body',\n         top: 0,\n         height: '100%'\n       },\n       homeButton: {\n         section: 'footer',\n         bottom: TOKENS.spacing.md,\n         height: TOKENS.typography.button,\n         width: 100\n       }\n     }\n   };\n   ```\n\n4. **Refactor renderSummaryScreen():**\n   - Get screen metrics: `const metrics = getScreenMetrics();`\n   - Resolve layout: `const layout = resolveLayout(SUMMARY_LAYOUT, metrics);`\n   - Create header section using createCard() with title, winnerText, and score elements\n   - Create body section with historyCard containing SCROLL_LIST for set history\n   - Keep existing SCROLL_LIST logic (params, callback for set items) but use layout bounds\n   - Create footer section with homeButton using createButton()\n   - Use TOKENS for all styling (colors, typography, spacing)\n   - Apply roundSafeInsets from layout engine for element positioning\n\n5. **Token Integration:**\n   - Replace all hardcoded colors with TOKENS.colors (text, accent, background, etc.)\n   - Replace font sizes with getFontSize() helper\n   - Replace spacing values with TOKENS.spacing values (xs, sm, md, lg)\n\n6. **Preserve Functionality:**\n   - Ensure winner text displays correctly from matchState\n   - Ensure final score displays correctly\n   - Ensure set history populates scroll list with all sets\n   - Ensure home button navigates to index page",
         "testStrategy": "1. **Build Verification:** Run npm run complete-check after migration to ensure no compilation errors.\n\n2. **Visual QA - Round Screen:**\n   - Test on round simulator, verify header elements (title, winner text, final score) are not cut off by screen edges\n   - Confirm round-safe side insets work correctly for header card\n   - Verify history card with scroll list respects round screen boundaries\n   - Ensure home button is positioned correctly at bottom with safe insets\n\n3. **Visual QA - Square Screen:**\n   - Test on square simulator, verify all elements are properly centered and spaced\n   - Confirm scroll list occupies appropriate body area\n   - Verify header and footer maintain consistent heights\n\n4. **Functional Testing:**\n   - Complete a match and verify summary screen displays correct winner\n   - Verify final score shows accurate set tally (e.g., '2-1')\n   - Verify scroll list contains all played sets with correct scores\n   - Verify scroll list is scrollable if many sets were played\n   - Tap home button and verify navigation to index screen works\n\n5. **Styling Verification:**\n   - Confirm typography uses correct token sizes (pageTitle, bodyLarge, scoreDisplay)\n   - Verify card styling (background, padding) matches design tokens\n   - Confirm button styling uses correct token colors",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40",
           "41",
@@ -3102,7 +3102,72 @@
           "47"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove Legacy Dependencies from Summary Screen",
+            "description": "Delete SUMMARY_TOKENS constant and remove all legacy calculation functions from page/summary.js",
+            "dependencies": [],
+            "details": "Remove the SUMMARY_TOKENS constant, delete calculateRoundSafeSideInset() and calculateRoundSafeSectionSideInset() functions, and remove all inline position calculations from renderSummaryScreen() function to prepare for migration.",
+            "status": "done",
+            "testStrategy": "Verify the file still loads without errors after removal, expect some functional failures until new system is implemented",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T23:18:19.223Z"
+          },
+          {
+            "id": 2,
+            "title": "Add New Imports and Define SUMMARY_LAYOUT Schema",
+            "description": "Import required utilities and define the declarative layout schema for the summary screen",
+            "dependencies": [
+              1
+            ],
+            "details": "Add imports for TOKENS, getFontSize, getScreenMetrics, getRoundSafeInsets, applyRoundSafeInset, resolveLayout, createCard, createButton, createText, and createStandardPageLayout. Define SUMMARY_LAYOUT constant with header, body, and footer sections with all element positions and roundSafeInset configurations.",
+            "status": "done",
+            "testStrategy": "Validate all imports resolve correctly and SUMMARY_LAYOUT object structure matches the schema defined in the PRD",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T23:18:19.227Z"
+          },
+          {
+            "id": 3,
+            "title": "Refactor Header Section with Layout Engine",
+            "description": "Implement header section using createCard and createText components with resolved layout bounds",
+            "dependencies": [
+              2
+            ],
+            "details": "Use getScreenMetrics() and resolveLayout() to get layout coordinates. Create headerCard container, titleText, winnerText, and scoreText elements using createCard() and createText(). Replace hardcoded values with TOKENS for colors, typography, and spacing. Apply roundSafeInsets from layout engine for positioning.",
+            "status": "done",
+            "testStrategy": "Verify header displays title, winner name, and final score correctly with proper styling and positioning",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T23:18:19.230Z"
+          },
+          {
+            "id": 4,
+            "title": "Refactor Body Section with Scrollable Set History",
+            "description": "Implement body section with history card and maintain scrollable set list functionality",
+            "dependencies": [
+              3
+            ],
+            "details": "Create body section with historyCard container and scrollList using layout bounds. Preserve existing SCROLL_LIST logic including params and callback for set items. Ensure scroll functionality works within the resolved layout bounds. Use TOKENS for all styling. Apply roundSafeInsets for element positioning in the body section.",
+            "status": "done",
+            "testStrategy": "Confirm set history populates correctly and scrolling works properly within the body bounds",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T23:18:19.233Z"
+          },
+          {
+            "id": 5,
+            "title": "Refactor Footer and Complete Token Integration",
+            "description": "Implement footer with home button and finalize all token replacements across the screen",
+            "dependencies": [
+              4
+            ],
+            "details": "Create footer section with homeButton using createButton() positioned at the bottom. Replace all remaining hardcoded colors with TOKENS.colors, font sizes with getFontSize(), and spacing with TOKENS.spacing values. Ensure home button navigates to index page. Verify winner text displays from matchState and final score displays correctly.",
+            "status": "done",
+            "testStrategy": "Run npm run complete-check for build verification and test on round simulator to verify elements are not cut off by screen edges",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-26T23:18:19.235Z"
+          }
+        ],
+        "updatedAt": "2026-02-26T23:18:19.235Z"
       },
       {
         "id": "50",
@@ -3138,9 +3203,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-26T22:03:56.251Z",
+      "lastModified": "2026-02-26T23:18:19.235Z",
       "taskCount": 51,
-      "completedCount": 45,
+      "completedCount": 46,
       "tags": [
         "master"
       ]

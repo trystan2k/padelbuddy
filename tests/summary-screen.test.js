@@ -17,7 +17,8 @@ function createHmUiRecorder() {
       widget: {
         FILL_RECT: 'FILL_RECT',
         TEXT: 'TEXT',
-        BUTTON: 'BUTTON'
+        BUTTON: 'BUTTON',
+        SCROLL_LIST: 'SCROLL_LIST'
       },
       align: {
         CENTER_H: 'CENTER_H',
@@ -210,6 +211,10 @@ async function loadSummaryPageDefinition() {
     '../utils/match-history-storage.js',
     import.meta.url
   )
+  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
+  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
+  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
+  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -239,6 +244,19 @@ async function loadSummaryPageDefinition() {
     .replace(
       "from '../utils/match-history-storage.js'",
       `from '${matchHistoryStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/design-tokens.js'",
+      `from '${designTokensUrl.href}'`
+    )
+    .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
+    .replace(
+      "from '../utils/layout-engine.js'",
+      `from '${layoutEngineUrl.href}'`
+    )
+    .replace(
+      "from '../utils/ui-components.js'",
+      `from '${uiComponentsUrl.href}'`
     )
 
   const moduleUrl =
