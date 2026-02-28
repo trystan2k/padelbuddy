@@ -25,13 +25,3 @@ export const SCORE_POINT_SEQUENCE = Object.freeze([
   SCORE_POINTS.ADVANTAGE,
   SCORE_POINTS.GAME
 ])
-
-/**
- * Enum-like scoring phases for game state transitions.
- */
-export const SCORING_PHASE = Object.freeze({
-  REGULAR: 'regular',
-  DEUCE: 'deuce',
-  ADVANTAGE: 'advantage',
-  GAME: 'game'
-})

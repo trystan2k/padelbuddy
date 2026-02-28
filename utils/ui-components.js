@@ -74,45 +74,6 @@ export function createBackground(options = {}) {
 }
 
 /**
- * Creates a card widget configuration with rounded corners.
- *
- * @param {Object} config - Card configuration
- * @param {number} config.x - X position (required)
- * @param {number} config.y - Y position (required)
- * @param {number} config.w - Width (required)
- * @param {number} config.h - Height (required)
- * @param {number} [config.color] - Card background color (default: TOKENS.colors.cardBackground)
- * @param {number} [config.radius] - Corner radius (default: h * TOKENS.sizing.cardRadiusRatio)
- * @returns {Object} Widget configuration for hmUI.widget.FILL_RECT
- * @throws {Error} If x, y, w, or h is missing
- *
- * @example
- * const cardConfig = createCard({ x: 20, y: 100, w: 350, h: 80 })
- * hmUI.createWidget(cardConfig.widgetType, cardConfig.config)
- */
-export function createCard(config) {
-  requireParam(config?.x, 'x')
-  requireParam(config?.y, 'y')
-  requireParam(config?.w, 'w')
-  requireParam(config?.h, 'h')
-
-  const radius =
-    config.radius ?? Math.round(config.h * TOKENS.sizing.cardRadiusRatio)
-
-  return {
-    widgetType: hmUI.widget.FILL_RECT,
-    config: {
-      x: config.x,
-      y: config.y,
-      w: config.w,
-      h: config.h,
-      color: config.color ?? TOKENS.colors.cardBackground,
-      radius
-    }
-  }
-}
-
-/**
  * Creates a horizontal or vertical divider widget configuration.
  *
  * @param {Object} config - Divider configuration
@@ -212,63 +173,6 @@ export function createText(config) {
       align_v: config.align_v ?? hmUI.align.CENTER_V
     }
   }
-}
-
-/**
- * Creates a page title text widget configuration.
- * Uses TOKENS.typography.pageTitle style.
- *
- * @param {Object} config - Text configuration (text required)
- * @returns {Object} Widget configuration for hmUI.widget.TEXT
- *
- * @example
- * const titleConfig = createPageTitle({ text: 'Match Score', y: 20 })
- * hmUI.createWidget(titleConfig.widgetType, titleConfig.config)
- */
-export function createPageTitle(config) {
-  return createText({
-    ...config,
-    style: 'pageTitle',
-    color: config?.color ?? TOKENS.colors.text
-  })
-}
-
-/**
- * Creates a section title text widget configuration.
- * Uses TOKENS.typography.sectionTitle style.
- *
- * @param {Object} config - Text configuration (text required)
- * @returns {Object} Widget configuration for hmUI.widget.TEXT
- *
- * @example
- * const sectionConfig = createSectionTitle({ text: 'Current Set', y: 80 })
- * hmUI.createWidget(sectionConfig.widgetType, sectionConfig.config)
- */
-export function createSectionTitle(config) {
-  return createText({
-    ...config,
-    style: 'sectionTitle',
-    color: config?.color ?? TOKENS.colors.text
-  })
-}
-
-/**
- * Creates a body text widget configuration.
- * Uses TOKENS.typography.body style with muted text color.
- *
- * @param {Object} config - Text configuration (text required)
- * @returns {Object} Widget configuration for hmUI.widget.TEXT
- *
- * @example
- * const bodyConfig = createBodyText({ text: 'Tap to start', y: 150 })
- * hmUI.createWidget(bodyConfig.widgetType, bodyConfig.config)
- */
-export function createBodyText(config) {
-  return createText({
-    ...config,
-    style: 'body',
-    color: config?.color ?? TOKENS.colors.mutedText
-  })
 }
 
 // ============================================================================

@@ -110,7 +110,7 @@ export function pct(screenDimension, percentage) {
  * // At y=0 (top edge)
  * getRoundSafeInset(466, 466, 0, 4)    // Returns ~237 (large inset at edge)
  */
-export function getRoundSafeInset(width, height, y, padding = 4) {
+function getRoundSafeInset(width, height, y, padding = 4) {
   const centerX = width / 2
   const radius = width / 2
   const yFromCenter = y - height / 2

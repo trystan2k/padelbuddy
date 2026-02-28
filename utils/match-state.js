@@ -48,7 +48,7 @@ export const MATCH_STATUS = Object.freeze({
 /**
  * @returns {MatchTeamConfiguration}
  */
-export function createInitialTeamConfiguration() {
+function createInitialTeamConfiguration() {
   return {
     teamA: {
       id: 'teamA',
@@ -64,7 +64,7 @@ export function createInitialTeamConfiguration() {
 /**
  * @returns {CurrentSetStatus}
  */
-export function createInitialCurrentSetStatus() {
+function createInitialCurrentSetStatus() {
   return {
     number: 1,
     teamAGames: 0,
@@ -75,7 +75,7 @@ export function createInitialCurrentSetStatus() {
 /**
  * @returns {TeamScore}
  */
-export function createInitialTeamScore() {
+function createInitialTeamScore() {
   return {
     points: SCORE_POINTS.LOVE,
     games: 0
