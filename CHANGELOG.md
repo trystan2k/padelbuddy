@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0](https://github.com/trystan2k/padelbuddy/compare/v1.6.2...v1.7.0) (2026-02-28)
+
+### Features
+
+* move build step to semantic-release prepareCmd ([acf8103](https://github.com/trystan2k/padelbuddy/commit/acf8103a0af99208fd9aed1a60c19a2905c63e48))
+
+### Code Refactoring
+
+* **app.json:** format permissions array for consistency ([929f025](https://github.com/trystan2k/padelbuddy/commit/929f0255c36d33435d6deb5bd2de4d301a1b9a9c))
+
 ## [1.6.2](https://github.com/trystan2k/padelbuddy/compare/v1.6.1...v1.6.2) (2026-02-28)
 
 ### Code Refactoring
