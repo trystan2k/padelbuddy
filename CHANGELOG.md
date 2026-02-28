@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0](https://github.com/trystan2k/padelbuddy/compare/v1.5.0...v1.6.0) (2026-02-28)
+
+### Features
+
+* migrate Settings, History, and History Detail pages to new layout system ([3d5bd7e](https://github.com/trystan2k/padelbuddy/commit/3d5bd7e449a9cdb9c7ea0a522af3a0ea963109d2)), closes [#50](https://github.com/trystan2k/padelbuddy/issues/50)
+
 ## [1.5.0](https://github.com/trystan2k/padelbuddy/compare/v1.4.0...v1.5.0) (2026-02-27)
 
 ### Features
