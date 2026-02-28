@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.2](https://github.com/trystan2k/padelbuddy/compare/v1.6.1...v1.6.2) (2026-02-28)
+
+### Code Refactoring
+
+* **i18n:** consolidate translation keys by removing unused entries ([78562c0](https://github.com/trystan2k/padelbuddy/commit/78562c0de44fd9ca93651dbbcd032ca6cefa912d))
+
 ## [1.6.1](https://github.com/trystan2k/padelbuddy/compare/v1.6.0...v1.6.1) (2026-02-28)
 
 ### Bug Fixes
