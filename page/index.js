@@ -85,7 +85,7 @@ const INDEX_LAYOUT = {
     secondaryButton: {
       section: 'body',
       x: 'center',
-      y: '55%',
+      y: '50%',
       width: toPercentage(TOKENS.sizing.buttonWidth), // '85%'
       // height calculated in render using screen height ratio
       align: 'center',

@@ -1,40 +1,117 @@
 import { gettext } from 'i18n'
+import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
+import { resolveLayout } from '../utils/layout-engine.js'
 import {
   deleteMatchFromHistory,
   loadMatchById
 } from '../utils/match-history-storage.js'
+import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
+import {
+  createBackground,
+  createButton,
+  createText
+} from '../utils/ui-components.js'
 
-const HISTORY_DETAIL_TOKENS = Object.freeze({
-  colors: {
-    accent: 0x1eb98c,
-    background: 0x000000,
-    cardBackground: 0x000000,
-    mutedText: 0x7d8289,
-    text: 0xffffff
+/**
+ * Layout schema for the history detail screen.
+ * Uses declarative positioning resolved by layout-engine.
+ * Matches the summary page layout structure with 2 footer buttons.
+ */
+const HISTORY_DETAIL_LAYOUT = {
+  sections: {
+    // Header section: Contains only the page title
+    header: {
+      top: toPercentage(TOKENS.spacing.pageTop), // '5%'
+      height: '10%', // Just title
+      roundSafeInset: false
+    },
+    // Body section: Winner, score, set history (fills remaining space)
+    body: {
+      height: 'fill',
+      after: 'header',
+      gap: toPercentage(TOKENS.spacing.sectionGap), // '2%'
+      roundSafeInset: false
+    },
+    // Footer section: Delete and Go back buttons (bottom-anchored)
+    footer: {
+      bottom: toPercentage(TOKENS.spacing.pageBottom), // '6%'
+      height: '10%', // Button area height
+      roundSafeInset: false
+    }
   },
-  fontScale: {
-    body: 0.055,
-    label: 0.06,
-    score: 0.15,
-    subtitle: 0.07,
-    title: 0.065,
-    setHistory: 0.06
-  },
-  spacingScale: {
-    bottomInset: 0.05,
-    roundSideInset: 0.06, // Reduced for wider content
-    sectionGap: 0.015,
-    sideInset: 0.04, // Reduced for wider content
-    topInset: 0.03
+  elements: {
+    // Title text ("Match Details")
+    pageTitle: {
+      section: 'header',
+      x: 'center',
+      y: '30%',
+      width: '100%',
+      height: '50%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'pageTitle',
+        textKey: 'history.detail.title'
+      }
+    },
+    datetimeText: {
+      section: 'body',
+      x: 0,
+      y: '0%',
+      width: '100%',
+      height: '15%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'body',
+        color: 'text',
+        textKey: 'datetimeText' // Dynamic
+      }
+    },
+    // Final score value (e.g., "2-1")
+    scoreValue: {
+      section: 'body',
+      x: 0,
+      y: '25%',
+      width: '100%',
+      height: '12%',
+      align: 'center',
+      _meta: {
+        type: 'text',
+        style: 'score',
+        color: 'accent',
+        textKey: 'finalSetsScore' // Dynamic
+      }
+    },
+    // Delete button (left side of footer)
+    deleteButton: {
+      section: 'footer',
+
+      x: '35%',
+      y: 'center',
+      width: TOKENS.sizing.iconLarge,
+      height: TOKENS.sizing.iconLarge,
+      _meta: {
+        type: 'iconButton',
+        icon: 'delete-icon.png',
+        confirmIcon: 'remove-icon.png',
+        onClick: 'handleDeleteClick'
+      }
+    },
+    // Go back button (right side of footer)
+    goBackButton: {
+      section: 'footer',
+      x: '55%',
+      y: 'center',
+      width: TOKENS.sizing.iconLarge,
+      height: TOKENS.sizing.iconLarge,
+      _meta: {
+        type: 'iconButton',
+        icon: 'goback-icon.png',
+        onClick: 'goBack'
+      }
+    }
   }
-})
-
-function ensureNumber(value, fallback) {
-  return Number.isFinite(value) && value > 0 ? value : fallback
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max)
 }
 
 function formatDate(entry) {
@@ -75,46 +152,6 @@ function formatDate(entry) {
   }
 
   return ''
-}
-
-function calculateRoundSafeSideInset(
-  width,
-  height,
-  yPosition,
-  horizontalPadding
-) {
-  const radius = Math.min(width, height) / 2
-  const centerX = width / 2
-  const centerY = height / 2
-  const boundedY = clamp(yPosition, 0, height)
-  const distanceFromCenter = Math.abs(boundedY - centerY)
-  const halfChord = Math.sqrt(
-    Math.max(0, radius * radius - distanceFromCenter * distanceFromCenter)
-  )
-
-  return Math.max(0, Math.ceil(centerX - halfChord + horizontalPadding))
-}
-
-function calculateRoundSafeSectionSideInset(
-  width,
-  height,
-  sectionTop,
-  sectionHeight,
-  horizontalPadding
-) {
-  const boundedTop = clamp(sectionTop, 0, height)
-  const boundedBottom = clamp(
-    sectionTop + Math.max(sectionHeight, 0),
-    0,
-    height
-  )
-  const middleY = (boundedTop + boundedBottom) / 2
-
-  return Math.max(
-    calculateRoundSafeSideInset(width, height, boundedTop, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, middleY, horizontalPadding),
-    calculateRoundSafeSideInset(width, height, boundedBottom, horizontalPadding)
-  )
 }
 
 Page({
@@ -177,19 +214,6 @@ Page({
       } catch {
         this.matchEntry = null
       }
-    }
-  },
-
-  getScreenMetrics() {
-    if (typeof hmSetting === 'undefined') {
-      return { width: 390, height: 450 }
-    }
-
-    const { width, height } = hmSetting.getDeviceInfo()
-
-    return {
-      width: ensureNumber(width, 390),
-      height: ensureNumber(height, 450)
     }
   },
 
@@ -268,17 +292,12 @@ Page({
   updateDeleteButtonIcon(isConfirmMode) {
     if (typeof hmUI === 'undefined') return
 
-    // In Zepp OS v1.0, we need to delete and recreate the button to change its image
-    // Store button position before deleting
-    const buttonSize = 48
-    const { width, height } = this.getScreenMetrics()
-    const bottomInset = Math.round(
-      height * HISTORY_DETAIL_TOKENS.spacingScale.bottomInset
-    )
-    const buttonGap = Math.round(width * 0.12)
-    const totalButtonWidth = buttonSize * 2 + buttonGap
-    const buttonsStartX = Math.round((width - totalButtonWidth) / 2)
-    const buttonY = height - bottomInset - buttonSize
+    const metrics = getScreenMetrics()
+    const layout = resolveLayout(HISTORY_DETAIL_LAYOUT, metrics)
+
+    // Get button position from layout
+    const deleteEl = layout.elements.deleteButton
+    if (!deleteEl) return
 
     // Delete old button
     if (this.deleteButton) {
@@ -287,13 +306,14 @@ Page({
     }
 
     // Create new button with updated icon
+    const deleteMeta = HISTORY_DETAIL_LAYOUT.elements.deleteButton._meta
     this.deleteButton = hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: buttonsStartX,
-      y: buttonY,
-      w: buttonSize,
-      h: buttonSize,
-      normal_src: isConfirmMode ? 'remove-icon.png' : 'delete-icon.png',
-      press_src: isConfirmMode ? 'remove-icon.png' : 'delete-icon.png',
+      x: deleteEl.x,
+      y: deleteEl.y,
+      w: deleteEl.w,
+      h: deleteEl.h,
+      normal_src: isConfirmMode ? deleteMeta.confirmIcon : deleteMeta.icon,
+      press_src: isConfirmMode ? deleteMeta.confirmIcon : deleteMeta.icon,
       click_func: () => this.handleDeleteClick()
     })
   },
@@ -303,276 +323,192 @@ Page({
       return
     }
 
-    const { width, height } = this.getScreenMetrics()
-    const isRoundScreen = Math.abs(width - height) <= Math.round(width * 0.04)
-    const topInset = Math.round(
-      height * HISTORY_DETAIL_TOKENS.spacingScale.topInset
-    )
-    const bottomInset = Math.round(
-      height * HISTORY_DETAIL_TOKENS.spacingScale.bottomInset
-    )
-    const sectionGap = Math.round(
-      height * HISTORY_DETAIL_TOKENS.spacingScale.sectionGap
-    )
-    const baseSectionSideInset = Math.round(
-      width *
-        (isRoundScreen
-          ? HISTORY_DETAIL_TOKENS.spacingScale.roundSideInset
-          : HISTORY_DETAIL_TOKENS.spacingScale.sideInset)
-    )
-    const buttonSize = 48
-    const maxSectionInset = Math.floor((width - 1) / 2)
+    // Get screen metrics and resolve layout
+    const metrics = getScreenMetrics()
+    const layout = resolveLayout(HISTORY_DETAIL_LAYOUT, metrics)
 
-    // Calculate layout
-    const titleHeight = clamp(Math.round(height * 0.1), 36, 52)
-    const scoreCardHeight = clamp(Math.round(height * 0.3), 150, 150)
-    const scoreCardY = topInset + titleHeight + sectionGap
-
-    const resolveSectionSideInset = (sectionY, sectionHeight) => {
-      if (!isRoundScreen) {
-        return clamp(baseSectionSideInset, 0, maxSectionInset)
-      }
-
-      const roundSafeInset = calculateRoundSafeSectionSideInset(
-        width,
-        height,
-        sectionY,
-        sectionHeight,
-        Math.round(width * 0.01)
-      )
-
-      return clamp(
-        Math.max(baseSectionSideInset, roundSafeInset),
-        0,
-        maxSectionInset
-      )
-    }
-
-    const contentSideInset = resolveSectionSideInset(
-      scoreCardY,
-      scoreCardHeight
-    )
-    const contentX = contentSideInset
-    const contentWidth = Math.max(1, width - contentSideInset * 2)
-
-    const actionsSectionY = height - bottomInset - buttonSize
+    // Create view model from match entry
+    const viewModel = this.createDetailViewModel()
 
     this.clearWidgets()
 
-    // Background
-    this.createWidget(hmUI.widget.FILL_RECT, {
-      x: 0,
-      y: 0,
-      w: width,
-      h: height,
-      color: HISTORY_DETAIL_TOKENS.colors.background
-    })
+    // ── Background ────────────────────────────────────────────────────────
+    const bg = createBackground()
+    this.createWidget(bg.widgetType, bg.config)
 
-    // Title
-    this.createWidget(hmUI.widget.TEXT, {
-      x: 0,
-      y: topInset,
-      w: width,
-      h: titleHeight,
-      color: HISTORY_DETAIL_TOKENS.colors.text,
-      text: gettext('history.detail.title'),
-      text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.title),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V
-    })
+    // ── Header Section ─────────────────────────────────────────────────────
+    this.renderHeaderSection(layout)
 
+    // ── Body Section (Winner, Score, Set History) ──────────────────────────
+    this.renderBodySection(layout, viewModel, metrics)
+
+    // ── Footer Section ─────────────────────────────────────────────────────
+    this.renderFooterSection(layout)
+  },
+
+  /**
+   * Creates a view model from the match entry for rendering.
+   */
+  createDetailViewModel() {
     if (!this.matchEntry) {
-      // No match found
-      const noMatchHeight = clamp(Math.round(height * 0.2), 60, 100)
-      this.createWidget(hmUI.widget.TEXT, {
-        x: contentSideInset,
-        y: scoreCardY,
-        w: contentWidth,
-        h: noMatchHeight,
-        color: HISTORY_DETAIL_TOKENS.colors.mutedText,
-        text: gettext('history.detail.notFound'),
-        text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.body),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-    } else {
-      // Match details card
-      this.createWidget(hmUI.widget.FILL_RECT, {
-        x: contentX,
-        y: scoreCardY,
-        w: contentWidth,
-        h: scoreCardHeight,
-        radius: Math.round(scoreCardHeight * 0.15),
-        color: HISTORY_DETAIL_TOKENS.colors.cardBackground
-      })
-
-      // Date
-      const dateStr = formatDate(this.matchEntry)
-      const dateLabelHeight = Math.round(scoreCardHeight * 0.15)
-      this.createWidget(hmUI.widget.TEXT, {
-        x: contentX,
-        y: scoreCardY + Math.round(scoreCardHeight * 0.03),
-        w: contentWidth,
-        h: dateLabelHeight,
-        color: HISTORY_DETAIL_TOKENS.colors.mutedText,
-        text: dateStr,
-        text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.label),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-
-      // Final score
-      const scoreHeight = Math.round(scoreCardHeight * 0.4)
-      const scoreY = scoreCardY + Math.round(scoreCardHeight * 0.25)
-      const winnerText =
-        this.matchEntry.winnerTeam === 'teamA'
-          ? `${this.matchEntry.teamALabel} ${gettext('history.detail.wins')}`
-          : this.matchEntry.winnerTeam === 'teamB'
-            ? `${this.matchEntry.teamBLabel} ${gettext('history.detail.wins')}`
-            : gettext('history.detail.draw')
-
-      this.createWidget(hmUI.widget.TEXT, {
-        x: contentX,
-        y: scoreY,
-        w: contentWidth,
-        h: scoreHeight,
-        color: HISTORY_DETAIL_TOKENS.colors.text,
-        text: `${this.matchEntry.setsWonTeamA} - ${this.matchEntry.setsWonTeamB}`,
-        text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.score),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-
-      // Winner
-      const winnerHeight = Math.round(scoreCardHeight * 0.18)
-      const winnerY = scoreY + scoreHeight
-      this.createWidget(hmUI.widget.TEXT, {
-        x: contentX,
-        y: winnerY,
-        w: contentWidth,
-        h: winnerHeight,
-        color: HISTORY_DETAIL_TOKENS.colors.accent,
-        text: winnerText,
-        text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.body),
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V
-      })
-
-      // Set history section - SCROLL_LIST for bigger fonts
-      if (this.matchEntry.setHistory && this.matchEntry.setHistory.length > 0) {
-        const setsCardY = scoreCardY + scoreCardHeight + sectionGap
-        // Make set history section larger for scroll list
-        const setsCardHeight = actionsSectionY - setsCardY - sectionGap
-        const setsSideInset = resolveSectionSideInset(setsCardY, setsCardHeight)
-        const setsX = setsSideInset
-        const setsWidth = Math.max(1, width - setsSideInset * 2)
-
-        // Card background for set history
-        this.createWidget(hmUI.widget.FILL_RECT, {
-          x: setsX,
-          y: setsCardY,
-          w: setsWidth,
-          h: setsCardHeight,
-          radius: Math.round(setsCardHeight * 0.08),
-          color: HISTORY_DETAIL_TOKENS.colors.cardBackground
-        })
-
-        // Title for set history
-        const setsTitleHeight = Math.round(height * 0.05)
-        this.createWidget(hmUI.widget.TEXT, {
-          x: setsX,
-          y: setsCardY + Math.round(height * 0.01),
-          w: setsWidth,
-          h: setsTitleHeight,
-          color: HISTORY_DETAIL_TOKENS.colors.mutedText,
-          text: gettext('history.detail.setHistory'),
-          text_size: Math.round(width * HISTORY_DETAIL_TOKENS.fontScale.label),
-          align_h: hmUI.align.CENTER_H,
-          align_v: hmUI.align.CENTER_V
-        })
-
-        // Build data for SCROLL_LIST
-        const setsBodyY =
-          setsCardY + setsTitleHeight + Math.round(height * 0.01)
-        const setsBodyHeight =
-          setsCardHeight - setsTitleHeight - Math.round(height * 0.02)
-        const setRowHeight = Math.round(height * 0.07) // Height for each set row
-
-        // Build data array for scroll list
-        const setsDataArray = this.matchEntry.setHistory.map((set) => ({
-          setInfo: `Set ${set.setNumber}:  ${set.teamAGames} - ${set.teamBGames}`
-        }))
-
-        // SCROLL_LIST for set history with bigger fonts
-        this.createWidget(hmUI.widget.SCROLL_LIST, {
-          x: setsX,
-          y: setsBodyY,
-          w: setsWidth,
-          h: setsBodyHeight,
-          item_space: 2,
-          item_config: [
-            {
-              type_id: 1,
-              item_height: setRowHeight,
-              item_bg_color: HISTORY_DETAIL_TOKENS.colors.cardBackground,
-              item_bg_radius: 0,
-              text_view: [
-                {
-                  x: Math.round(width * 0.02),
-                  y: Math.round(
-                    (setRowHeight -
-                      Math.round(
-                        width * HISTORY_DETAIL_TOKENS.fontScale.setHistory
-                      )) /
-                      2
-                  ),
-                  w: Math.round(setsWidth * 0.9),
-                  h: Math.round(
-                    width * HISTORY_DETAIL_TOKENS.fontScale.setHistory
-                  ),
-                  key: 'setInfo',
-                  color: HISTORY_DETAIL_TOKENS.colors.text,
-                  text_size: Math.round(
-                    width * HISTORY_DETAIL_TOKENS.fontScale.setHistory
-                  )
-                }
-              ],
-              text_view_count: 1
-            }
-          ],
-          item_config_count: 1,
-          data_array: setsDataArray,
-          data_count: setsDataArray.length
-        })
+      return {
+        datetimeText: gettext('history.detail.notFound'),
+        finalSetsScore: '',
+        historyLines: []
       }
     }
 
-    // Icon button layout at bottom - Delete (left) and Return (right)
-    const buttonGap = Math.round(width * 0.12)
-    const totalButtonWidth = buttonSize * 2 + buttonGap
-    const buttonsStartX = Math.round((width - totalButtonWidth) / 2)
-    const buttonY = height - bottomInset - buttonSize
+    const datetimeText = formatDate(this.matchEntry)
 
-    // Delete button (left side) - double-tap to delete
-    this.deleteButton = this.createWidget(hmUI.widget.BUTTON, {
-      x: buttonsStartX,
-      y: buttonY,
-      w: buttonSize,
-      h: buttonSize,
-      normal_src: 'delete-icon.png',
-      press_src: 'delete-icon.png',
-      click_func: () => this.handleDeleteClick()
-    })
+    const historyLines =
+      this.matchEntry.setHistory && this.matchEntry.setHistory.length > 0
+        ? this.matchEntry.setHistory.map(
+            (set) => `Set ${set.setNumber}: ${set.teamAGames}-${set.teamBGames}`
+          )
+        : [gettext('summary.noSetHistory')]
 
-    // Home/Go back button (right side)
-    this.createWidget(hmUI.widget.BUTTON, {
-      x: buttonsStartX + buttonSize + buttonGap,
-      y: buttonY,
-      w: buttonSize,
-      h: buttonSize,
-      normal_src: 'goback-icon.png',
-      press_src: 'goback-icon.png',
-      click_func: () => this.goBack()
+    return {
+      datetimeText,
+      finalSetsScore: `${this.matchEntry.setsWonTeamA}-${this.matchEntry.setsWonTeamB}`,
+      historyLines
+    }
+  },
+
+  /**
+   * Renders the header section with title only.
+   */
+  renderHeaderSection(layout) {
+    const headerSection = layout.sections.header
+    const elements = HISTORY_DETAIL_LAYOUT.elements
+
+    const titleMeta = elements.pageTitle._meta
+    const titleConfig = createText({
+      text: gettext(titleMeta.textKey),
+      style: titleMeta.style,
+      x: headerSection.x,
+      y: headerSection.y,
+      w: headerSection.w,
+      h: headerSection.h,
+      color: TOKENS.colors[titleMeta.color]
     })
+    this.createWidget(titleConfig.widgetType, titleConfig.config)
+  },
+
+  /**
+   * Renders the body section with winner text, score, and set history scroll list.
+   */
+  renderBodySection(layout, viewModel, metrics) {
+    const bodySection = layout.sections.body
+    const elements = HISTORY_DETAIL_LAYOUT.elements
+
+    // Datetime text (dynamic)
+    const datetimeMeta = elements.datetimeText._meta
+    const datetimeHeight = Math.round(bodySection.h * 0.12)
+    const datetimeConfig = createText({
+      text: viewModel.datetimeText,
+      style: datetimeMeta.style,
+      x: bodySection.x,
+      y: bodySection.y,
+      w: bodySection.w,
+      h: datetimeHeight,
+      color: TOKENS.colors[datetimeMeta.color]
+    })
+    this.createWidget(datetimeConfig.widgetType, datetimeConfig.config)
+
+    // Score value (dynamic)
+    const scoreValueMeta = elements.scoreValue._meta
+    const scoreValueHeight = Math.round(bodySection.h * 0.2)
+    const scoreValueY = bodySection.y + datetimeHeight
+    const scoreValueConfig = createText({
+      text: viewModel.finalSetsScore,
+      style: scoreValueMeta.style,
+      x: bodySection.x,
+      y: scoreValueY,
+      w: bodySection.w,
+      h: scoreValueHeight,
+      color: TOKENS.colors[scoreValueMeta.color]
+    })
+    this.createWidget(scoreValueConfig.widgetType, scoreValueConfig.config)
+
+    // SCROLL_LIST for set history
+    // Calculate bounds within the body section (below winner and score)
+    const historyBodyY =
+      scoreValueY + scoreValueHeight + Math.round(TOKENS.spacing.sectionGap * 5)
+    const historyRowHeight = clamp(
+      Math.round(metrics.width * TOKENS.typography.body * 2.2),
+      28,
+      56
+    )
+
+    // Build data array for SCROLL_LIST
+    const scrollDataArray = viewModel.historyLines.map((line) => ({ line }))
+
+    // Create SCROLL_LIST widget
+    this.createWidget(hmUI.widget.SCROLL_LIST, {
+      x: bodySection.x,
+      y: historyBodyY,
+      w: bodySection.w,
+      h: historyRowHeight * 3,
+      item_space: 0,
+      item_config: [
+        {
+          type_id: 1,
+          item_height: historyRowHeight,
+          item_bg_color: TOKENS.colors.cardBackground,
+          item_bg_radius: 0,
+          text_view: [
+            {
+              x: 0,
+              y: 0,
+              w: bodySection.w,
+              h: historyRowHeight,
+              key: 'line',
+              color: TOKENS.colors.text,
+              text_size: getFontSize('bodyLarge')
+            }
+          ],
+          text_view_count: 1
+        }
+      ],
+      item_config_count: 1,
+      data_array: scrollDataArray,
+      data_count: scrollDataArray.length
+    })
+  },
+
+  /**
+   * Renders the footer section with delete and go back buttons side by side.
+   */
+  renderFooterSection(layout) {
+    const elements = HISTORY_DETAIL_LAYOUT.elements
+
+    // Delete button (left side)
+    const deleteEl = layout.elements.deleteButton
+    const deleteMeta = elements.deleteButton._meta
+    if (deleteEl) {
+      this.deleteButton = this.createWidget(hmUI.widget.BUTTON, {
+        x: deleteEl.x,
+        y: deleteEl.y,
+        w: deleteEl.w,
+        h: deleteEl.h,
+        normal_src: deleteMeta.icon,
+        press_src: deleteMeta.icon,
+        click_func: () => this.handleDeleteClick()
+      })
+    }
+
+    // Go back button (right side)
+    const goBackEl = layout.elements.goBackButton
+    const goBackMeta = elements.goBackButton._meta
+    if (goBackEl) {
+      const goBackBtn = createButton({
+        x: goBackEl.x,
+        y: goBackEl.y,
+        variant: 'icon',
+        normal_src: goBackMeta.icon,
+        onClick: () => this.goBack()
+      })
+      this.createWidget(goBackBtn.widgetType, goBackBtn.config)
+    }
   }
 })
