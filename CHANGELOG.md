@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1](https://github.com/trystan2k/padelbuddy/compare/v1.6.0...v1.6.1) (2026-02-28)
+
+### Bug Fixes
+
+* **ui:** adjust row height and swap text colors for better readability ([fefc17e](https://github.com/trystan2k/padelbuddy/commit/fefc17efa81a47d476d15d0e12639975fb05d25f))
+
+### Code Refactoring
+
+* migrate page layouts to shared presets ([0480c44](https://github.com/trystan2k/padelbuddy/commit/0480c445f7e99b0693a10a1caeaf54f624128c1d))
+* remove unused UI components and internalize helper functions ([87b1105](https://github.com/trystan2k/padelbuddy/commit/87b110532ed681aa9352cec6a7de184c223b0e0b))
+
 ## [1.6.0](https://github.com/trystan2k/padelbuddy/compare/v1.5.0...v1.6.0) (2026-02-28)
 
 ### Features
