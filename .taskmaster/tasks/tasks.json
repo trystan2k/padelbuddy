@@ -3175,7 +3175,7 @@
         "description": "Refactor page/settings.js, page/history.js, and page/history-detail.js to use the new declarative layout system, replacing page-specific TOKENS constants with design tokens, layout engine resolution, and reusable UI components while preserving scroll list functionality and navigation patterns.",
         "details": "Migrate three utility pages (settings, history, history-detail) from the legacy token-based positioning system to the new layout architecture defined in the PRD (Section 9: Migration Plan, Phase 8). These pages share similar patterns including scroll lists with icons, settings icon navigation, and go back icon navigation.\n\n**Implementation Steps:**\n\n1. **Remove Legacy Dependencies from each file:**\n   - Delete the SETTINGS_TOKENS constant from page/settings.js\n   - Delete the HISTORY_TOKENS constant from page/history.js\n   - Delete the HISTORY_DETAIL_TOKENS constant from page/history-detail.js\n   - Remove all inline position calculations from render functions\n\n2. **Add New Imports (for all three files):**\n   ```javascript\n   import { TOKENS, getFontSize } from '../utils/design-tokens.js';\n   import { getScreenMetrics } from '../utils/screen-utils.js';\n   import { resolveLayout } from '../utils/layout-engine.js';\n   import { createStandardPageLayout } from '../utils/layout-presets.js';\n   import { createBackground, createCard, createText, createButton } from '../utils/ui-components.js';\n   ```\n\n3. **Define Page Layout Schemas:**\n   - For settings.js and history.js: Create standard page layout with header (title), body (scroll list), footer (optional buttons)\n   - For history-detail.js: Create layout similar to summary page with header (title), body (detail content), footer (goBack button)\n   - Use createStandardPageLayout() with appropriate options for each page\n\n4. **Migrate Settings Page (page/settings.js):**\n   - Keep SCROLL_LIST logic but use TOKENS for styling (colors, typography, spacing)\n   - Migrate title to use createText() with TOKENS.typography.pageTitle\n   - Migrate goBack button to use createButton() with appropriate icon\n   - Preserve clear confirm mode for delete action behavior\n\n5. **Migrate History Page (page/history.js):**\n   - Keep SCROLL_LIST logic but use TOKENS for styling\n   - Migrate title to use createText() with TOKENS.typography.pageTitle\n   - Migrate goBack button to use createButton() with appropriate icon\n   - Preserve empty state message display logic\n\n6. **Migrate History Detail Page (page/history-detail.js):**\n   - Follow pattern similar to summary page migration\n   - Create layout with header/body/footer structure\n   - Use TOKENS for all text styling and positioning\n   - Preserve go back navigation functionality\n\n7. **Run Validation:**\n   - Execute `npm run complete-check` after each page migration to ensure no compilation errors\n   - Test on both round and square simulators",
         "testStrategy": "1. **Build Verification:** Run npm run complete-check after migrating each page to ensure no compilation errors.\n\n2. **Visual QA - Round Screen:**\n   - Test Settings page on round simulator: verify title, scroll list items, and goBack button are not cut off by screen edges\n   - Test History page on round simulator: verify title, history entries, and empty state message display correctly\n   - Test History Detail page on round simulator: verify all detail content and navigation elements are visible\n\n3. **Visual QA - Square Screen:**\n   - Verify all three pages render correctly on square simulator\n   - Confirm scroll lists maintain proper spacing and alignment\n   - Check that titles and buttons are properly positioned\n\n4. **Functional Testing - Settings Page:**\n   - Navigate to Settings page and verify all menu items display\n   - Test scroll list scrolling functionality\n   - Verify goBack button returns to previous screen\n   - Test clear confirm mode for delete action (confirm dialog appears and works)\n\n5. **Functional Testing - History Page:**\n   - Navigate to History page with existing matches\n   - Verify scroll list populates with match entries\n   - Test scrolling through history\n   - Verify empty state message displays when no history exists\n   - Test goBack button navigation\n\n6. **Functional Testing - History Detail Page:**\n   - Navigate to History Detail page from History list\n   - Verify all match details display correctly\n   - Test goBack button returns to History list\n\n7. **Regression Testing:**\n   - Verify visual appearance is unchanged compared to pre-migration implementation\n   - Confirm all existing functionality is preserved (navigation, scrolling, deletion, etc.)",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "40",
           "41",
@@ -3185,7 +3185,72 @@
           "49"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Remove legacy dependencies and add new imports",
+            "description": "Clean up legacy token constants from all three pages and add the new architecture imports",
+            "dependencies": [],
+            "details": "Delete SETTINGS_TOKENS from page/settings.js, HISTORY_TOKENS from page/history.js, and HISTORY_DETAIL_TOKENS from page/history-detail.js. Remove all inline position calculations from render functions in all three files. Add the following imports to all three files: import { TOKENS, getFontSize } from '../utils/design-tokens.js'; import { getScreenMetrics } from '../utils/screen-utils.js'; import { resolveLayout } from '../utils/layout-engine.js'; import { createStandardPageLayout } from '../utils/layout-presets.js'; import { createBackground, createCard, createText, createButton } from '../utils/ui-components.js';",
+            "status": "done",
+            "testStrategy": "Run npm run complete-check to verify imports resolve without errors",
+            "updatedAt": "2026-02-27T01:03:42.748Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Define page layout schemas for all three pages",
+            "description": "Create declarative layout schemas for settings, history, and history-detail pages using the new system",
+            "dependencies": [
+              1
+            ],
+            "details": "For settings.js and history.js: create standard page layout with header (title), body (scroll list), and optional footer buttons using createStandardPageLayout(). For history-detail.js: create layout similar to summary page with header (title), body (detail content), and footer (goBack button). Pass appropriate options to createStandardPageLayout() for each page type. Ensure layouts account for scroll list functionality and round-safe positioning.",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2026-02-27T01:15:34.776Z"
+          },
+          {
+            "id": 3,
+            "title": "Migrate Settings page to new layout system",
+            "description": "Refactor page/settings.js to use design tokens and UI components while preserving scroll list functionality",
+            "dependencies": [
+              2
+            ],
+            "details": "Keep existing SCROLL_LIST logic but replace styling with TOKENS values (colors, typography, spacing). Migrate the page title to use createText() with TOKENS.typography.pageTitle. Migrate the goBack button to use createButton() with appropriate icon. Preserve the clear confirm mode for delete action behavior. Use resolveLayout() with the defined schema to generate final layout coordinates.",
+            "status": "done",
+            "testStrategy": "Test on round simulator: verify title, scroll list items, and goBack button are not cut off by screen edges",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-27T09:41:02.317Z"
+          },
+          {
+            "id": 4,
+            "title": "Migrate History page to new layout system",
+            "description": "Refactor page/history.js to use design tokens and UI components while preserving empty state logic",
+            "dependencies": [
+              3
+            ],
+            "details": "Keep existing SCROLL_LIST logic but replace styling with TOKENS values (colors, typography, spacing). Migrate the page title to use createText() with TOKENS.typography.pageTitle. Migrate the goBack button to use createButton() with appropriate icon. Preserve empty state message display logic. Use resolveLayout() with the defined schema to generate final layout coordinates.",
+            "status": "done",
+            "testStrategy": "Run npm run complete-check after migration to ensure no compilation errors",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-27T09:46:36.265Z"
+          },
+          {
+            "id": 5,
+            "title": "Migrate History Detail page and run validation",
+            "description": "Refactor page/history-detail.js following the summary page pattern and validate all three migrated pages",
+            "dependencies": [
+              4
+            ],
+            "details": "Follow the summary page migration pattern. Create layout with header/body/footer structure using createStandardPageLayout(). Use TOKENS for all text styling and positioning including TOKENS.typography.pageTitle for title. Preserve go back navigation functionality. Use resolveLayout() to generate final layout. Run npm run complete-check to verify all three pages compile without errors. Test on both round and square simulators to verify proper display and scroll functionality.",
+            "status": "done",
+            "testStrategy": "1. Build Verification: Run npm run complete-check to ensure no compilation errors\n2. Visual QA - Round Screen: Test all three pages on round simulator\n3. Visual QA - Square Screen: Test all three pages on square simulator",
+            "parentId": "undefined",
+            "updatedAt": "2026-02-27T09:52:00.063Z"
+          }
+        ],
+        "updatedAt": "2026-02-27T09:52:00.063Z"
       },
       {
         "id": "51",
@@ -3203,9 +3268,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-02-26T23:18:19.235Z",
+      "lastModified": "2026-02-27T09:52:00.063Z",
       "taskCount": 51,
-      "completedCount": 46,
+      "completedCount": 47,
       "tags": [
         "master"
       ]
