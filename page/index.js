@@ -2,6 +2,7 @@ import { gettext } from 'i18n'
 import { TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { resolveLayout } from '../utils/layout-engine.js'
+import { createPageWithFooterButton } from '../utils/layout-presets.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { loadMatchState } from '../utils/match-storage.js'
@@ -22,25 +23,24 @@ const REGULAR_GAME_POINT_VALUES = new Set([0, 15, 30, 40])
  * Layout schema for the home screen.
  * Uses declarative positioning resolved by layout-engine.
  */
+const INDEX_BASE_LAYOUT = createPageWithFooterButton({
+  icon: 'setting-icon.png',
+  footerButtonName: 'settingsButton',
+  hasHeader: true,
+  top: 0,
+  bottom: 0,
+  bodyGap: 0,
+  headerHeight: '22%',
+  footerHeight: '5%',
+  headerRoundSafeInset: false,
+  bodyRoundSafeInset: false,
+  footerRoundSafeInset: false
+})
+
 const INDEX_LAYOUT = {
-  sections: {
-    header: {
-      top: 0,
-      height: '22%',
-      roundSafeInset: false
-    },
-    body: {
-      height: 'fill',
-      after: 'header',
-      roundSafeInset: false
-    },
-    footer: {
-      bottom: 0,
-      height: '5%',
-      roundSafeInset: false
-    }
-  },
+  sections: INDEX_BASE_LAYOUT.sections,
   elements: {
+    ...INDEX_BASE_LAYOUT.elements,
     logo: {
       section: 'header',
       x: 'center',
@@ -98,15 +98,10 @@ const INDEX_LAYOUT = {
       }
     },
     settingsButton: {
-      section: 'footer',
-      x: 'center',
+      ...INDEX_BASE_LAYOUT.elements.settingsButton,
       y: '20%',
-      width: TOKENS.sizing.iconLarge,
-      height: TOKENS.sizing.iconLarge,
-      align: 'center',
       _meta: {
-        type: 'iconButton',
-        icon: 'setting-icon.png',
+        ...INDEX_BASE_LAYOUT.elements.settingsButton._meta,
         onClick: 'navigateToSettings'
       }
     }

@@ -15,7 +15,7 @@
  * const layout = resolveLayout(schema, metrics)
  */
 
-import { TOKENS } from './design-tokens.js'
+import { TOKENS, toPercentage } from './design-tokens.js'
 
 /**
  * Creates a standard 3-section page layout schema.
@@ -46,6 +46,12 @@ export function createStandardPageLayout(options = {}) {
   const {
     hasHeader = true,
     hasFooter = true,
+    top = 0,
+    bottom = 0,
+    bodyGap,
+    headerRoundSafeInset = true,
+    bodyRoundSafeInset = true,
+    footerRoundSafeInset = false,
     headerHeight = `${TOKENS.typography.pageTitle * 2 * 100}%`,
     footerHeight = `${TOKENS.typography.button * 2 * 100}%`
   } = options
@@ -56,29 +62,33 @@ export function createStandardPageLayout(options = {}) {
   // Header section: top-anchored with round-safe inset
   if (hasHeader) {
     sections.header = {
-      top: 0,
+      top,
       height: headerHeight,
-      roundSafeInset: true
+      roundSafeInset: headerRoundSafeInset
     }
   }
 
   // Body section: fills remaining space with header gap
   sections.body = {
     height: 'fill',
-    roundSafeInset: true
+    roundSafeInset: bodyRoundSafeInset
   }
 
   if (hasHeader) {
     sections.body.after = 'header'
-    sections.body.gap = `${TOKENS.spacing.headerToContent * 100}%`
+    if (bodyGap != null) {
+      sections.body.gap = bodyGap
+    } else {
+      sections.body.gap = `${TOKENS.spacing.headerToContent * 100}%`
+    }
   }
 
   // Footer section: bottom-anchored, no round-safe inset (icon centering handles positioning)
   if (hasFooter) {
     sections.footer = {
-      bottom: 0,
+      bottom,
       height: footerHeight,
-      roundSafeInset: false
+      roundSafeInset: footerRoundSafeInset
     }
   }
 
@@ -109,8 +119,15 @@ export function createStandardPageLayout(options = {}) {
 export function createPageWithFooterButton(options = {}) {
   const {
     icon = 'home-icon.png',
+    footerButtonName = 'footerButton',
     onClick,
     hasHeader = true,
+    top,
+    bottom,
+    bodyGap,
+    headerRoundSafeInset,
+    bodyRoundSafeInset,
+    footerRoundSafeInset,
     headerHeight,
     footerHeight
   } = options
@@ -119,6 +136,12 @@ export function createPageWithFooterButton(options = {}) {
   const baseSchema = createStandardPageLayout({
     hasHeader,
     hasFooter: true, // Footer required for button
+    top,
+    bottom,
+    bodyGap,
+    headerRoundSafeInset,
+    bodyRoundSafeInset,
+    footerRoundSafeInset,
     headerHeight,
     footerHeight
   })
@@ -127,7 +150,7 @@ export function createPageWithFooterButton(options = {}) {
   // Button is centered and sized based on TOKENS
   const buttonSize = TOKENS.sizing.iconLarge // 48px
 
-  baseSchema.elements.footerButton = {
+  baseSchema.elements[footerButtonName] = {
     section: 'footer',
     x: 0,
     y: 0,
@@ -143,6 +166,58 @@ export function createPageWithFooterButton(options = {}) {
   }
 
   return baseSchema
+}
+
+/**
+ * Creates a score-focused page layout schema.
+ *
+ * Returns a 3-section layout tailored for scoreboard screens:
+ * header (top), scoreArea (middle fill), and footer (bottom).
+ *
+ * @param {Object} [options={}] - Configuration options
+ * @param {number|string} [options.headerTop] - Top offset for header section
+ * @param {number|string} [options.headerHeight='15%'] - Header height
+ * @param {number|string} [options.scoreAreaGap] - Gap between header and score area
+ * @param {number|string} [options.footerBottom] - Bottom offset for footer section
+ * @param {number|string} [options.footerHeight='5%'] - Footer height
+ * @param {boolean} [options.headerRoundSafeInset=false] - Header round screen inset behavior
+ * @param {boolean} [options.scoreAreaRoundSafeInset=false] - Score area round screen inset behavior
+ * @param {boolean} [options.footerRoundSafeInset=false] - Footer round screen inset behavior
+ * @returns {Object} Layout schema with sections property
+ */
+export function createScorePageLayout(options = {}) {
+  const {
+    headerTop = toPercentage(TOKENS.spacing.headerTop),
+    headerHeight = '15%',
+    scoreAreaGap = toPercentage(TOKENS.spacing.headerToContent),
+    footerBottom = toPercentage(TOKENS.spacing.footerBottom),
+    footerHeight = '5%',
+    headerRoundSafeInset = false,
+    scoreAreaRoundSafeInset = false,
+    footerRoundSafeInset = false
+  } = options
+
+  return {
+    sections: {
+      header: {
+        top: headerTop,
+        height: headerHeight,
+        roundSafeInset: headerRoundSafeInset
+      },
+      scoreArea: {
+        height: 'fill',
+        after: 'header',
+        gap: scoreAreaGap,
+        roundSafeInset: scoreAreaRoundSafeInset
+      },
+      footer: {
+        bottom: footerBottom,
+        height: footerHeight,
+        roundSafeInset: footerRoundSafeInset
+      }
+    },
+    elements: {}
+  }
 }
 
 /**

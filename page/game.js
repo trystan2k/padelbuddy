@@ -3,6 +3,7 @@ import { gettext } from 'i18n'
 import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { createHistoryStack, deepCopyState } from '../utils/history-stack.js'
 import { resolveLayout } from '../utils/layout-engine.js'
+import { createScorePageLayout } from '../utils/layout-presets.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import {
   createDefaultMatchState as createDefaultPersistedMatchState,
@@ -42,27 +43,16 @@ const REGULAR_GAME_POINT_VALUES = new Set([
  * Two-column layout: Team A (left) | Team B (right)
  */
 const GAME_LAYOUT = {
-  sections: {
-    // Header: SETS and GAMES rows
-    header: {
-      top: toPercentage(TOKENS.spacing.headerTop), // '4%'
-      height: '15%', // Two rows of ~5.5% each
-      roundSafeInset: false
-    },
-    // Score area: fills between header and footer
-    scoreArea: {
-      height: 'fill',
-      after: 'header',
-      gap: toPercentage(TOKENS.spacing.headerToContent), // '6%'
-      roundSafeInset: false
-    },
-    // Footer: home button
-    footer: {
-      bottom: toPercentage(TOKENS.spacing.footerBottom), // '7%'
-      height: '5%',
-      roundSafeInset: false
-    }
-  },
+  sections: createScorePageLayout({
+    headerTop: toPercentage(TOKENS.spacing.headerTop),
+    headerHeight: '15%',
+    scoreAreaGap: toPercentage(TOKENS.spacing.headerToContent),
+    footerBottom: toPercentage(TOKENS.spacing.footerBottom),
+    footerHeight: '5%',
+    headerRoundSafeInset: false,
+    scoreAreaRoundSafeInset: false,
+    footerRoundSafeInset: false
+  }).sections,
   elements: {
     // ── Header elements: SETS row ─────────────────────────────────────────
     setsLabel: {

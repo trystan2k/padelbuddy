@@ -2,6 +2,7 @@ import { gettext } from 'i18n'
 
 import { TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
+import { createPageWithFooterButton } from '../utils/layout-presets.js'
 import { initializeMatchState } from '../utils/match-session-init.js'
 import { MATCH_STATUS } from '../utils/match-state-schema.js'
 import { clearMatchState, saveMatchState } from '../utils/match-storage.js'
@@ -19,26 +20,30 @@ const MATCH_SET_OPTIONS = Object.freeze([1, 3, 5])
  * Layout schema for the setup screen.
  * Direct rendering on background with title in header and go back in footer.
  */
+const SETUP_BASE_LAYOUT = createPageWithFooterButton({
+  icon: 'goback-icon.png',
+  footerButtonName: 'goBackButton',
+  hasHeader: true,
+  top: 0,
+  bottom: 0,
+  bodyGap: 0,
+  headerHeight: '15%',
+  footerHeight: '5%',
+  headerRoundSafeInset: false,
+  bodyRoundSafeInset: false,
+  footerRoundSafeInset: false
+})
+
 const SETUP_LAYOUT = {
   sections: {
-    header: {
-      top: 0,
-      height: '15%', // Reduced from 22% to give more space to body
-      roundSafeInset: false
-    },
+    ...SETUP_BASE_LAYOUT.sections,
     body: {
-      height: 'fill',
-      after: 'header',
-      roundSafeInset: false,
+      ...SETUP_BASE_LAYOUT.sections.body,
       sideInset: '7%'
-    },
-    footer: {
-      bottom: 0,
-      height: '5%', // Reduced from 15% to give more space to body
-      roundSafeInset: false
     }
   },
   elements: {
+    ...SETUP_BASE_LAYOUT.elements,
     // Title text (in header section)
     title: {
       section: 'header',
@@ -115,15 +120,11 @@ const SETUP_LAYOUT = {
     },
     // Go back button (in footer section)
     goBackButton: {
-      section: 'footer',
+      ...SETUP_BASE_LAYOUT.elements.goBackButton,
       x: 'center',
       y: '20%',
-      width: TOKENS.sizing.iconLarge,
-      height: TOKENS.sizing.iconLarge,
-      align: 'center',
       _meta: {
-        type: 'iconButton',
-        icon: 'goback-icon.png',
+        ...SETUP_BASE_LAYOUT.elements.goBackButton._meta,
         onClick: 'navigateBack'
       }
     }

@@ -1,6 +1,7 @@
 import { gettext } from 'i18n'
 import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
+import { createStandardPageLayout } from '../utils/layout-presets.js'
 import {
   deleteMatchFromHistory,
   loadMatchById
@@ -18,27 +19,16 @@ import {
  * Matches the summary page layout structure with 2 footer buttons.
  */
 const HISTORY_DETAIL_LAYOUT = {
-  sections: {
-    // Header section: Contains only the page title
-    header: {
-      top: toPercentage(TOKENS.spacing.pageTop), // '5%'
-      height: '10%', // Just title
-      roundSafeInset: false
-    },
-    // Body section: Winner, score, set history (fills remaining space)
-    body: {
-      height: 'fill',
-      after: 'header',
-      gap: toPercentage(TOKENS.spacing.sectionGap), // '2%'
-      roundSafeInset: false
-    },
-    // Footer section: Delete and Go back buttons (bottom-anchored)
-    footer: {
-      bottom: toPercentage(TOKENS.spacing.pageBottom), // '6%'
-      height: '10%', // Button area height
-      roundSafeInset: false
-    }
-  },
+  sections: createStandardPageLayout({
+    top: toPercentage(TOKENS.spacing.pageTop),
+    bottom: toPercentage(TOKENS.spacing.pageBottom),
+    bodyGap: toPercentage(TOKENS.spacing.sectionGap),
+    headerHeight: '10%',
+    footerHeight: '10%',
+    headerRoundSafeInset: false,
+    bodyRoundSafeInset: false,
+    footerRoundSafeInset: false
+  }).sections,
   elements: {
     // Title text ("Match Details")
     pageTitle: {

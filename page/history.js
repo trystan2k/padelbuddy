@@ -1,12 +1,12 @@
 import { gettext } from 'i18n'
 import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
+import { createStandardPageLayout } from '../utils/layout-presets.js'
 import { loadMatchHistory } from '../utils/match-history-storage.js'
 import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
   createButton,
-  createCard,
   createText
 } from '../utils/ui-components.js'
 
@@ -16,27 +16,16 @@ import {
  * Matches the summary page layout structure.
  */
 const HISTORY_LAYOUT = {
-  sections: {
-    // Header section: Contains only the page title
-    header: {
-      top: toPercentage(TOKENS.spacing.pageTop), // '5%'
-      height: '10%', // Just title
-      roundSafeInset: false
-    },
-    // Body section: History scroll list (fills remaining space)
-    body: {
-      height: 'fill',
-      after: 'header',
-      gap: toPercentage(TOKENS.spacing.sectionGap), // '2%'
-      roundSafeInset: false
-    },
-    // Footer section: Go back button (bottom-anchored)
-    footer: {
-      bottom: toPercentage(TOKENS.spacing.pageBottom), // '6%'
-      height: '10%', // Button area height
-      roundSafeInset: false // Centered icon doesn't need inset
-    }
-  },
+  sections: createStandardPageLayout({
+    top: toPercentage(TOKENS.spacing.pageTop),
+    bottom: toPercentage(TOKENS.spacing.pageBottom),
+    bodyGap: toPercentage(TOKENS.spacing.sectionGap),
+    headerHeight: '10%',
+    footerHeight: '10%',
+    headerRoundSafeInset: false,
+    bodyRoundSafeInset: false,
+    footerRoundSafeInset: false
+  }).sections,
   elements: {
     // Title text ("Match History")
     pageTitle: {

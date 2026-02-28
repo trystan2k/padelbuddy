@@ -75,6 +75,10 @@ async function loadGamePageDefinition() {
   )
   const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
   const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
+  const layoutPresetsUrl = new URL(
+    '../utils/layout-presets.js',
+    import.meta.url
+  )
   const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
   const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
 
@@ -115,6 +119,10 @@ async function loadGamePageDefinition() {
     .replace(
       "from '../utils/layout-engine.js'",
       `from '${layoutEngineUrl.href}'`
+    )
+    .replace(
+      "from '../utils/layout-presets.js'",
+      `from '${layoutPresetsUrl.href}'`
     )
     .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
     .replace(
