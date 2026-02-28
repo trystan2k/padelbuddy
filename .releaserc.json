@@ -67,6 +67,12 @@
     [
       "@semantic-release/github",
       {
+        "assets": [
+          {
+            "path": "dist/*.zab",
+            "label": "Zepp OS app bundle"
+          }
+        ],
         "draftRelease": false,
         "addReleases": "bottom"
       }
