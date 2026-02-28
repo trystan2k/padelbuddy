@@ -7,56 +7,14 @@ msgstr "Buddy"
 msgid "home.startNewGame"
 msgstr "Nueva Partida"
 
-msgid "home.confirmStartNewGame"
-msgstr "Toca de Nuevo para Reiniciar"
-
 msgid "home.resumeGame"
 msgstr "Continuar Partida"
-
-msgid "game.title"
-msgstr "Marcador del Partido"
-
-msgid "game.setLabel"
-msgstr "Set"
 
 msgid "game.setsLabel"
 msgstr "SETS"
 
 msgid "game.gamesLabel"
 msgstr "JUEGOS"
-
-msgid "game.setsWonLabel"
-msgstr "Sets"
-
-msgid "game.teamAAddPoint"
-msgstr "+ Equipo A"
-
-msgid "game.teamBAddPoint"
-msgstr "+ Equipo B"
-
-msgid "game.teamARemovePoint"
-msgstr "- Equipo A"
-
-msgid "game.teamBRemovePoint"
-msgstr "- Equipo B"
-
-msgid "game.backHome"
-msgstr "Volver al Inicio"
-
-msgid "game.home"
-msgstr "Inicio"
-
-msgid "game.finishedLabel"
-msgstr "Partido Finalizado"
-
-msgid "game.winsSuffix"
-msgstr "Gana!"
-
-msgid "game.matchFinished"
-msgstr "Partido Terminado"
-
-msgid "game.undo"
-msgstr "Deshacer"
 
 msgid "setup.title"
 msgstr "Configurar Partido"
@@ -94,29 +52,8 @@ msgstr "Partido Terminado"
 msgid "summary.matchUnavailable"
 msgstr "Resumen no disponible"
 
-msgid "summary.finalScoreLabel"
-msgstr "Sets Final"
-
-msgid "summary.setHistoryTitle"
-msgstr "Historial de Sets"
-
 msgid "summary.noSetHistory"
 msgstr "Ningún set completado"
-
-msgid "summary.home"
-msgstr "Inicio"
-
-msgid "summary.startNewGame"
-msgstr "Nueva Partida"
-
-msgid "home.clearData"
-msgstr "Borrar Datos"
-
-msgid "home.clearDataConfirm"
-msgstr "Toca de Nuevo para Confirmar"
-
-msgid "home.previousMatches"
-msgstr "Partidos Anteriores"
 
 msgid "history.title"
 msgstr "Historial de Partidos"
@@ -124,23 +61,11 @@ msgstr "Historial de Partidos"
 msgid "history.empty"
 msgstr "Aún no hay partidos jugados"
 
-msgid "history.back"
-msgstr "Volver"
-
 msgid "history.detail.title"
 msgstr "Detalles del Partido"
 
 msgid "history.detail.notFound"
 msgstr "Partido no encontrado"
-
-msgid "history.detail.wins"
-msgstr "Gana"
-
-msgid "history.detail.draw"
-msgstr "Empate"
-
-msgid "history.detail.setHistory"
-msgstr "Historial de Sets"
 
 msgid "history.deleteConfirmToast"
 msgstr "Presiona de nuevo para confirmar eliminación"
