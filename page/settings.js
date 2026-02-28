@@ -254,9 +254,9 @@ Page({
     if (listEl) {
       // Calculate row height matching summary.js pattern (doubled for better touch targets)
       const rowHeight = clamp(
-        Math.round(metrics.width * TOKENS.typography.body * 3),
-        80,
-        80
+        Math.round(metrics.width * TOKENS.typography.body * 3.5),
+        88,
+        88
       )
 
       // Text sizing

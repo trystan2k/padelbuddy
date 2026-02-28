@@ -63,7 +63,7 @@ const SUMMARY_LAYOUT = {
       _meta: {
         type: 'text',
         style: 'bodyLarge', // Using bodyLarge for winner text
-        color: 'accent',
+        color: 'text',
         textKey: 'winnerText' // Dynamic: viewModel.winnerText
       }
     },
@@ -78,7 +78,7 @@ const SUMMARY_LAYOUT = {
       _meta: {
         type: 'text',
         style: 'score',
-        color: 'text',
+        color: 'accent',
         textKey: 'finalSetsScore' // Dynamic: viewModel.finalSetsScore
       }
     },
