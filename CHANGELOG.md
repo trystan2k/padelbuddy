@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1](https://github.com/trystan2k/padelbuddy/compare/v1.7.0...v1.7.1) (2026-03-01)
+
+### Code Refactoring
+
+* **tests:** centralize file path resolution for test imports ([b58c233](https://github.com/trystan2k/padelbuddy/commit/b58c233c1457745cd53c09186548266908d9d707))
+* trigger release workflow after successful CI run ([7b7ca8c](https://github.com/trystan2k/padelbuddy/commit/7b7ca8c3df1519340c6526939fdb99175486f756))
+
 ## [1.7.0](https://github.com/trystan2k/padelbuddy/compare/v1.6.2...v1.7.0) (2026-02-28)
 
 ### Features

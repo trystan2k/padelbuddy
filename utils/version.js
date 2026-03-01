@@ -3,4 +3,4 @@
  * Keep in sync with app.json > app.version.name
  */
 
-export const APP_VERSION = '1.7.0'
+export const APP_VERSION = '1.7.1'
