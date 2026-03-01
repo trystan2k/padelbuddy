@@ -4,6 +4,7 @@ import test from 'node:test'
 
 import { MATCH_STATUS, STORAGE_KEY } from '../utils/match-state-schema.js'
 import { matchStorage } from '../utils/match-storage.js'
+import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let setupPageImportCounter = 0
 
@@ -48,25 +49,16 @@ function createPageInstance(definition) {
 }
 
 async function loadSetupPageDefinition() {
-  const sourceUrl = new URL('../page/setup.js', import.meta.url)
-  const matchSessionInitUrl = new URL(
-    '../utils/match-session-init.js',
-    import.meta.url
-  )
-  const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL(
-    '../utils/match-state-schema.js',
-    import.meta.url
-  )
-  const storageUrl = new URL('../utils/storage.js', import.meta.url)
-  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
-  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
-  const layoutPresetsUrl = new URL(
-    '../utils/layout-presets.js',
-    import.meta.url
-  )
-  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
-  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
+  const sourceUrl = toProjectFileUrl('page/setup.js')
+  const matchSessionInitUrl = toProjectFileUrl('utils/match-session-init.js')
+  const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
+  const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
+  const storageUrl = toProjectFileUrl('utils/storage.js')
+  const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
+  const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
+  const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
 

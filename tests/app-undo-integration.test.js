@@ -7,6 +7,7 @@ import { matchStorage } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
 import { createHmFsMock, readFileStoreKey } from './helpers/hmfs-mock.js'
+import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let appImportCounter = 0
 
@@ -18,10 +19,8 @@ async function loadAppDefinition() {
     capturedDefinition = definition
   }
 
-  const moduleUrl = new URL(
-    `../app.js?integration=${Date.now()}-${appImportCounter}`,
-    import.meta.url
-  )
+  const moduleUrl = toProjectFileUrl('app.js')
+  moduleUrl.search = `integration=${Date.now()}-${appImportCounter}`
   appImportCounter += 1
 
   try {

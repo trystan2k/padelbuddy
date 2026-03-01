@@ -5,6 +5,7 @@ import { createInitialMatchState } from '../utils/match-state.js'
 import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
 import { matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
+import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let summaryPageImportCounter = 0
 
@@ -194,31 +195,23 @@ async function waitForAsyncPageUpdates() {
 }
 
 async function loadSummaryPageDefinition() {
-  const sourceUrl = new URL('../page/summary.js', import.meta.url)
-  const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
-  const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL(
-    '../utils/match-state-schema.js',
-    import.meta.url
+  const sourceUrl = toProjectFileUrl('page/summary.js')
+  const historyStackUrl = toProjectFileUrl('utils/history-stack.js')
+  const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
+  const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
+  const matchStateUrl = toProjectFileUrl('utils/match-state.js')
+  const startNewMatchFlowUrl = toProjectFileUrl(
+    'tests/helpers/summary-start-new-match-flow-bridge.js'
   )
-  const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
-  const startNewMatchFlowUrl = new URL(
-    './helpers/summary-start-new-match-flow-bridge.js',
-    import.meta.url
+  const storageUrl = toProjectFileUrl('utils/storage.js')
+  const matchHistoryStorageUrl = toProjectFileUrl(
+    'utils/match-history-storage.js'
   )
-  const storageUrl = new URL('../utils/storage.js', import.meta.url)
-  const matchHistoryStorageUrl = new URL(
-    '../utils/match-history-storage.js',
-    import.meta.url
-  )
-  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
-  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
-  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
-  const layoutPresetsUrl = new URL(
-    '../utils/layout-presets.js',
-    import.meta.url
-  )
-  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
+  const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
+  const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
+  const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -592,7 +585,7 @@ test('summary start-new-game button ignores accidental double taps while flow is
 })
 
 test('app routes register summary screen for both targets', async () => {
-  const appConfigPath = new URL('../app.json', import.meta.url)
+  const appConfigPath = toProjectFileUrl('app.json')
   const appConfig = JSON.parse(await readFile(appConfigPath, 'utf8'))
 
   assert.equal(

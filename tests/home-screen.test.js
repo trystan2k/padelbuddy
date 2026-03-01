@@ -7,6 +7,7 @@ import { matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
 import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
 import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
+import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let homePageImportCounter = 0
 
@@ -129,27 +130,20 @@ async function waitForAsyncPageUpdates() {
 }
 
 async function loadHomePageDefinition() {
-  const sourceUrl = new URL('../page/index.js', import.meta.url)
-  const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
-  const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL(
-    '../utils/match-state-schema.js',
-    import.meta.url
+  const sourceUrl = toProjectFileUrl('page/index.js')
+  const historyStackUrl = toProjectFileUrl('utils/history-stack.js')
+  const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
+  const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
+  const matchStateUrl = toProjectFileUrl('utils/match-state.js')
+  const startNewMatchFlowUrl = toProjectFileUrl(
+    'tests/helpers/home-start-new-match-flow-bridge.js'
   )
-  const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
-  const startNewMatchFlowUrl = new URL(
-    './helpers/home-start-new-match-flow-bridge.js',
-    import.meta.url
-  )
-  const storageUrl = new URL('../utils/storage.js', import.meta.url)
-  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
-  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
-  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
-  const layoutPresetsUrl = new URL(
-    '../utils/layout-presets.js',
-    import.meta.url
-  )
-  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
+  const storageUrl = toProjectFileUrl('utils/storage.js')
+  const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
+  const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
+  const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
 

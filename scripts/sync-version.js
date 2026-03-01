@@ -5,12 +5,9 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const rootDir = join(__dirname, '..')
+const rootDir = process.cwd()
 
 // Read version from package.json
 const packageJsonPath = join(rootDir, 'package.json')

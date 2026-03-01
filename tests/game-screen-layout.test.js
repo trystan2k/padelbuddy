@@ -8,6 +8,7 @@ import { createInitialMatchState } from '../utils/match-state.js'
 import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
+import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let gamePageImportCounter = 0
 
@@ -52,35 +53,20 @@ function createPageInstance(definition) {
 }
 
 async function loadGamePageDefinition() {
-  const sourceUrl = new URL('../page/game.js', import.meta.url)
-  const scoreViewModelUrl = new URL(
-    '../page/score-view-model.js',
-    import.meta.url
-  )
-  const historyStackUrl = new URL('../utils/history-stack.js', import.meta.url)
-  const matchStateUrl = new URL('../utils/match-state.js', import.meta.url)
-  const scoringConstantsUrl = new URL(
-    '../utils/scoring-constants.js',
-    import.meta.url
-  )
-  const scoringEngineUrl = new URL(
-    '../utils/scoring-engine.js',
-    import.meta.url
-  )
-  const storageUrl = new URL('../utils/storage.js', import.meta.url)
-  const matchStorageUrl = new URL('../utils/match-storage.js', import.meta.url)
-  const matchStateSchemaUrl = new URL(
-    '../utils/match-state-schema.js',
-    import.meta.url
-  )
-  const designTokensUrl = new URL('../utils/design-tokens.js', import.meta.url)
-  const layoutEngineUrl = new URL('../utils/layout-engine.js', import.meta.url)
-  const layoutPresetsUrl = new URL(
-    '../utils/layout-presets.js',
-    import.meta.url
-  )
-  const screenUtilsUrl = new URL('../utils/screen-utils.js', import.meta.url)
-  const uiComponentsUrl = new URL('../utils/ui-components.js', import.meta.url)
+  const sourceUrl = toProjectFileUrl('page/game.js')
+  const scoreViewModelUrl = toProjectFileUrl('page/score-view-model.js')
+  const historyStackUrl = toProjectFileUrl('utils/history-stack.js')
+  const matchStateUrl = toProjectFileUrl('utils/match-state.js')
+  const scoringConstantsUrl = toProjectFileUrl('utils/scoring-constants.js')
+  const scoringEngineUrl = toProjectFileUrl('utils/scoring-engine.js')
+  const storageUrl = toProjectFileUrl('utils/storage.js')
+  const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
+  const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
+  const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
+  const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
+  const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
 
