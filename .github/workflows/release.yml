@@ -1,18 +1,11 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.opencode/**'
-      - '.taskmaster/**'
-      - '.husky/**'
-      - '.github/**'
-      - 'docs/**'
-      - '*.md'
-      - 'LICENSE'
-      - '.gitignore'
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -23,8 +16,11 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    # Only run if there are actual code changes (double-check)
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      !contains(github.event.workflow_run.head_commit.message, '[skip ci]')
 
     steps:
       - name: Checkout code
@@ -32,6 +28,7 @@ jobs:
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -71,14 +68,6 @@ jobs:
             echo "No releasable changes - skipping release"
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Run tests
-        if: steps.check-changes.outputs.has_changes == 'true'
-        run: npm run test
-
-      - name: Run lint
-        if: steps.check-changes.outputs.has_changes == 'true'
-        run: npm run lint
 
       - name: Create Release
         if: steps.check-changes.outputs.has_changes == 'true'
