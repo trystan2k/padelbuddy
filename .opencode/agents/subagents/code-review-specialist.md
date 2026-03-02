@@ -1,7 +1,7 @@
 ---
 description: Expert code review agent that evaluates task implementations for correctness, quality, best practices, and improvement opportunities using stack-specific skills.
 mode: subagent
-model: zai-coding-plan/glm-5
+model: github-copilot/claude-sonnet-4.6
 reasoningEffort: high
 temperature: 0
 tools:
