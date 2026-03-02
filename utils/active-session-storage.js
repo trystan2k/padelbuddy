@@ -52,13 +52,12 @@ const LEGACY_ACTIVE_SESSION_FILE_PATH = keyToFilename(
 const SOURCE_PRIORITY = Object.freeze({
   canonical: 0,
   'legacy-active-file': 1,
-  'handoff-persisted': 2,
-  'legacy-runtime-storage': 3,
-  'handoff-runtime': 4
+  'legacy-runtime-storage': 2
 })
 
 const ACTIVE_TEAM = 'teamA'
 const OPPOSING_TEAM = 'teamB'
+let isAtomicUpdateInFlight = false
 
 /**
  * @returns {ActiveSession | null}
@@ -137,6 +136,91 @@ export function saveActiveSession(session, options = {}) {
 }
 
 /**
+ * @param {(session: ActiveSession) => ActiveSession | null | void} updaterFn
+ * @param {{ preserveUpdatedAt?: boolean }} [options]
+ * @returns {ActiveSession | null}
+ */
+export function updateActiveSession(updaterFn, options = {}) {
+  if (typeof updaterFn !== 'function') {
+    log('warn', 'refusing to update active session with non-function updater')
+    return null
+  }
+
+  return withAtomicUpdateLock(() => {
+    const currentSession = getActiveSession()
+
+    if (!currentSession) {
+      return null
+    }
+
+    const currentSnapshot = cloneSession(currentSession)
+
+    if (!currentSnapshot) {
+      return null
+    }
+
+    let updaterResult
+
+    try {
+      updaterResult = updaterFn(currentSnapshot)
+    } catch {
+      log('warn', 'active session updater threw')
+      return null
+    }
+
+    if (updaterResult === null) {
+      return null
+    }
+
+    const nextSession =
+      typeof updaterResult === 'undefined' ? currentSnapshot : updaterResult
+
+    if (!isMatchState(nextSession)) {
+      log('warn', 'active session updater returned invalid state')
+      return null
+    }
+
+    const persistedSnapshot = cloneSession(nextSession)
+
+    if (!persistedSnapshot) {
+      return null
+    }
+
+    if (!saveActiveSession(persistedSnapshot, options)) {
+      return null
+    }
+
+    return getActiveSession()
+  })
+}
+
+/**
+ * @param {Partial<ActiveSession>} patch
+ * @param {{ preserveUpdatedAt?: boolean }} [options]
+ * @returns {ActiveSession | null}
+ */
+export function updateActiveSessionPartial(patch, options = {}) {
+  if (!isRecord(patch)) {
+    log('warn', 'refusing to apply non-object active session patch')
+    return null
+  }
+
+  const patchSnapshot = cloneSession(patch)
+
+  if (!isRecord(patchSnapshot)) {
+    return null
+  }
+
+  return updateActiveSession(
+    (session) => ({
+      ...session,
+      ...patchSnapshot
+    }),
+    options
+  )
+}
+
+/**
  * @returns {boolean}
  */
 export function clearActiveSession() {
@@ -174,15 +258,9 @@ export function clearActiveSession() {
 }
 
 /**
- * @param {{
- *   globalData?: Record<string, unknown>,
- *   pendingPersistedMatchState?: unknown,
- *   pendingRuntimeMatchState?: unknown,
- *   sessionHandoff?: unknown
- * }} [options]
  * @returns {LegacyMigrationResult}
  */
-export function migrateLegacySessions(options = {}) {
+export function migrateLegacySessions() {
   const candidates = []
   const canonicalCandidate = loadSessionCandidate(
     ACTIVE_SESSION_FILE_PATH,
@@ -207,32 +285,6 @@ export function migrateLegacySessions(options = {}) {
   }
   if (legacyRuntimeCandidate) {
     candidates.push(legacyRuntimeCandidate)
-  }
-
-  const globalData = isRecord(options.globalData) ? options.globalData : null
-
-  const handoffPersistedCandidate = createPersistedCandidate(
-    options.pendingPersistedMatchState ??
-      globalData?.pendingPersistedMatchState,
-    'handoff-persisted'
-  )
-  const handoffRuntimeCandidate = createRuntimeCandidate(
-    options.pendingRuntimeMatchState ?? globalData?.pendingHomeMatchState,
-    'handoff-runtime'
-  )
-  const sessionHandoffCandidate = createPersistedCandidate(
-    options.sessionHandoff ?? globalData?.sessionHandoff,
-    'handoff-persisted'
-  )
-
-  if (handoffPersistedCandidate) {
-    candidates.push(handoffPersistedCandidate)
-  }
-  if (handoffRuntimeCandidate) {
-    candidates.push(handoffRuntimeCandidate)
-  }
-  if (sessionHandoffCandidate) {
-    candidates.push(sessionHandoffCandidate)
   }
 
   const bestCandidate = pickMostRecentCandidate(candidates)
@@ -274,7 +326,7 @@ export function migrateLegacySessions(options = {}) {
     log('debug', 'canonical active session already up-to-date')
   }
 
-  const didCleanupLegacy = cleanupLegacyArtifacts(globalData)
+  const didCleanupLegacy = cleanupLegacyArtifacts()
 
   return {
     migrated: shouldWriteCanonical,
@@ -317,27 +369,6 @@ function loadSessionCandidate(path, source, allowLegacyRuntimeFallback) {
     source,
     session,
     updatedAt: toNonNegativeInteger(session.updatedAt, 0)
-  }
-}
-
-/**
- * @param {unknown} value
- * @param {string} source
- * @returns {{ source: string, session: ActiveSession, updatedAt: number } | null}
- */
-function createPersistedCandidate(value, source) {
-  if (!isRecord(value)) {
-    return null
-  }
-
-  if (!isMatchState(value)) {
-    return null
-  }
-
-  return {
-    source,
-    session: withHistoryCompatibilityMetadata(value, value),
-    updatedAt: toNonNegativeInteger(value.updatedAt, 0)
   }
 }
 
@@ -669,10 +700,9 @@ function withHistoryCompatibilityMetadata(session, source) {
 }
 
 /**
- * @param {Record<string, unknown> | null} globalData
  * @returns {boolean}
  */
-function cleanupLegacyArtifacts(globalData) {
+function cleanupLegacyArtifacts() {
   let didCleanup = true
 
   try {
@@ -691,13 +721,39 @@ function cleanupLegacyArtifacts(globalData) {
     didCleanup = false
   }
 
-  if (globalData) {
-    delete globalData.pendingPersistedMatchState
-    delete globalData.pendingHomeMatchState
-    delete globalData.sessionHandoff
+  return didCleanup
+}
+
+/**
+ * @param {() => ActiveSession | null} callback
+ * @returns {ActiveSession | null}
+ */
+function withAtomicUpdateLock(callback) {
+  if (isAtomicUpdateInFlight) {
+    log('warn', 'atomic active session update skipped due to in-flight update')
+    return null
   }
 
-  return didCleanup
+  isAtomicUpdateInFlight = true
+
+  try {
+    return callback()
+  } finally {
+    isAtomicUpdateInFlight = false
+  }
+}
+
+/**
+ * @template T
+ * @param {T} value
+ * @returns {T | null}
+ */
+function cloneSession(value) {
+  try {
+    return JSON.parse(JSON.stringify(value))
+  } catch {
+    return null
+  }
 }
 
 /**

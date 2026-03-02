@@ -8,7 +8,9 @@ import {
   clearActiveSession,
   getActiveSession,
   migrateLegacySessions,
-  saveActiveSession
+  saveActiveSession,
+  updateActiveSession,
+  updateActiveSessionPartial
 } from '../utils/active-session-storage.js'
 import {
   createDefaultMatchState,
@@ -237,79 +239,212 @@ test('migrateLegacySessions uses runtime legacy source when it is newer', () => 
   })
 })
 
-test('migrateLegacySessions migrates pendingPersistedMatchState from globalData and clears handoff keys', () => {
-  const handoffSession = {
-    ...createDefaultMatchState(),
-    updatedAt: 1700000007000,
-    teams: {
-      teamA: { id: 'teamA', label: 'Handoff Team A' },
-      teamB: { id: 'teamB', label: 'Handoff Team B' }
-    }
-  }
-  const globalData = {
-    pendingPersistedMatchState: handoffSession,
-    pendingHomeMatchState: {},
-    sessionHandoff: {}
-  }
+test('updateActiveSession returns null when no active session exists', () => {
   const { mock, fileStore } = createHmFsMock()
 
   withMockedHmFs(mock, () => {
-    const migration = migrateLegacySessions({ globalData })
+    const updatedSession = updateActiveSession((session) => ({
+      ...session,
+      status: 'finished'
+    }))
 
-    assert.equal(migration.migrated, true)
-    assert.equal(migration.source, 'handoff-persisted')
-    assert.equal(fileStore.has(CANONICAL_FILENAME), true)
-
-    const loadedSession = getActiveSession()
-    assert.notEqual(loadedSession, null)
-    assert.equal(loadedSession?.updatedAt, handoffSession.updatedAt)
-    assert.equal(loadedSession?.teams?.teamA?.label, 'Handoff Team A')
-
-    assert.equal(Object.hasOwn(globalData, 'pendingPersistedMatchState'), false)
-    assert.equal(Object.hasOwn(globalData, 'pendingHomeMatchState'), false)
-    assert.equal(Object.hasOwn(globalData, 'sessionHandoff'), false)
+    assert.equal(updatedSession, null)
+    assert.equal(getActiveSession(), null)
+    assert.equal(fileStore.has(CANONICAL_FILENAME), false)
   })
 })
 
-test('migrateLegacySessions prefers newer handoff state over older canonical state', () => {
-  const canonicalSession = {
-    ...createDefaultMatchState(),
-    updatedAt: 1700000008000,
-    currentSet: {
-      number: 1,
-      games: {
+test('updateActiveSession aborts without persisting when updater returns null', () => {
+  const seedSession = createDefaultMatchState()
+  seedSession.updatedAt = 1700000008199
+  const { mock } = createHmFsMock()
+
+  withMockedHmFs(mock, () => {
+    assert.equal(
+      saveActiveSession(seedSession, { preserveUpdatedAt: true }),
+      true
+    )
+
+    const beforeUpdate = getActiveSession()
+    const updatedSession = updateActiveSession(() => null)
+    const afterUpdate = getActiveSession()
+
+    assert.equal(updatedSession, null)
+    assert.deepEqual(afterUpdate, beforeUpdate)
+  })
+})
+
+test('updateActiveSession mutates only persisted snapshots, not caller references', () => {
+  const seedSession = createDefaultMatchState()
+  seedSession.updatedAt = 1700000008100
+  const { mock } = createHmFsMock()
+
+  withMockedHmFs(mock, () => {
+    assert.equal(
+      saveActiveSession(seedSession, { preserveUpdatedAt: true }),
+      true
+    )
+
+    const callerSnapshot = getActiveSession()
+    assert.notEqual(callerSnapshot, null)
+
+    const updatedSession = updateActiveSession(
+      (session) => {
+        session.currentSet.games.teamA = 3
+      },
+      { preserveUpdatedAt: true }
+    )
+
+    assert.notEqual(updatedSession, null)
+    assert.equal(callerSnapshot?.currentSet?.games?.teamA, 0)
+    assert.equal(updatedSession?.currentSet?.games?.teamA, 3)
+  })
+})
+
+test('updateActiveSession preserves persisted state when updater throws', () => {
+  const seedSession = createDefaultMatchState()
+  seedSession.updatedAt = 1700000008200
+  const { mock } = createHmFsMock()
+
+  withMockedHmFs(mock, () => {
+    assert.equal(
+      saveActiveSession(seedSession, { preserveUpdatedAt: true }),
+      true
+    )
+    const beforeUpdate = getActiveSession()
+
+    const updatedSession = updateActiveSession(() => {
+      throw new Error('boom')
+    })
+
+    const afterUpdate = getActiveSession()
+
+    assert.equal(updatedSession, null)
+    assert.deepEqual(afterUpdate, beforeUpdate)
+  })
+})
+
+test('updateActiveSession helpers apply sequential updates deterministically', () => {
+  const seedSession = createDefaultMatchState()
+  seedSession.updatedAt = 1700000008300
+  const { mock } = createHmFsMock()
+
+  withMockedHmFs(mock, () => {
+    assert.equal(
+      saveActiveSession(seedSession, { preserveUpdatedAt: true }),
+      true
+    )
+
+    const firstUpdate = updateActiveSessionPartial(
+      {
+        currentSet: {
+          number: 1,
+          games: {
+            teamA: 2,
+            teamB: 1
+          }
+        }
+      },
+      { preserveUpdatedAt: true }
+    )
+
+    assert.notEqual(firstUpdate, null)
+
+    const secondUpdate = updateActiveSession(
+      (session) => ({
+        ...session,
+        currentSet: {
+          ...session.currentSet,
+          games: {
+            ...session.currentSet.games,
+            teamB: session.currentSet.games.teamB + 2
+          }
+        }
+      }),
+      { preserveUpdatedAt: true }
+    )
+
+    assert.notEqual(secondUpdate, null)
+    assert.equal(secondUpdate?.currentSet?.games?.teamA, 2)
+    assert.equal(secondUpdate?.currentSet?.games?.teamB, 3)
+  })
+})
+
+test('updateActiveSession helpers preserve canonical schema fields and updatedAt options', () => {
+  const seedSession = createDefaultMatchState()
+  seedSession.updatedAt = 1700000008400
+  const { mock } = createHmFsMock()
+
+  withMockedHmFs(mock, () => {
+    assert.equal(
+      saveActiveSession(seedSession, { preserveUpdatedAt: true }),
+      true
+    )
+
+    const preservedUpdate = updateActiveSessionPartial(
+      {
+        setsToPlay: 5,
+        setsNeededToWin: 3
+      },
+      { preserveUpdatedAt: true }
+    )
+
+    assert.notEqual(preservedUpdate, null)
+    assert.equal(preservedUpdate?.updatedAt, seedSession.updatedAt)
+    assert.equal(preservedUpdate?.schemaVersion, seedSession.schemaVersion)
+
+    const timestampUpdated = updateActiveSession((session) => ({
+      ...session,
+      setsWon: {
         teamA: 1,
         teamB: 0
       }
-    }
-  }
-  const handoffSession = {
-    ...createDefaultMatchState(),
-    updatedAt: 1700000009000,
-    currentSet: {
-      number: 1,
-      games: {
-        teamA: 4,
-        teamB: 1
-      }
-    }
-  }
-  const { mock } = createHmFsMock({
-    [CANONICAL_FILENAME]: JSON.stringify(canonicalSession)
+    }))
+
+    assert.notEqual(timestampUpdated, null)
+    assert.equal(
+      Number.isInteger(timestampUpdated?.updatedAt) &&
+        timestampUpdated.updatedAt >= seedSession.updatedAt,
+      true
+    )
+    assert.equal(timestampUpdated?.schemaVersion, seedSession.schemaVersion)
   })
+})
+
+test('updateActiveSession prevents reentrant writes inside updater callbacks', () => {
+  const seedSession = createDefaultMatchState()
+  seedSession.updatedAt = 1700000008500
+  const { mock } = createHmFsMock()
 
   withMockedHmFs(mock, () => {
-    const migration = migrateLegacySessions({
-      pendingPersistedMatchState: handoffSession
-    })
+    assert.equal(
+      saveActiveSession(seedSession, { preserveUpdatedAt: true }),
+      true
+    )
 
-    assert.equal(migration.migrated, true)
-    assert.equal(migration.source, 'handoff-persisted')
+    let nestedResult = 'not-run'
 
-    const loadedSession = getActiveSession()
-    assert.notEqual(loadedSession, null)
-    assert.equal(loadedSession?.updatedAt, handoffSession.updatedAt)
-    assert.equal(loadedSession?.currentSet?.games?.teamA, 4)
+    const outerResult = updateActiveSession(
+      (session) => {
+        nestedResult = updateActiveSessionPartial(
+          {
+            setsWon: {
+              teamA: 9,
+              teamB: 0
+            }
+          },
+          { preserveUpdatedAt: true }
+        )
+
+        session.setsWon.teamA = 1
+        return session
+      },
+      { preserveUpdatedAt: true }
+    )
+
+    assert.equal(nestedResult, null)
+    assert.notEqual(outerResult, null)
+    assert.equal(outerResult?.setsWon?.teamA, 1)
   })
 })
 

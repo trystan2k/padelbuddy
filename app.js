@@ -1,11 +1,15 @@
-import { migrateLegacySessions } from './utils/active-session-storage.js'
+import {
+  getActiveSession,
+  migrateLegacySessions,
+  saveActiveSession,
+  updateActiveSession
+} from './utils/active-session-storage.js'
 import { createHistoryStack } from './utils/history-stack.js'
 import { createInitialMatchState } from './utils/match-state.js'
 import {
   isMatchState as isPersistedMatchState,
   MATCH_STATUS as PERSISTED_MATCH_STATUS
 } from './utils/match-state-schema.js'
-import { saveActiveSession } from './utils/match-storage.js'
 import { addPoint, removePoint as undoPoint } from './utils/scoring-engine.js'
 
 /**
@@ -41,9 +45,7 @@ function runStartupSessionMigration(appInstance) {
   }
 
   try {
-    migrateLegacySessions({
-      globalData: appInstance.globalData
-    })
+    migrateLegacySessions()
   } catch {
     // Best-effort startup migration; never block app initialization.
   } finally {
@@ -76,10 +78,58 @@ function emergencyPersistMatchState(globalData) {
         ? schemaSnapshot
         : runtimeState
 
-    saveActiveSession(stateToPersist)
+    if (
+      !isRecord(stateToPersist) ||
+      !isPersistedMatchState(stateToPersist) ||
+      stateToPersist.status !== PERSISTED_MATCH_STATUS.ACTIVE
+    ) {
+      return
+    }
+
+    const didUpdateInPlace =
+      updateActiveSession(
+        (currentSession) => {
+          if (
+            isRecord(currentSession) &&
+            isPersistedMatchState(currentSession) &&
+            toNonNegativeInteger(currentSession.updatedAt, 0) >
+              toNonNegativeInteger(stateToPersist.updatedAt, 0)
+          ) {
+            return currentSession
+          }
+
+          return stateToPersist
+        },
+        { preserveUpdatedAt: true }
+      ) !== null
+
+    if (didUpdateInPlace) {
+      return
+    }
+
+    const existingSession = getActiveSession()
+
+    if (
+      isRecord(existingSession) &&
+      isPersistedMatchState(existingSession) &&
+      toNonNegativeInteger(existingSession.updatedAt, 0) >
+        toNonNegativeInteger(stateToPersist.updatedAt, 0)
+    ) {
+      return
+    }
+
+    saveActiveSession(stateToPersist, { preserveUpdatedAt: true })
   } catch {
     // Never let app.onDestroy throw — it would prevent proper app teardown.
   }
+}
+
+function toNonNegativeInteger(value, fallback = 0) {
+  if (Number.isInteger(value) && value >= 0) {
+    return value
+  }
+
+  return fallback
 }
 
 App({
