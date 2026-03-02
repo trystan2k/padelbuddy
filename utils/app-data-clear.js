@@ -110,9 +110,6 @@ export function clearAllAppData() {
       if (app?.globalData) {
         app.globalData.matchState = null
         app.globalData.matchHistory = null
-        app.globalData.pendingHomeMatchState = null
-        app.globalData.pendingPersistedMatchState = null
-        app.globalData.sessionHandoff = null
         app.globalData._lastPersistedSchemaState = null
       }
     }

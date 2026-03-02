@@ -2,13 +2,19 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { createScoreViewModel } from '../page/score-view-model.js'
-import { STORAGE_KEY as ACTIVE_MATCH_SESSION_KEY } from '../utils/match-state-schema.js'
-import { matchStorage } from '../utils/match-storage.js'
+import {
+  ACTIVE_SESSION_FILE_PATH,
+  getActiveSession
+} from '../utils/active-session-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { createHmFsMock } from './helpers/hmfs-mock.js'
 import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let appImportCounter = 0
+const ACTIVE_SESSION_FILESTORE_KEY = ACTIVE_SESSION_FILE_PATH.replace(
+  /^\/data\//,
+  ''
+)
 
 async function loadAppDefinition() {
   const originalApp = globalThis.App
@@ -67,22 +73,9 @@ test('app exposes add/undo actions and keeps global match state in sync', async 
 
 test('app.onDestroy persists active match state as emergency save', async () => {
   const originalHmFS = globalThis.hmFS
-  const originalMatchStorageAdapter = matchStorage.adapter
-
-  const savedSchemaKeys = []
-  const { mock } = createHmFsMock()
+  const { mock, fileStore } = createHmFsMock()
 
   globalThis.hmFS = mock
-
-  matchStorage.adapter = {
-    save(key, value) {
-      if (key === ACTIVE_MATCH_SESSION_KEY) savedSchemaKeys.push({ key, value })
-    },
-    load() {
-      return null
-    },
-    clear() {}
-  }
 
   try {
     const app = await loadAppDefinition()
@@ -116,39 +109,29 @@ test('app.onDestroy persists active match state as emergency save', async () => 
 
     app.onDestroy()
 
-    // Schema state should have been passed to the matchStorage adapter
-    assert.ok(
-      savedSchemaKeys.length > 0,
+    assert.equal(
+      fileStore.has(ACTIVE_SESSION_FILESTORE_KEY),
+      true,
       'schema state was not persisted on app.onDestroy'
     )
+
+    const persistedSession = getActiveSession()
+    assert.notEqual(persistedSession, null)
+    assert.equal(persistedSession?.status, 'active')
   } finally {
     if (typeof originalHmFS === 'undefined') {
       delete globalThis.hmFS
     } else {
       globalThis.hmFS = originalHmFS
     }
-    matchStorage.adapter = originalMatchStorageAdapter
   }
 })
 
 test('app.onDestroy skips save when match state is not active', async () => {
   const originalHmFS = globalThis.hmFS
-  const originalMatchStorageAdapter = matchStorage.adapter
-
-  const savedSchemaKeys = []
-  const { mock } = createHmFsMock()
+  const { mock, fileStore } = createHmFsMock()
 
   globalThis.hmFS = mock
-
-  matchStorage.adapter = {
-    save(key, value) {
-      if (key === ACTIVE_MATCH_SESSION_KEY) savedSchemaKeys.push({ key, value })
-    },
-    load() {
-      return null
-    },
-    clear() {}
-  }
 
   try {
     const app = await loadAppDefinition()
@@ -169,8 +152,8 @@ test('app.onDestroy skips save when match state is not active', async () => {
     app.onDestroy()
 
     assert.equal(
-      savedSchemaKeys.length,
-      0,
+      fileStore.has(ACTIVE_SESSION_FILESTORE_KEY),
+      false,
       'should not persist finished state to schema key'
     )
   } finally {
@@ -179,7 +162,6 @@ test('app.onDestroy skips save when match state is not active', async () => {
     } else {
       globalThis.hmFS = originalHmFS
     }
-    matchStorage.adapter = originalMatchStorageAdapter
   }
 })
 

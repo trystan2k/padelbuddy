@@ -90,19 +90,18 @@ test('app startup migration is one-time and idempotent per app lifecycle', async
     assert.equal(fileStore.has(CANONICAL_FILENAME), true)
     assert.equal(fileStore.has(LEGACY_RUNTIME_FILENAME), false)
 
-    const pendingSessionHandoff = {
+    app.globalData.__migrationSentinel = {
       status: 'active',
       updatedAt: 1700000009999
     }
-    app.globalData.pendingPersistedMatchState = pendingSessionHandoff
 
     app.onCreate.call(app, {})
     const secondPassSession = getActiveSession()
     assert.deepEqual(secondPassSession, migratedSession)
     assert.equal(fileStore.has(LEGACY_ACTIVE_FILENAME), false)
     assert.equal(
-      app.globalData.pendingPersistedMatchState,
-      pendingSessionHandoff,
+      app.globalData.__migrationSentinel?.updatedAt,
+      1700000009999,
       'startup migration should execute once per app lifecycle'
     )
   } finally {

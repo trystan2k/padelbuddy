@@ -269,7 +269,6 @@ Page({
     this.widgets = []
     this.savedMatchState = null
     this.hasSavedGame = false
-    this.savedMatchStateFromHandoff = false
     this.isStartingNewGame = false
     this.refreshSavedMatchState()
     this.registerGestureHandler()
@@ -346,32 +345,8 @@ Page({
     return widget
   },
 
-  consumeHomeHandoff() {
-    // Read and clear the one-shot match state passed from game.js via globalData,
-    // used as a fallback when SysProGetChars doesn't reflect the write immediately.
-    try {
-      if (typeof getApp !== 'function') {
-        return null
-      }
-
-      const app = getApp()
-
-      if (!isRecord(app) || !isRecord(app.globalData)) {
-        return null
-      }
-
-      const handoff = app.globalData.pendingHomeMatchState
-      app.globalData.pendingHomeMatchState = null
-
-      return isRecord(handoff) ? handoff : null
-    } catch {
-      return null
-    }
-  },
-
   refreshSavedMatchState() {
     let savedMatchState = null
-    let fromHandoff = false
 
     try {
       savedMatchState = getActiveSession()
@@ -379,19 +354,11 @@ Page({
       savedMatchState = null
     }
 
-    // Fallback: if storage didn't return the value written just before
-    // the page transition from game.js, try the in-memory handoff instead.
-    if (!isActivePersistedMatchState(savedMatchState)) {
-      savedMatchState = this.consumeHomeHandoff()
-      fromHandoff = savedMatchState !== null
-    }
-
     const hasSavedGame = isActivePersistedMatchState(savedMatchState)
     this.savedMatchState = hasSavedGame
       ? cloneMatchState(savedMatchState)
       : null
     this.hasSavedGame = hasSavedGame
-    this.savedMatchStateFromHandoff = hasSavedGame && fromHandoff
     this.renderHomeScreen()
 
     return hasSavedGame
@@ -507,11 +474,6 @@ Page({
   },
 
   handleResumeGame() {
-    // Re-validate from storage (most up-to-date source of truth).
-    // If storage returns an explicit non-active state or throws, fail safe.
-    // Only fall back to the in-memory cached state when storage returns null AND
-    // the cached state came from the globalData handoff — meaning SysProGetChars
-    // was unreliable from the start of this page load (timing issue on transition).
     let savedMatchState = null
 
     try {
@@ -519,28 +481,15 @@ Page({
     } catch {
       this.savedMatchState = null
       this.hasSavedGame = false
-      this.savedMatchStateFromHandoff = false
       this.renderHomeScreen()
       return false
     }
 
     if (!isActivePersistedMatchState(savedMatchState)) {
-      if (
-        savedMatchState === null &&
-        this.savedMatchStateFromHandoff &&
-        isActivePersistedMatchState(this.savedMatchState)
-      ) {
-        // SysProGetChars still returning null — fall back to the handoff cache.
-        savedMatchState = this.savedMatchState
-      } else {
-        // Storage returned an explicit non-active state, or the cache wasn't
-        // from a handoff — the game is gone, hide the resume button.
-        this.savedMatchState = null
-        this.hasSavedGame = false
-        this.savedMatchStateFromHandoff = false
-        this.renderHomeScreen()
-        return false
-      }
+      this.savedMatchState = null
+      this.hasSavedGame = false
+      this.renderHomeScreen()
+      return false
     }
 
     const restoredRuntimeMatchState =
@@ -549,45 +498,15 @@ Page({
     if (!restoredRuntimeMatchState) {
       this.savedMatchState = null
       this.hasSavedGame = false
-      this.savedMatchStateFromHandoff = false
       this.renderHomeScreen()
       return false
     }
 
     this.savedMatchState = cloneMatchState(savedMatchState)
     this.hasSavedGame = true
-    this.savedMatchStateFromHandoff = false
     this.restoreRuntimeMatchState(restoredRuntimeMatchState)
-    // Set the pendingPersistedMatchState handoff so game.js validateSessionAccess
-    // can find a valid session even when SysProGetChars returns null on transition.
-    this.storeResumeSessionHandoff(savedMatchState)
     this.navigateToGamePage()
     return true
-  },
-
-  storeResumeSessionHandoff(persistedMatchState) {
-    // Write the persisted state into globalData so game.js can consume it on
-    // transition even if SysProGetChars hasn't reflected the write yet.
-    try {
-      if (typeof getApp !== 'function') {
-        return
-      }
-
-      const app = getApp()
-
-      if (!isRecord(app)) {
-        return
-      }
-
-      if (!isRecord(app.globalData)) {
-        app.globalData = {}
-      }
-
-      app.globalData.pendingPersistedMatchState =
-        cloneMatchState(persistedMatchState)
-    } catch {
-      // Non-fatal: handoff is best-effort.
-    }
   },
 
   restoreRuntimeMatchState(matchState) {

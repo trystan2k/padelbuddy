@@ -3619,13 +3619,78 @@
         "description": "Identify and refactor all GlobalData patterns used as transient handoff stores to use deterministic getter/setter patterns via the unified storage service. Implement atomic update helpers to resolve race conditions and ensure consistent session state management.",
         "details": "1. **Audit GlobalData Usage**: Perform a comprehensive codebase search to identify all locations where `globalData` is used as a temporary handoff mechanism for passing session state between modules. Document each usage site, the data being passed, and the calling/consuming modules.\n\n2. **Refactor to Unified Storage Service**: For each identified handoff site, replace the GlobalData pattern with calls to the Unified Active-Session Storage Service (Task 54):\n   - Replace reads with `getActiveSession()` calls\n   - Replace writes with `saveActiveSession(session)` calls\n   - Ensure proper null handling when no session exists\n\n3. **Implement Atomic Update Helpers**: Create helper functions to ensure atomic read-modify-write operations:\n   ```javascript\n   // Example atomic update helper\n   function updateActiveSession(updaterFn) {\n     const current = getActiveSession();\n     if (!current) return null;\n     const updated = updaterFn(current);\n     saveActiveSession(updated);\n     return updated;\n   }\n   ```\n\n4. **Update Module Interfaces**: Modify modules that previously relied on GlobalData handoffs to accept session data as explicit parameters or retrieve directly from the unified service. Remove any GlobalData key constants related to session passing.\n\n5. **Concurrency Protection**: If the platform supports concurrent execution, implement appropriate locking mechanisms or use transactional patterns to prevent race conditions during session updates.\n\n6. **Code Cleanup**: Remove any remaining GlobalData-related code specific to session handoffs. Update comments and documentation to reflect the new deterministic access patterns.",
         "testStrategy": "1. **Static Code Analysis**: Run grep/ripgrep searches across the codebase for patterns like `globalData.session`, `globalData.pending`, `globalData.handoff` to confirm all transient handoffs have been removed.\n\n2. **Unit Tests for Atomic Updates**: Write tests that verify the atomic update helpers correctly serialize concurrent operations and never result in lost updates or corrupted state.\n\n3. **Concurrency Stress Tests**: Simulate rapid sequential events (e.g., rapid scoring, background/foreground transitions) to verify no race conditions occur. Use automated test scripts to trigger multiple session read/write operations in quick succession.\n\n4. **Integration Tests**: Verify session state flows correctly across all previously handoff-dependent scenarios:\n   - App lifecycle events (sleep, wake, background, foreground)\n   - Screen navigation transitions\n   - Scoring operations\n   - Match start/completion flows\n\n5. **Manual Verification**: Navigate the app through typical user journeys while monitoring for any session state inconsistencies or crashes. Verify the active session is always correctly retrieved and persisted at each step.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "53",
           "54"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit GlobalData Usage for Session Handoffs",
+            "description": "Perform comprehensive codebase search to identify all locations where globalData is used as temporary handoff mechanism for passing session state between modules.",
+            "dependencies": [],
+            "details": "Run grep/ripgrep searches for patterns like `globalData.session`, `globalData.pending`, `globalData.handoff`, and `globalData.activeSession`. For each usage found, document: the file path, the specific globalData key being used, the data type/structure being stored, the module that writes the data, and the module(s) that consume the data. Create a tracking spreadsheet or document to map all handoff relationships.",
+            "status": "done",
+            "testStrategy": "Manually verify the audit document covers all globalData usage by cross-referencing with code search results. Have a peer review the documentation to ensure no handoff sites were missed.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T21:12:10.809Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Atomic Update Helpers",
+            "description": "Create helper functions to ensure atomic read-modify-write operations for session updates to prevent race conditions.",
+            "dependencies": [
+              1
+            ],
+            "details": "In the Unified Active-Session Storage Service module, implement the `updateActiveSession(updaterFn)` helper function that: retrieves current session via getActiveSession(), returns null if no session exists, applies the updaterFn to create updated state, saves via saveActiveSession(), and returns the updated session. Also implement `updateActiveSessionPartial(updates)` for partial updates using Object spread. Add JSDoc comments explaining the atomic operation guarantee.",
+            "status": "done",
+            "testStrategy": "Write unit tests that verify atomic update helpers correctly modify session state, handle null sessions gracefully, and preserve session immutability by creating new objects rather than mutating existing ones.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T21:12:10.814Z"
+          },
+          {
+            "id": 3,
+            "title": "Refactor GlobalData Patterns to Unified Storage Service",
+            "description": "Replace all identified GlobalData handoff patterns with calls to the Unified Active-Session Storage Service's getActiveSession() and saveActiveSession() methods.",
+            "dependencies": [
+              2
+            ],
+            "details": "For each documented GlobalData handoff site from the audit: replace globalData read access with `getActiveSession()` calls, replace globalData write access with `saveActiveSession(session)` or `updateActiveSession()` calls, add null checks where sessions may not exist, and remove direct globalData key assignments. Prioritize refactoring high-traffic paths first. Ensure error handling is preserved or improved during the transition.",
+            "status": "done",
+            "testStrategy": "Run integration tests for each refactored module to verify session state is correctly passed between modules. Verify that session persistence works across module boundaries without data loss.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T21:12:10.817Z"
+          },
+          {
+            "id": 4,
+            "title": "Update Module Interfaces for Direct Session Access",
+            "description": "Modify modules that previously relied on GlobalData handoffs to accept session data as explicit parameters or retrieve directly from the unified service.",
+            "dependencies": [
+              3
+            ],
+            "details": "Review each module that consumed GlobalData handoffs. For modules that receive session data from callers, update function signatures to accept session as an explicit parameter instead of reading from globalData. For self-contained modules, modify them to call getActiveSession() directly. Remove any GlobalData key constants defined in these modules (e.g., GLOBAL_DATA_SESSION_KEY, PENDING_HANDOFF_KEY). Update module exports and import statements as needed.",
+            "status": "done",
+            "testStrategy": "Verify that all updated module interfaces are correctly called by their consumers. Ensure no compilation errors from missing imports or undefined variables. Test that session data flows correctly through the updated call chains.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T21:12:10.820Z"
+          },
+          {
+            "id": 5,
+            "title": "Cleanup GlobalData Code and Implement Concurrency Protection",
+            "description": "Remove all remaining GlobalData-related code specific to session handoffs and implement concurrency protection mechanisms.",
+            "dependencies": [
+              4
+            ],
+            "details": "Remove any remaining GlobalData-related code for session handoffs including unused imports, key constants, and commented-out code. If the platform supports concurrent execution, implement a simple locking mechanism or use transactional patterns in the atomic update helpers to prevent race conditions. Update inline comments and module documentation to reflect the new deterministic access patterns via the unified service. Run final code quality checks.",
+            "status": "done",
+            "testStrategy": "Run static code analysis (grep/ripgrep) to confirm no session-related globalData patterns remain. If concurrency protection was added, write tests that simulate concurrent session updates to verify race conditions are prevented.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T21:12:10.823Z"
+          }
+        ],
+        "updatedAt": "2026-03-02T21:12:10.823Z"
       },
       {
         "id": "58",
@@ -3815,9 +3880,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-02T19:31:27.939Z",
+      "lastModified": "2026-03-02T21:12:10.823Z",
       "taskCount": 70,
-      "completedCount": 52,
+      "completedCount": 53,
       "tags": [
         "master"
       ]

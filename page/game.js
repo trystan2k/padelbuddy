@@ -840,7 +840,6 @@ Page({
           this.resetManualFinishConfirmState()
           // Save state before navigating
           this.saveCurrentRuntimeState({ force: true })
-          this.storeHomeHandoff()
           // Navigate directly to Home Screen
           this.navigateToHomePage()
           // Return true to skip default goBack() behavior
@@ -910,15 +909,7 @@ Page({
     }
 
     try {
-      let persistedMatchState = getActiveSession()
-
-      // Fallback: if SysProGetChars did not return the state written by setup.js
-      // (e.g. timing issue or unsupported API on this device), consume the handoff
-      // value passed through globalData by setup.js instead.
-      if (!isPersistedMatchStateActive(persistedMatchState)) {
-        persistedMatchState = this.consumeSessionHandoff()
-      }
-
+      const persistedMatchState = getActiveSession()
       const hasValidActiveSession =
         isPersistedMatchStateActive(persistedMatchState)
 
@@ -937,31 +928,6 @@ Page({
       this.isSessionAccessGranted = false
       this.navigateToSetupPage()
       return false
-    }
-  },
-
-  consumeSessionHandoff() {
-    // The only reliable cross-page handoff channel on Zepp OS v1.0 is
-    // app.globalData — module-level singletons are reset on each page load.
-    try {
-      if (typeof getApp !== 'function') {
-        return null
-      }
-
-      const app = getApp()
-
-      if (!isRecord(app) || !isRecord(app.globalData)) {
-        return null
-      }
-
-      const handoff = app.globalData.pendingPersistedMatchState
-
-      // Consume it (clear) so it is only used once
-      app.globalData.pendingPersistedMatchState = null
-
-      return isRecord(handoff) ? handoff : null
-    } catch {
-      return null
     }
   },
 
@@ -1266,29 +1232,6 @@ Page({
     this.navigateToSummaryPage()
   },
 
-  storeHomeHandoff() {
-    // Pass the current persisted session state through globalData so the home
-    // page can show the Resume button even if SysProGetChars doesn't return the
-    // written value immediately after the page transition.
-    try {
-      const app = this.getAppInstance()
-
-      if (!app) {
-        return
-      }
-
-      const snapshot = this.persistedSessionState
-
-      // Use the runtime-safe active check only — avoid calling isPersistedMatchState
-      // (schema validator) which crashes on Zepp OS due to Date.toISOString() usage.
-      if (isPersistedMatchStateActive(snapshot)) {
-        app.globalData.pendingHomeMatchState = cloneMatchState(snapshot)
-      }
-    } catch {
-      // Non-fatal: handoff is a best-effort optimisation.
-    }
-  },
-
   navigateToHomePage() {
     this.resetManualFinishConfirmState()
 
@@ -1308,7 +1251,6 @@ Page({
   handleBackToHome() {
     this.resetManualFinishConfirmState()
     this.saveCurrentRuntimeState({ force: true })
-    this.storeHomeHandoff()
     this.navigateToHomePage()
   },
 

@@ -246,14 +246,17 @@ Page({
       return false
     }
 
-    const didStoreRuntimeHandoff = this.prepareRuntimeForGameStart(
-      initializedMatchState
-    )
+    try {
+      this.clearRuntimeMatchState()
+    } catch {
+      // Non-blocking runtime cleanup failure should not prevent navigation.
+    }
+
     const didPersistMatchState = this.persistMatchStateForGameStart(
       initializedMatchState
     )
 
-    if (!didPersistMatchState && !didStoreRuntimeHandoff) {
+    if (!didPersistMatchState) {
       this.startErrorMessage = gettext('setup.saveFailed')
       this.isPersistingMatchState = false
       this.renderSetupScreen()
@@ -274,24 +277,6 @@ Page({
     }
 
     return true
-  },
-
-  prepareRuntimeForGameStart(persistedMatchState) {
-    let didStoreHandoff = false
-
-    try {
-      this.clearRuntimeMatchState()
-    } catch {
-      // Non-blocking runtime cleanup failure should not prevent navigation.
-    }
-
-    try {
-      didStoreHandoff = this.storeSessionHandoff(persistedMatchState) === true
-    } catch {
-      // Non-blocking handoff failure should not prevent navigation.
-    }
-
-    return didStoreHandoff
   },
 
   persistMatchStateForGameStart(matchState) {
@@ -341,21 +326,6 @@ Page({
     } catch {
       return null
     }
-  },
-
-  storeSessionHandoff(persistedMatchState) {
-    const app = this.getAppInstance()
-
-    if (!app) {
-      return false
-    }
-
-    if (!isRecord(app.globalData)) {
-      app.globalData = {}
-    }
-
-    app.globalData.pendingPersistedMatchState = persistedMatchState
-    return true
   },
 
   navigateToGamePage() {
