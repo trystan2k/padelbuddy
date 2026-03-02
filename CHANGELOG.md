@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0](https://github.com/trystan2k/padelbuddy/compare/v1.7.1...v1.8.0) (2026-03-02)
+
+### Features
+
+* add coach-whistle manual finish with 3s confirm and tie-aware summary ([b38bfdc](https://github.com/trystan2k/padelbuddy/commit/b38bfdcfd3c0ca4fcc8ba1a0d5c2658ded9c5302))
+
 ## [1.7.1](https://github.com/trystan2k/padelbuddy/compare/v1.7.0...v1.7.1) (2026-03-01)
 
 ### Code Refactoring
