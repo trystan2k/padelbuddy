@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.2](https://github.com/trystan2k/padelbuddy/compare/v1.10.1...v1.10.2) (2026-03-02)
+
+### Code Refactoring
+
+* remove globaldata session handoffs with deterministic storage access ([8d24073](https://github.com/trystan2k/padelbuddy/commit/8d240737e48b02f4b8aae6040a9f8d520e0cabc3))
+
 ## [1.10.1](https://github.com/trystan2k/padelbuddy/compare/v1.10.0...v1.10.1) (2026-03-02)
 
 ### Code Refactoring
