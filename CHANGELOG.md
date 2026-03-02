@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.1](https://github.com/trystan2k/padelbuddy/compare/v1.10.0...v1.10.1) (2026-03-02)
+
+### Code Refactoring
+
+* unify app and page session persistence paths ([e56e4d8](https://github.com/trystan2k/padelbuddy/commit/e56e4d89b37f10c14d27b6a309235f4e9cb6a1a7))
+
 ## [1.10.0](https://github.com/trystan2k/padelbuddy/compare/v1.9.0...v1.10.0) (2026-03-02)
 
 ### Features
