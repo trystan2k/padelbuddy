@@ -1,10 +1,9 @@
 import { createHistoryStack } from './history-stack.js'
 import { createInitialMatchState } from './match-state.js'
-import { clearMatchState } from './match-storage.js'
-import { clearState } from './storage.js'
+import { clearActiveSession } from './match-storage.js'
 
 /**
- * Clears both schema and legacy persisted match session keys.
+ * Clears the active session through the unified API.
  * This operation is best-effort and idempotent.
  *
  * @returns {{ clearedSchema: boolean, clearedLegacy: boolean }}
@@ -16,17 +15,12 @@ export function clearActiveMatchSession() {
   }
 
   try {
-    clearMatchState()
+    // Unified clear removes canonical and legacy compatibility artifacts.
+    clearActiveSession()
     result.clearedSchema = true
-  } catch {
-    // Ignore schema-clear failures to keep reset flow resilient.
-  }
-
-  try {
-    clearState()
     result.clearedLegacy = true
   } catch {
-    // Ignore legacy-clear failures to keep reset flow resilient.
+    // Ignore clear failures to keep reset flow resilient.
   }
 
   return result

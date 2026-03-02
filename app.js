@@ -5,9 +5,8 @@ import {
   isMatchState as isPersistedMatchState,
   MATCH_STATUS as PERSISTED_MATCH_STATUS
 } from './utils/match-state-schema.js'
-import { saveMatchState } from './utils/match-storage.js'
+import { saveActiveSession } from './utils/match-storage.js'
 import { addPoint, removePoint as undoPoint } from './utils/scoring-engine.js'
-import { saveState } from './utils/storage.js'
 
 /**
  * @param {Record<string, unknown>} appInstance
@@ -21,6 +20,35 @@ function applyNextState(appInstance, nextState) {
 
 function isRecord(value) {
   return typeof value === 'object' && value !== null
+}
+
+const STARTUP_MIGRATION_FLAG_KEY = '_didRunLegacySessionMigration'
+
+/**
+ * @param {Record<string, unknown>} appInstance
+ */
+function runStartupSessionMigration(appInstance) {
+  if (!isRecord(appInstance)) {
+    return
+  }
+
+  if (!isRecord(appInstance.globalData)) {
+    appInstance.globalData = {}
+  }
+
+  if (appInstance.globalData[STARTUP_MIGRATION_FLAG_KEY] === true) {
+    return
+  }
+
+  try {
+    migrateLegacySessions({
+      globalData: appInstance.globalData
+    })
+  } catch {
+    // Best-effort startup migration; never block app initialization.
+  } finally {
+    appInstance.globalData[STARTUP_MIGRATION_FLAG_KEY] = true
+  }
 }
 
 /**
@@ -38,22 +66,17 @@ function emergencyPersistMatchState(globalData) {
       return
     }
 
-    // Persist the runtime state blob (fast, no schema conversion needed).
-    saveState(runtimeState)
-
-    // Also persist to the schema key if we have a valid persisted snapshot cached.
-    // game.js keeps the last written schema snapshot in app.globalData._lastPersistedSchemaState
-    // (set below in persistSchemaStateToGlobalData). This avoids needing to re-import
-    // createPersistedMatchStateSnapshot here.
+    // Prefer the latest validated persisted snapshot cached by game.js.
+    // Fallback to the runtime state shape as a best-effort write attempt.
     const schemaSnapshot = globalData?._lastPersistedSchemaState
-
-    if (
+    const stateToPersist =
       isRecord(schemaSnapshot) &&
       isPersistedMatchState(schemaSnapshot) &&
       schemaSnapshot.status === PERSISTED_MATCH_STATUS.ACTIVE
-    ) {
-      saveMatchState(schemaSnapshot)
-    }
+        ? schemaSnapshot
+        : runtimeState
+
+    saveActiveSession(stateToPersist)
   } catch {
     // Never let app.onDestroy throw — it would prevent proper app teardown.
   }
@@ -93,13 +116,7 @@ App({
       hmApp.setScreenKeep(true)
     }
 
-    try {
-      migrateLegacySessions({
-        globalData: this.globalData
-      })
-    } catch {
-      // Best-effort startup migration; never block app initialization.
-    }
+    runStartupSessionMigration(this)
   },
 
   onDestroy(_options) {

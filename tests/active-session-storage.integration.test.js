@@ -64,7 +64,7 @@ async function loadAppDefinition() {
   return capturedDefinition
 }
 
-test('app startup triggers one safe migration from legacy runtime storage', async () => {
+test('app startup migration is one-time and idempotent per app lifecycle', async () => {
   const runtimeLegacySession = loadLegacyFixture('legacy-runtime-session.json')
   const { mock, fileStore } = createHmFsMock({
     [LEGACY_RUNTIME_FILENAME]: JSON.stringify(runtimeLegacySession)
@@ -90,10 +90,21 @@ test('app startup triggers one safe migration from legacy runtime storage', asyn
     assert.equal(fileStore.has(CANONICAL_FILENAME), true)
     assert.equal(fileStore.has(LEGACY_RUNTIME_FILENAME), false)
 
+    const pendingSessionHandoff = {
+      status: 'active',
+      updatedAt: 1700000009999
+    }
+    app.globalData.pendingPersistedMatchState = pendingSessionHandoff
+
     app.onCreate.call(app, {})
     const secondPassSession = getActiveSession()
     assert.deepEqual(secondPassSession, migratedSession)
     assert.equal(fileStore.has(LEGACY_ACTIVE_FILENAME), false)
+    assert.equal(
+      app.globalData.pendingPersistedMatchState,
+      pendingSessionHandoff,
+      'startup migration should execute once per app lifecycle'
+    )
   } finally {
     if (typeof originalHmFS === 'undefined') {
       delete globalThis.hmFS

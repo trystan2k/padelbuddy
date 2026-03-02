@@ -7,7 +7,7 @@ import {
   saveMatchToHistory
 } from '../utils/match-history-storage.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
-import { loadMatchState } from '../utils/match-storage.js'
+import { getActiveSession } from '../utils/match-storage.js'
 import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
@@ -295,7 +295,7 @@ Page({
     let persistedMatchState = null
 
     try {
-      persistedMatchState = loadMatchState()
+      persistedMatchState = getActiveSession()
     } catch {
       persistedMatchState = null
     }

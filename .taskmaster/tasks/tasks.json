@@ -3540,13 +3540,78 @@
         "description": "Refactor pages/app and related pages to exclusively use the Unified active-session storage service API, removing all direct reads/writes to dual runtime persistence locations while maintaining existing functionality.",
         "details": "This task refactors the application to eliminate dual runtime persistence access patterns by consolidating all session data operations through the unified storage service defined in PAD-54.\n\n**Implementation Steps:**\n\n1. **Audit Current Usage:**\n   - Search `pages/app.js` and related page files for direct access to `globalData`, `localStorage`, or runtime persistence mechanisms\n   - Identify all code paths that read/write session data outside of the unified service\n   - Document all access patterns found and their purposes\n\n2. **Replace Direct Reads:**\n   - Replace all direct session reads (e.g., `globalData.activeSession`, storage.getItem calls) with calls to `getActiveSession()` from the unified service\n   - Update initialization code in `pages/app.js` to use the service on app startup\n   - Ensure null handling matches existing behavior for missing sessions\n\n3. **Replace Direct Writes:**\n   - Replace all direct session writes with calls to `saveActiveSession(session)` from the unified service\n   - Update match state change handlers throughout the app to use the service API\n   - Ensure proper error handling for save failures\n\n4. **Remove Dual-Path Logic:**\n   - Delete any code that maintains parallel copies of session data in multiple storage locations\n   - Remove conditional logic that switches between storage backends\n   - Clean up any unused imports related to legacy persistence methods\n\n5. **Add Migration Safety Checks:**\n   - Implement a one-time migration step on app launch to consolidate fragmented session data\n   - Check for existing session data in legacy locations and migrate to the unified format\n   - Add logging to track migration status for debugging\n\n6. **Pages to Update:**\n   - `pages/app.js` (main entry point)\n   - `pages/game.js` (active gameplay)\n   - `pages/summary.js` (match completion)\n   - `pages/setup.js` (match configuration)\n   - Any other pages accessing session data\n\n**Code Pattern Example:**\n\nBefore:\n```javascript\n// Legacy direct access\nconst session = globalData.activeSession || storage.getItem('ACTIVE_MATCH_SESSION');\nglobalData.currentSession = updatedSession;\nstorage.setItem('BACKUP_SESSION', JSON.stringify(updatedSession));\n```\n\nAfter:\n```javascript\n// Unified service access\nimport { getActiveSession, saveActiveSession } from '../services/session-storage.js';\n\nconst session = getActiveSession();\nawait saveActiveSession(updatedSession);\n```",
         "testStrategy": "1. **Functional Testing:**\n   - Run the application and verify that active session loads correctly on startup\n   - Complete a full match flow (setup → play → summary) and confirm session state persists correctly\n   - Test app restart scenarios: save session mid-game, close app, reopen, and verify state is restored\n   - Verify 'Start New Game' properly clears the session using the unified service\n\n2. **Regression Testing:**\n   - Run existing unit tests for pages/app and related pages to ensure no behavioral changes\n   - Execute integration tests that exercise session persistence flows\n   - Test edge cases: empty sessions, corrupted sessions, concurrent access patterns\n\n3. **Migration Testing:**\n   - Simulate a user with legacy session data in multiple storage locations\n   - Launch app and verify data is consolidated correctly without loss\n   - Confirm that after migration, only the unified storage location contains session data\n\n4. **Code Verification:**\n   - Search codebase for any remaining direct access to legacy storage APIs\n   - Verify no references to deprecated persistence methods remain\n   - Confirm all session-related imports point to the unified service\n\n5. **Device Testing:**\n   - Test on target devices (GTR-3, GTS-3) to verify storage operations work correctly\n   - Confirm UTF-8 encoding handles special characters in session data",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "53",
           "54"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit pages for direct persistence access patterns",
+            "description": "Search and document all direct access to globalData, localStorage, and runtime persistence in pages/app.js and related page files",
+            "dependencies": [],
+            "details": "Perform comprehensive code audit of pages/app.js, pages/game.js, pages/summary.js, pages/setup.js to identify all direct storage access patterns. Search for globalData.activeSession, storage.getItem, storage.setItem, and any other direct persistence calls. Document each location with file name, line number, current access pattern, and purpose (read/write). Create a mapping document for the refactoring phase.",
+            "status": "done",
+            "testStrategy": "Manual verification: run grep searches for key patterns (globalData, localStorage, storage.getItem, storage.setItem) across all page files and verify all instances are documented",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T18:59:20.077Z"
+          },
+          {
+            "id": 2,
+            "title": "Replace direct session reads with unified service API",
+            "description": "Replace all direct session read operations with getActiveSession() calls from the unified storage service",
+            "dependencies": [
+              1
+            ],
+            "details": "Import getActiveSession from services/session-storage.js in all affected page files. Replace direct reads like globalData.activeSession, storage.getItem('ACTIVE_MATCH_SESSION'), and any dual-path read logic with getActiveSession(). Update initialization code in pages/app.js to use the service on app startup. Ensure null handling matches existing behavior for missing sessions. Test that all session reads now go through the unified service.",
+            "status": "done",
+            "testStrategy": "Unit tests: verify getActiveSession is called correctly in all scenarios, including missing sessions. Integration tests: confirm app loads with existing session data",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T19:05:16.681Z"
+          },
+          {
+            "id": 3,
+            "title": "Replace direct session writes with unified service API",
+            "description": "Replace all direct session write operations with saveActiveSession() calls from the unified storage service",
+            "dependencies": [
+              2
+            ],
+            "details": "Import saveActiveSession from services/session-storage.js in affected page files. Replace all direct writes like globalData.currentSession, storage.setItem('BACKUP_SESSION'), and dual-path write logic with await saveActiveSession(session). Update match state change handlers throughout pages/game.js, pages/summary.js to use the service API. Add proper error handling for save failures using try/catch blocks. Ensure all session mutations persist through the unified service.",
+            "status": "done",
+            "testStrategy": "Write unit tests mocking saveActiveSession to verify it's called with correct session data. Test error handling paths when save operations fail",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T19:11:30.549Z"
+          },
+          {
+            "id": 4,
+            "title": "Remove dual-path logic and legacy persistence code",
+            "description": "Clean up all code maintaining parallel copies of session data and remove conditional storage backend switching logic",
+            "dependencies": [
+              3
+            ],
+            "details": "Delete code that maintains parallel copies of session data in multiple storage locations. Remove conditional logic that switches between storage backends. Clean up unused imports related to legacy persistence methods (storage, globalData references). Remove any backup/restore dual-path mechanisms. Verify no references remain to old persistence keys like 'ACTIVE_MATCH_SESSION', 'BACKUP_SESSION'. Ensure code is clean and only references the unified service.",
+            "status": "done",
+            "testStrategy": "Static analysis: grep for legacy storage keys and direct access patterns to confirm removal. Code review to ensure no dual-path logic remains",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T19:17:01.757Z"
+          },
+          {
+            "id": 5,
+            "title": "Implement migration safety checks and verify functionality",
+            "description": "Add one-time migration logic for legacy session data and verify complete functionality across app lifecycle",
+            "dependencies": [
+              4
+            ],
+            "details": "Implement one-time migration step in pages/app.js on app launch to check for existing session data in legacy locations and migrate to unified format. Add a migration flag in storage to prevent re-running. Add logging to track migration status for debugging. Verify full match flow works: setup → play → summary with session persistence. Test app restart scenarios: save session mid-game, close, reopen, verify state restoration. Confirm no data loss during migration.",
+            "status": "done",
+            "testStrategy": "Integration tests: full match flow from setup to completion. Restart tests: save mid-game, close app, reopen, verify session restored. Migration tests: create legacy data, launch app, verify data migrated correctly to unified format",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-02T19:31:27.938Z"
+          }
+        ],
+        "updatedAt": "2026-03-02T19:31:27.938Z"
       },
       {
         "id": "57",
@@ -3750,9 +3815,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-02T14:18:07.285Z",
+      "lastModified": "2026-03-02T19:31:27.939Z",
       "taskCount": 70,
-      "completedCount": 51,
+      "completedCount": 52,
       "tags": [
         "master"
       ]

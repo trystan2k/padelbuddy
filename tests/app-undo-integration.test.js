@@ -5,8 +5,7 @@ import { createScoreViewModel } from '../page/score-view-model.js'
 import { STORAGE_KEY as ACTIVE_MATCH_SESSION_KEY } from '../utils/match-state-schema.js'
 import { matchStorage } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
-import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
-import { createHmFsMock, readFileStoreKey } from './helpers/hmfs-mock.js'
+import { createHmFsMock } from './helpers/hmfs-mock.js'
 import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let appImportCounter = 0
@@ -71,7 +70,7 @@ test('app.onDestroy persists active match state as emergency save', async () => 
   const originalMatchStorageAdapter = matchStorage.adapter
 
   const savedSchemaKeys = []
-  const { mock, fileStore } = createHmFsMock()
+  const { mock } = createHmFsMock()
 
   globalThis.hmFS = mock
 
@@ -117,13 +116,6 @@ test('app.onDestroy persists active match state as emergency save', async () => 
 
     app.onDestroy()
 
-    // Runtime state should have been written to file
-    const runtimeStored = readFileStoreKey(fileStore, MATCH_STATE_STORAGE_KEY)
-    assert.ok(
-      runtimeStored !== null,
-      'runtime state was not persisted on app.onDestroy'
-    )
-
     // Schema state should have been passed to the matchStorage adapter
     assert.ok(
       savedSchemaKeys.length > 0,
@@ -144,7 +136,7 @@ test('app.onDestroy skips save when match state is not active', async () => {
   const originalMatchStorageAdapter = matchStorage.adapter
 
   const savedSchemaKeys = []
-  const { mock, fileStore } = createHmFsMock()
+  const { mock } = createHmFsMock()
 
   globalThis.hmFS = mock
 
@@ -176,8 +168,6 @@ test('app.onDestroy skips save when match state is not active', async () => {
 
     app.onDestroy()
 
-    const runtimeStored = readFileStoreKey(fileStore, MATCH_STATE_STORAGE_KEY)
-    assert.equal(runtimeStored, null, 'should not persist finished state')
     assert.equal(
       savedSchemaKeys.length,
       0,
