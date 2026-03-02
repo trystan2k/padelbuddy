@@ -75,3 +75,31 @@ Then expand later with:
 - Zeus CLI: <https://docs.zepp.com/docs/guides/tools/cli/>
 - Simulator: <https://docs.zepp.com/docs/guides/tools/simulator/>
 - Samples: <https://docs.zepp.com/docs/samples/>
+
+## Testing
+
+Run all tests:
+
+```bash
+npm test
+```
+
+### Unification Regression Suite
+
+The unification regression suite validates the persistence unification work (Tasks 53-58) covering:
+
+- **Schema validation**: Canonical schema structure, field validation, serialization round-trips
+- **Storage CRUD**: getActiveSession/saveActiveSession/clearActiveSession operations
+- **Migration**: Legacy session migration precedence, idempotency, cleanup
+- **Runtime consistency**: Save/load/update cycles, timing field preservation, restart persistence
+
+Run the unification suite specifically:
+
+```bash
+npm run test:unification
+```
+
+#### Interpreting Test Failures
+
+- **Unit test failures** (`*.test.js`): Typically indicate schema validation, serialization, or single-function behavior issues
+- **Integration test failures** (`*.integration.test.js`): Typically indicate migration, storage, or cross-module interaction issues

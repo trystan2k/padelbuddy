@@ -7,6 +7,7 @@
   "scripts": {
     "prepare": "husky",
     "test": "node --test --test-isolation=process --test-concurrency=1",
+    "test:unification": "node --test --test-isolation=process --test-concurrency=1 'tests/unification-regression/**/*.test.js'",
     "lint": "biome lint --error-on-warnings .",
     "lint:fix": "biome lint --error-on-warnings --write .",
     "format": "biome format --error-on-warnings --write .",
