@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.3](https://github.com/trystan2k/padelbuddy/compare/v1.10.2...v1.10.3) (2026-03-02)
+
+### Bug Fixes
+
+* stabilize matchStartTime initialization and update storage schema with tests ([09bae8a](https://github.com/trystan2k/padelbuddy/commit/09bae8a00e721e260d720e7c40d08cf356c5d161))
+
 ## [1.10.2](https://github.com/trystan2k/padelbuddy/compare/v1.10.1...v1.10.2) (2026-03-02)
 
 ### Code Refactoring
