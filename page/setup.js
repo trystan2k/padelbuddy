@@ -6,12 +6,11 @@ import { createPageWithFooterButton } from '../utils/layout-presets.js'
 import { initializeMatchState } from '../utils/match-session-init.js'
 import { MATCH_STATUS } from '../utils/match-state-schema.js'
 import {
-  clearMatchState,
-  loadMatchState,
-  saveMatchState
+  clearActiveSession,
+  getActiveSession,
+  saveActiveSession
 } from '../utils/match-storage.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
-import { clearState } from '../utils/storage.js'
 import {
   createBackground,
   createButton,
@@ -297,10 +296,10 @@ Page({
 
   persistMatchStateForGameStart(matchState) {
     try {
-      clearMatchState()
-      saveMatchState(matchState)
+      clearActiveSession()
+      saveActiveSession(matchState)
 
-      const persistedMatchState = loadMatchState()
+      const persistedMatchState = getActiveSession()
 
       return _isVerifiedActiveSession(
         persistedMatchState,
@@ -322,8 +321,8 @@ Page({
     // from a previous match being used in the new game
     app.globalData.matchState = null
 
-    // Also clear the runtime storage to ensure fresh state is loaded
-    clearState()
+    // Also clear the persisted active session to ensure fresh state is loaded
+    clearActiveSession()
   },
 
   getAppInstance() {

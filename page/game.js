@@ -6,11 +6,10 @@ import { resolveLayout } from '../utils/layout-engine.js'
 import { createScorePageLayout } from '../utils/layout-presets.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
-import { loadMatchState, saveMatchState } from '../utils/match-storage.js'
+import { getActiveSession, saveActiveSession } from '../utils/match-storage.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { addPoint, removePoint } from '../utils/scoring-engine.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
-import { loadState, saveState } from '../utils/storage.js'
 import {
   createBackground,
   createButton,
@@ -911,7 +910,7 @@ Page({
     }
 
     try {
-      let persistedMatchState = loadMatchState()
+      let persistedMatchState = getActiveSession()
 
       // Fallback: if SysProGetChars did not return the state written by setup.js
       // (e.g. timing issue or unsupported API on this device), consume the handoff
@@ -1052,11 +1051,14 @@ Page({
     if (isValidRuntimeMatchState(app.globalData.matchState)) {
       runtimeMatchState = cloneMatchState(app.globalData.matchState)
     } else {
-      const persistedRuntimeState = loadState()
+      const persistedSessionState = getActiveSession()
 
       runtimeMatchState =
-        persistedRuntimeState !== null
-          ? cloneMatchState(persistedRuntimeState)
+        persistedSessionState !== null
+          ? mergeRuntimeStateWithPersistedSession(
+              createInitialMatchState(),
+              persistedSessionState
+            )
           : createInitialMatchState()
     }
 
@@ -1200,8 +1202,6 @@ Page({
       return
     }
 
-    saveState(runtimeState)
-
     const persistedMatchStateSnapshot = createPersistedMatchStateSnapshot(
       runtimeState,
       this.persistedSessionState
@@ -1209,9 +1209,8 @@ Page({
 
     if (persistedMatchStateSnapshot !== null) {
       try {
-        // saveMatchState internally calls isMatchState (schema validator).
-        // Wrap in try/catch so a schema crash never breaks gameplay.
-        saveMatchState(persistedMatchStateSnapshot)
+        // Wrap persistence in try/catch so a write-time crash never breaks gameplay.
+        saveActiveSession(persistedMatchStateSnapshot)
         this.persistedSessionState = cloneMatchState(
           persistedMatchStateSnapshot
         )

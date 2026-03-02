@@ -1,7 +1,7 @@
 import {
-  clearActiveSession,
-  getActiveSession,
-  saveActiveSession
+  getActiveSession as readActiveSession,
+  clearActiveSession as removeActiveSession,
+  saveActiveSession as writeActiveSession
 } from './active-session-storage.js'
 import {
   deserializeMatchState,
@@ -103,7 +103,7 @@ export class MatchStorage {
       return
     }
 
-    saveActiveSession(state, { preserveUpdatedAt: true })
+    writeActiveSession(state, { preserveUpdatedAt: true })
   }
 
   /**
@@ -131,7 +131,7 @@ export class MatchStorage {
       }
     }
 
-    const activeSession = getActiveSession()
+    const activeSession = readActiveSession()
     return isMatchState(activeSession) ? activeSession : null
   }
 
@@ -142,20 +142,41 @@ export class MatchStorage {
       } catch {
         // Ignore persistence errors to keep app runtime stable.
       }
-      return
     }
 
-    clearActiveSession()
+    // Always clear canonical/legacy filesystem artifacts as a safety-net.
+    removeActiveSession()
   }
 }
 
 export const matchStorage = new MatchStorage()
 
 /**
+ * Compatibility helper for app/page flows using the unified session API.
+ * Routes through MatchStorage so tests can continue to override the adapter.
+ *
+ * @returns {import('./match-state-schema.js').MatchState | null}
+ */
+export function getActiveSession() {
+  return matchStorage.loadMatchState()
+}
+
+/**
+ * @param {import('./match-state-schema.js').MatchState} state
+ */
+export function saveActiveSession(state) {
+  matchStorage.saveMatchState(state)
+}
+
+export function clearActiveSession() {
+  matchStorage.clearMatchState()
+}
+
+/**
  * @param {import('./match-state-schema.js').MatchState} state
  */
 export function saveMatchState(state) {
-  matchStorage.saveMatchState(state)
+  saveActiveSession(state)
 }
 
 /**
@@ -166,7 +187,7 @@ export function loadMatchState() {
 }
 
 export function clearMatchState() {
-  matchStorage.clearMatchState()
+  clearActiveSession()
 }
 
 /**

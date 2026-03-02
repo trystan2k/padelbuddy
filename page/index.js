@@ -5,7 +5,7 @@ import { resolveLayout } from '../utils/layout-engine.js'
 import { createPageWithFooterButton } from '../utils/layout-presets.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
-import { loadMatchState } from '../utils/match-storage.js'
+import { getActiveSession } from '../utils/match-storage.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
 import { startNewMatchFlow } from '../utils/start-new-match-flow.js'
 import {
@@ -374,7 +374,7 @@ Page({
     let fromHandoff = false
 
     try {
-      savedMatchState = loadMatchState()
+      savedMatchState = getActiveSession()
     } catch {
       savedMatchState = null
     }
@@ -515,7 +515,7 @@ Page({
     let savedMatchState = null
 
     try {
-      savedMatchState = loadMatchState()
+      savedMatchState = getActiveSession()
     } catch {
       this.savedMatchState = null
       this.hasSavedGame = false
