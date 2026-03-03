@@ -27,7 +27,9 @@ export function getScreenMetrics() {
     return { width: 390, height: 450, isRound: false }
   }
 
-  const { width, height } = hmSetting.getDeviceInfo()
+  const deviceInfo = hmSetting.getDeviceInfo()
+  const width = ensureNumber(deviceInfo?.width, 390)
+  const height = ensureNumber(deviceInfo?.height, 450)
   const isRound = Math.abs(width - height) <= Math.round(width * 0.04)
 
   return { width, height, isRound }
