@@ -15,6 +15,7 @@ import {
   serializeMatchState,
   toIsoTimestampSafe
 } from './match-state-schema.js'
+import { sessionsEqual } from './object-helpers.js'
 import {
   clearLegacyActiveSession,
   MATCH_STATE_STORAGE_KEY as LEGACY_RUNTIME_STORAGE_KEY,
@@ -529,11 +530,7 @@ function pickMostRecentCandidate(candidates) {
  * @returns {boolean}
  */
 function areSessionsEquivalent(leftSession, rightSession) {
-  try {
-    return JSON.stringify(leftSession) === JSON.stringify(rightSession)
-  } catch {
-    return false
-  }
+  return sessionsEqual(leftSession, rightSession)
 }
 
 /**

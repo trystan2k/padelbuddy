@@ -10,6 +10,7 @@ import {
   toIsoTimestampSafe
 } from '../utils/match-state-schema.js'
 import { getActiveSession, saveActiveSession } from '../utils/match-storage.js'
+import { scoresEqual } from '../utils/object-helpers.js'
 import { addPoint, removePoint } from '../utils/scoring-engine.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
 import {
@@ -544,11 +545,9 @@ function isHistoryStackLike(historyStack) {
 }
 
 function isSameMatchState(leftState, rightState) {
-  try {
-    return JSON.stringify(leftState) === JSON.stringify(rightState)
-  } catch {
-    return false
-  }
+  // Use key-specific comparison for hot-path performance
+  // This avoids JSON.stringify overhead while comparing all relevant state keys
+  return scoresEqual(leftState, rightState)
 }
 
 function getScoringTeamForTransition(previousState, nextState) {

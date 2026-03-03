@@ -190,6 +190,7 @@ async function loadGamePageDefinition() {
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
+  const objectHelpersUrl = toProjectFileUrl('utils/object-helpers.js')
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -239,6 +240,10 @@ async function loadGamePageDefinition() {
     .replace(
       "from '../utils/ui-components.js'",
       `from '${uiComponentsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/object-helpers.js'",
+      `from '${objectHelpersUrl.href}'`
     )
 
   const moduleUrl =
