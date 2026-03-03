@@ -3944,12 +3944,78 @@
         "description": "Hot-path code currently relies on JSON.stringify for object comparison or cloning which affects performance. Replace hot-path stringify usage with faster, explicit comparison or shallow copy helpers in the shared utilities.",
         "details": "Implementation Steps:\n\n1. **Audit Hot-Path Usage**:\n   - Identify all locations in performance-sensitive code paths where JSON.stringify is used for:\n     - Object comparison (e.g., detecting state changes, equality checks)\n     - Object cloning (creating shallow copies for state updates)\n   - Profile the codebase to determine which stringify calls are in hot paths (frequently executed during gameplay)\n   - Document each found location with context (file, function, frequency, and specific use case)\n\n2. **Implement Performance Helpers**:\n   - Create `shallowClone(obj)` helper that creates a shallow copy using Object spread or Object.assign\n   - Create `shallowEqual(obj1, obj2)` helper that performs efficient shallow comparison without stringification\n   - Create key-specific comparison helpers for common patterns (e.g., `scoresEqual`, `stateKeysEqual`)\n   - Add JSDoc comments explaining performance characteristics and appropriate use cases\n\n3. **Replace Hot-Path Stringify Usage**:\n   - Replace each identified hot-path JSON.stringify comparison with `shallowEqual` or appropriate helper\n   - Replace each identified hot-path JSON.stringify cloning with `shallowClone`\n   - Ensure semantic equivalence - deep clones should remain unchanged if deep copy is required\n   - Focus on performance-sensitive areas:\n     - Score update operations (every point increment/decrement)\n     - State change detection in rendering loops\n     - History stack operations (pushing/popping state)\n     - Session save/load operations during gameplay\n\n4. **Add Performance Benchmarks**:\n   - Create benchmark suite comparing old (JSON.stringify) vs new (helpers) approaches\n   - Benchmark scenarios: object comparison (small/large objects), shallow cloning (various sizes)\n   - Include memory allocation metrics in benchmarks (heap usage, GC frequency)\n   - Set performance targets (e.g., 50% reduction in allocations, 2x faster comparisons)\n   - Add benchmark results as comments or documentation showing improvement\n\n5. **Code Review Considerations**:\n   - Verify no semantics changed for deep clone requirements (e.g., for persistence operations)\n   - Ensure all hot paths have been addressed through profiling\n   - Validate helpers handle edge cases (null, undefined, circular refs where applicable)\n   - Confirm no regressions in functionality after replacements\n\nNote: Do not change semantics of deep cloning where required - only replace stringify when shallow operations are sufficient and performance-critical.",
         "testStrategy": "1. **Performance Benchmarking**:\n   - Run benchmark suite comparing old vs new implementations\n   - Verify benchmarks show improvement in execution speed and/or reduced memory allocations\n   - Document benchmark results showing performance gains meet targets\n\n2. **Functional Correctness Tests**:\n   - Unit tests for `shallowClone`: verify it creates proper shallow copies and handles edge cases\n   - Unit tests for `shallowEqual`: verify it correctly compares objects, returns expected results for equal/unequal objects\n   - Regression tests for all replaced code paths to ensure behavior is unchanged\n   - Edge case tests: null/undefined inputs, circular references, nested objects, empty objects\n\n3. **Integration Testing**:\n   - Play full matches and verify score tracking works correctly without any regressions\n   - Test state persistence to ensure session saves/loads properly with new helpers\n   - Verify undo/redo functionality maintains correctness after replacing stringify usage\n   - Test history operations (push, pop, navigation) work as expected\n\n4. **Regression Testing**:\n   - Run the full regression suite from Task 59 to ensure no regressions introduced\n   - Verify all existing tests pass after performance-related changes\n\n5. **Manual Verification**:\n   - Profile the application during gameplay to confirm reduced allocations using dev tools\n   - Monitor memory usage during extended play sessions to verify improvement",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "59"
         ],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Audit hot-path JSON.stringify usage",
+            "description": "Identify all locations in performance-sensitive code paths where JSON.stringify is used for object comparison or cloning operations.",
+            "dependencies": [],
+            "details": "Search the codebase systematically for JSON.stringify usage, focusing on performance-sensitive areas: score update operations, state change detection in rendering loops, history stack operations (pushing/popping state), and session save/load operations during gameplay. Profile the codebase to confirm which stringify calls are actual hot paths. Document each found location with full context including file path, function name, execution frequency, and specific use case (comparison vs cloning).",
+            "status": "done",
+            "testStrategy": "Review audit documentation to ensure all hot-path stringify usages are identified with complete context including file, function, and frequency metrics.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-03T08:48:30.611Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement performance helper utilities",
+            "description": "Create efficient helper functions for shallow cloning and comparison to replace JSON.stringify usage.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement shallowClone(obj) helper using Object spread operator or Object.assign for creating shallow copies. Implement shallowEqual(obj1, obj2) helper for efficient shallow comparison without stringification. Create key-specific comparison helpers for common patterns (e.g., scoresEqual, stateKeysEqual). Add comprehensive JSDoc comments explaining performance characteristics, appropriate use cases, and limitations (e.g., shallow vs deep). Place all helpers in shared utilities module for reuse.",
+            "status": "done",
+            "testStrategy": "Unit tests covering all helper functions with edge cases including null, undefined, objects with different prototypes, and various object sizes.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-03T08:48:30.614Z"
+          },
+          {
+            "id": 3,
+            "title": "Replace stringify in hot-path code",
+            "description": "Replace identified hot-path JSON.stringify calls with the new performance helper functions.",
+            "dependencies": [
+              2
+            ],
+            "details": "Replace each identified hot-path JSON.stringify comparison with shallowEqual or appropriate key-specific helper. Replace each identified hot-path JSON.stringify cloning operation with shallowClone. Ensure semantic equivalence by carefully analyzing each replacement - preserve deep clones where actually required (e.g., for persistence operations). Focus implementation on performance-critical areas documented in audit. Maintain code comments explaining why shallow operations are safe for each use case.",
+            "status": "done",
+            "testStrategy": "Functional tests verifying behavior remains unchanged after each replacement, particularly for state updates, score tracking, and history operations.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-03T08:48:30.622Z"
+          },
+          {
+            "id": 4,
+            "title": "Create performance benchmark suite",
+            "description": "Implement benchmarks comparing old JSON.stringify approach vs new helper approach to validate performance improvements.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create comprehensive benchmark suite testing object comparison (small and large objects) and shallow cloning operations across various object sizes. Include memory allocation metrics tracking heap usage and garbage collection frequency. Define clear performance targets: 50% reduction in memory allocations and 2x faster comparisons. Run benchmarks comparing original stringify-based code vs new helper implementations. Document benchmark results showing achieved improvements, include before/after metrics as comments or documentation.",
+            "status": "done",
+            "testStrategy": "Execute benchmark suite and verify results meet or exceed performance targets (reduced allocations, faster execution times).",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-03T08:48:30.625Z"
+          },
+          {
+            "id": 5,
+            "title": "Validate and review all changes",
+            "description": "Final validation ensuring no regressions, correct semantics, and documented performance improvements.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Verify no semantics were changed for deep clone requirements (particularly persistence operations that need deep copies). Confirm all hot paths identified in audit have been addressed through the replacement work. Validate helper functions properly handle all edge cases (null, undefined, circular references where applicable). Review benchmark results to confirm performance gains meet established targets. Conduct final code review focusing on correctness, performance characteristics, and documentation completeness.",
+            "status": "done",
+            "testStrategy": "Execute full integration test suite and perform manual gameplay testing to verify no functional regressions. Confirm benchmark documentation is complete and shows improvement.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-03T08:48:30.629Z"
+          }
+        ],
+        "updatedAt": "2026-03-03T08:48:30.629Z"
       },
       {
         "id": "62",
@@ -4082,9 +4148,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-03T07:05:50.948Z",
+      "lastModified": "2026-03-03T08:48:30.629Z",
       "taskCount": 70,
-      "completedCount": 56,
+      "completedCount": 57,
       "tags": [
         "master"
       ]
