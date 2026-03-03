@@ -158,3 +158,31 @@ function decodeString(bytes) {
   }
   return str
 }
+
+/**
+ * Derives the canonical filename from the active session file path.
+ * Mirrors the path extraction logic in active-session-storage.js.
+ * @type {string}
+ */
+export const CANONICAL_FILENAME = 'active_session.json'
+
+/**
+ * Executes a callback with a mocked hmFS global.
+ * Restores the original hmFS (or removes it) after callback completes.
+ * @param {object} mock - The mock hmFS object from createHmFsMock()
+ * @param {() => void} callback - The function to execute with mocked hmFS
+ */
+export function withMockedHmFs(mock, callback) {
+  const originalHmFS = globalThis.hmFS
+  globalThis.hmFS = mock
+
+  try {
+    callback()
+  } finally {
+    if (typeof originalHmFS === 'undefined') {
+      delete globalThis.hmFS
+    } else {
+      globalThis.hmFS = originalHmFS
+    }
+  }
+}
