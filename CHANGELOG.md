@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.2](https://github.com/trystan2k/padelbuddy/compare/v1.11.1...v1.11.2) (2026-03-03)
+
+### Code Refactoring
+
+* split game screen into focused modules and restore interactions ([e9ed7bf](https://github.com/trystan2k/padelbuddy/commit/e9ed7bfbc37207463214a71c499474322dadaf8e))
+
 ## [1.11.1](https://github.com/trystan2k/padelbuddy/compare/v1.11.0...v1.11.1) (2026-03-03)
 
 ### Code Refactoring
