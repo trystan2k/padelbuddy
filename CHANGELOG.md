@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.1](https://github.com/trystan2k/padelbuddy/compare/v1.11.0...v1.11.1) (2026-03-03)
+
+### Code Refactoring
+
+* remove JSON.stringify from hot-path to improve performance ([abdc099](https://github.com/trystan2k/padelbuddy/commit/abdc0998e02283e03e1dcf764f076ab07e2c7253))
+
 ## [1.11.0](https://github.com/trystan2k/padelbuddy/compare/v1.10.3...v1.11.0) (2026-03-03)
 
 ### Features
