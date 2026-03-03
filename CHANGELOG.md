@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.3](https://github.com/trystan2k/padelbuddy/compare/v1.11.2...v1.11.3) (2026-03-03)
+
+### Code Refactoring
+
+* consolidate screen metrics helpers into screen-utils.js ([39b0dad](https://github.com/trystan2k/padelbuddy/commit/39b0dad053864ebacd7b80449d7bd74aac8cc3ab))
+
 ## [1.11.2](https://github.com/trystan2k/padelbuddy/compare/v1.11.1...v1.11.2) (2026-03-03)
 
 ### Code Refactoring
