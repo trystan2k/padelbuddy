@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0](https://github.com/trystan2k/padelbuddy/compare/v1.10.3...v1.11.0) (2026-03-03)
+
+### Features
+
+* add unification regression suite ([43b409d](https://github.com/trystan2k/padelbuddy/commit/43b409d0f506fa89e70359d445a41efebe977e11))
+
+### Code Refactoring
+
+* consolidate shared constants and validation helpers ([e7d28e1](https://github.com/trystan2k/padelbuddy/commit/e7d28e108bb2f054ff5222050a6a972950d7282a))
+
 ## [1.10.3](https://github.com/trystan2k/padelbuddy/compare/v1.10.2...v1.10.3) (2026-03-02)
 
 ### Bug Fixes
