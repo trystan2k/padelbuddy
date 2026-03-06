@@ -110,6 +110,7 @@ GitHub (`gh`) typical commands:
 - Review comments: `gh pr view <number|url|branch> --comments`
 - Add review/comment: `gh pr review <number> --comment -b <body>`
 - Edit PR: `gh pr edit <number> --title <title> --body <body>`
+- Request Copilot review: `gh pr edit <number> --add-reviewer @copilot`
 - Change PR status: `gh pr ready <number>` or `gh pr ready <number> --undo`
 - Close or reopen: `gh pr close <number>` / `gh pr reopen <number>`
 - Merge PR: `gh pr merge <number>`
@@ -377,8 +378,12 @@ gh pr create --title "$TITLE" --body "$BODY" --base "$BASE" --head "$BRANCH"
 
 ## PR review
 
-1- If the project uses Github, use Github CLI to Copilot review the pull request
-2- If the project does not use Github, ask the user for help to review the pull request
+1- If the project uses GitHub and the request is to ask Copilot for review, use ONLY this command:
+   `gh pr edit <pr-number> --add-reviewer @copilot`
+2- If that command fails for any reason, STOP immediately and report the failure to the caller.
+3- Do NOT post fallback comments like `@copilot review`.
+4- Do NOT attempt alternate Copilot-trigger mechanisms unless explicitly requested by the user.
+5- If the project does not use GitHub, report that Copilot review request via gh is not supported.
 
 ## Any other git command
 
