@@ -19,6 +19,13 @@ const mockRoundMetrics = {
   isRound: true
 }
 
+const mockSafeTopMetrics = {
+  width: 400,
+  height: 500,
+  isRound: false,
+  safeTop: 48
+}
+
 // ============================================
 // Test 1: File compiles and basic resolution
 // ============================================
@@ -131,6 +138,76 @@ test('expression parsing with subtraction computes correctly', () => {
   // Expected content bottom = 425, so y = 425 - 350 = 75
   // But we're setting bottom position, so content.y should align accordingly
   assert.equal(layout.sections.footer.y, 450)
+})
+
+test('safeTop offsets numeric and percentage top values', () => {
+  const layout = resolveLayout(
+    {
+      sections: {
+        numericTop: { height: 50, top: 10, roundSafeInset: false },
+        percentageTop: { height: 50, top: '10%', roundSafeInset: false }
+      }
+    },
+    mockSafeTopMetrics
+  )
+
+  // numericTop: safeTop (48) + 10
+  assert.equal(layout.sections.numericTop.y, 58)
+
+  // percentageTop: 10% of (height - safeTop) = 10% of 452 = 45.2 -> 45
+  // final top = safeTop + 45
+  assert.equal(layout.sections.percentageTop.y, 93)
+})
+
+test('safeTop affects after, fill, and bottom section placement', () => {
+  const layout = resolveLayout(
+    {
+      sections: {
+        header: { height: '10%', top: 0, roundSafeInset: false },
+        content: { height: 'fill', after: 'header', roundSafeInset: false },
+        footer: { height: '10%', bottom: 0, roundSafeInset: false }
+      }
+    },
+    mockSafeTopMetrics
+  )
+
+  // vertical base is 500 - 48 = 452, so 10% sections are 45px
+  assert.equal(layout.sections.header.y, 48)
+  assert.equal(layout.sections.header.h, 45)
+
+  // Content starts after header.bottom
+  assert.equal(layout.sections.content.y, 93)
+
+  // Fill uses remaining space after fixed sections (45 + 45)
+  assert.equal(layout.sections.content.h, 362)
+
+  // Bottom section stays anchored to physical bottom, clamped by safeTop
+  assert.equal(layout.sections.footer.h, 45)
+  assert.equal(layout.sections.footer.y, 455)
+})
+
+test('metrics.safeTop takes precedence over schema.safeTop', () => {
+  const schema = {
+    safeTop: 12,
+    sections: {
+      header: { top: 0, height: 50, roundSafeInset: false }
+    }
+  }
+
+  const schemaOnlyLayout = resolveLayout(schema, {
+    width: 400,
+    height: 500,
+    isRound: false
+  })
+  assert.equal(schemaOnlyLayout.sections.header.y, 12)
+
+  const metricsOverrideLayout = resolveLayout(schema, {
+    width: 400,
+    height: 500,
+    isRound: false,
+    safeTop: 60
+  })
+  assert.equal(metricsOverrideLayout.sections.header.y, 60)
 })
 
 // ============================================

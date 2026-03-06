@@ -793,6 +793,17 @@ POTENTIAL ACTIONS:
 
 ---
 
+## Copilot PR Review Policy (GitHub)
+
+When the user asks to request a Copilot review on a PR, enforce this strict flow:
+
+1. Use only GitHub CLI reviewer assignment:
+   `gh pr edit <pr-number> --add-reviewer @copilot`
+2. If this command fails (for example, invalid reviewer, permission issue, or CLI error), stop immediately.
+3. Report the failure back to the caller with the exact command and error.
+4. Do not post fallback comments (for example `@copilot review`).
+5. Do not try alternative mechanisms unless the user explicitly asks for them.
+
 ## Anti-Patterns (ALL MODES)
 
 ### Rebase Mode

@@ -26,6 +26,7 @@ import { TOKENS, toPercentage } from './design-tokens.js'
  * @param {Object} [options={}] - Configuration options
  * @param {boolean} [options.hasHeader=true] - Whether to include header section
  * @param {boolean} [options.hasFooter=true] - Whether to include footer section
+ * @param {number} [options.safeTop=0] - Reserved top inset for system UI overlap prevention
  * @param {number|string} [options.headerHeight] - Header height (default: TOKENS.typography.pageTitle * 2 as percentage)
  * @param {number|string} [options.footerHeight] - Footer height (default: TOKENS.typography.button * 2 as percentage)
  * @returns {Object} Layout schema with sections property
@@ -46,6 +47,7 @@ export function createStandardPageLayout(options = {}) {
   const {
     hasHeader = true,
     hasFooter = true,
+    safeTop = 0,
     top = 0,
     bottom = 0,
     bodyGap,
@@ -92,7 +94,7 @@ export function createStandardPageLayout(options = {}) {
     }
   }
 
-  return { sections, elements }
+  return { safeTop, sections, elements }
 }
 
 /**
@@ -122,6 +124,7 @@ export function createPageWithFooterButton(options = {}) {
     footerButtonName = 'footerButton',
     onClick,
     hasHeader = true,
+    safeTop,
     top,
     bottom,
     bodyGap,
@@ -136,6 +139,7 @@ export function createPageWithFooterButton(options = {}) {
   const baseSchema = createStandardPageLayout({
     hasHeader,
     hasFooter: true, // Footer required for button
+    safeTop,
     top,
     bottom,
     bodyGap,
@@ -180,6 +184,7 @@ export function createPageWithFooterButton(options = {}) {
  * @param {number|string} [options.scoreAreaGap] - Gap between header and score area
  * @param {number|string} [options.footerBottom] - Bottom offset for footer section
  * @param {number|string} [options.footerHeight='5%'] - Footer height
+ * @param {number} [options.safeTop=0] - Reserved top inset for system UI overlap prevention
  * @param {boolean} [options.headerRoundSafeInset=false] - Header round screen inset behavior
  * @param {boolean} [options.scoreAreaRoundSafeInset=false] - Score area round screen inset behavior
  * @param {boolean} [options.footerRoundSafeInset=false] - Footer round screen inset behavior
@@ -192,12 +197,14 @@ export function createScorePageLayout(options = {}) {
     scoreAreaGap = toPercentage(TOKENS.spacing.headerToContent),
     footerBottom = toPercentage(TOKENS.spacing.footerBottom),
     footerHeight = '5%',
+    safeTop = 0,
     headerRoundSafeInset = false,
     scoreAreaRoundSafeInset = false,
     footerRoundSafeInset = false
   } = options
 
   return {
+    safeTop,
     sections: {
       header: {
         top: headerTop,

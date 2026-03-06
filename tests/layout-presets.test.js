@@ -9,6 +9,7 @@ import { TOKENS } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
 import {
   createPageWithFooterButton,
+  createScorePageLayout,
   createStandardPageLayout,
   createTwoColumnLayout
 } from '../utils/layout-presets.js'
@@ -32,6 +33,7 @@ const mockRoundMetrics = {
 test('layout-presets module exports all factory functions', () => {
   assert.equal(typeof createStandardPageLayout, 'function')
   assert.equal(typeof createPageWithFooterButton, 'function')
+  assert.equal(typeof createScorePageLayout, 'function')
   assert.equal(typeof createTwoColumnLayout, 'function')
 })
 
@@ -269,6 +271,37 @@ test('default positions use 0 for top and bottom', () => {
   assert.equal(schema.sections.header.top, 0)
   // Footer ends at bottom: 0
   assert.equal(schema.sections.footer.bottom, 0)
+})
+
+test('standard and score presets default safeTop to 0', () => {
+  const standardSchema = createStandardPageLayout()
+  const scoreSchema = createScorePageLayout()
+
+  assert.equal(standardSchema.safeTop, 0)
+  assert.equal(scoreSchema.safeTop, 0)
+})
+
+test('presets preserve provided safeTop value', () => {
+  const standardSchema = createStandardPageLayout({ safeTop: 48 })
+  const scoreSchema = createScorePageLayout({ safeTop: 36 })
+
+  assert.equal(standardSchema.safeTop, 48)
+  assert.equal(scoreSchema.safeTop, 36)
+})
+
+test('schema safeTop from presets affects resolveLayout when metrics omit safeTop', () => {
+  const scoreSchema = createScorePageLayout({
+    safeTop: 30,
+    headerTop: 0,
+    headerHeight: 100,
+    scoreAreaGap: 0,
+    footerBottom: 0,
+    footerHeight: 50
+  })
+
+  const layout = resolveLayout(scoreSchema, mockMetrics)
+
+  assert.equal(layout.sections.header.y, 30)
 })
 
 // ============================================

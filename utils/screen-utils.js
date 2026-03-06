@@ -7,32 +7,103 @@
  * @module utils/screen-utils
  */
 
+export const SYSTEM_HEADER_HEIGHT_SQUARE = 48
+
+const GTS_3_SQUARE_DEVICE_SOURCES = new Set([224, 225])
+const GTS_3_SQUARE_WIDTH = 390
+const GTS_3_SQUARE_HEIGHT = 450
+const GTS_3_SQUARE_DIMENSION_TOLERANCE = 2
+
 /**
  * Retrieves screen metrics including dimensions and round screen detection.
  * Uses hmSetting.getDeviceInfo() to obtain screen dimensions.
  *
- * @returns {{width: number, height: number, isRound: boolean}} Screen metrics object
+ * @param {Object|number} [overrides={}] - Optional metrics overrides for testing
+ * @param {number} [overrides.safeTop] - Explicit safeTop override
+ * @returns {{width: number, height: number, isRound: boolean, safeTop: number}} Screen metrics object
  *
  * @example
- * const { width, height, isRound } = getScreenMetrics()
+ * const { width, height, isRound, safeTop } = getScreenMetrics()
  * // width: 466 (GTR 3), height: 466 (GTR 3), isRound: true
  * // width: 390 (GTS 3), height: 450 (GTS 3), isRound: false
  */
-export function getScreenMetrics() {
+export function getScreenMetrics(overrides = {}) {
+  const safeTopOverride =
+    typeof overrides === 'number' ? overrides : overrides?.safeTop
+
   // Default fallback for test environments
   if (
     typeof hmSetting === 'undefined' ||
     typeof hmSetting.getDeviceInfo !== 'function'
   ) {
-    return { width: 390, height: 450, isRound: false }
+    const width = 390
+    const height = 450
+    const isRound = false
+
+    return {
+      width,
+      height,
+      isRound,
+      safeTop: resolveSafeTop({
+        width,
+        height,
+        isRound,
+        safeTopOverride
+      })
+    }
   }
 
   const deviceInfo = hmSetting.getDeviceInfo()
   const width = ensureNumber(deviceInfo?.width, 390)
   const height = ensureNumber(deviceInfo?.height, 450)
   const isRound = Math.abs(width - height) <= Math.round(width * 0.04)
+  const deviceSource = Number(deviceInfo?.deviceSource)
 
-  return { width, height, isRound }
+  return {
+    width,
+    height,
+    isRound,
+    safeTop: resolveSafeTop({
+      deviceSource,
+      width,
+      height,
+      isRound,
+      safeTopOverride
+    })
+  }
+}
+
+function resolveSafeTop({
+  deviceSource,
+  width,
+  height,
+  isRound,
+  safeTopOverride
+}) {
+  if (typeof safeTopOverride === 'number' && !Number.isNaN(safeTopOverride)) {
+    return clamp(Math.round(safeTopOverride), 0, height)
+  }
+
+  if (isRound) {
+    return 0
+  }
+
+  if (isGts3SquareDevice(deviceSource, width, height)) {
+    return SYSTEM_HEADER_HEIGHT_SQUARE
+  }
+
+  return 0
+}
+
+function isGts3SquareDevice(deviceSource, width, height) {
+  if (!GTS_3_SQUARE_DEVICE_SOURCES.has(deviceSource)) {
+    return false
+  }
+
+  return (
+    Math.abs(width - GTS_3_SQUARE_WIDTH) <= GTS_3_SQUARE_DIMENSION_TOLERANCE &&
+    Math.abs(height - GTS_3_SQUARE_HEIGHT) <= GTS_3_SQUARE_DIMENSION_TOLERANCE
+  )
 }
 
 /**

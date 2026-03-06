@@ -11,7 +11,7 @@ import test from 'node:test'
 // ============================================
 // Test 1: getScreenMetrics returns valid metrics
 // ============================================
-test('getScreenMetrics returns width, height, and isRound', async () => {
+test('getScreenMetrics returns width, height, isRound, and safeTop', async () => {
   const { getScreenMetrics } = await import('../utils/screen-utils.js')
 
   const metrics = getScreenMetrics()
@@ -20,9 +20,11 @@ test('getScreenMetrics returns width, height, and isRound', async () => {
   assert.ok('width' in metrics, 'metrics should have width property')
   assert.ok('height' in metrics, 'metrics should have height property')
   assert.ok('isRound' in metrics, 'metrics should have isRound property')
+  assert.ok('safeTop' in metrics, 'metrics should have safeTop property')
   assert.equal(typeof metrics.width, 'number', 'width should be a number')
   assert.equal(typeof metrics.height, 'number', 'height should be a number')
   assert.equal(typeof metrics.isRound, 'boolean', 'isRound should be a boolean')
+  assert.equal(typeof metrics.safeTop, 'number', 'safeTop should be a number')
 })
 
 // ============================================
@@ -37,6 +39,66 @@ test('getScreenMetrics returns fallback values when hmSetting is unavailable', a
   assert.equal(metrics.width, 390, 'should return default width 390')
   assert.equal(metrics.height, 450, 'should return default height 450')
   assert.equal(metrics.isRound, false, 'should return default isRound false')
+  assert.equal(metrics.safeTop, 0, 'should return default safeTop 0')
+})
+
+test('getScreenMetrics safeTop override supports clamping and legacy number input', async () => {
+  const { getScreenMetrics } = await import('../utils/screen-utils.js')
+
+  const clampedHigh = getScreenMetrics({ safeTop: 9999 })
+  assert.equal(clampedHigh.safeTop, clampedHigh.height)
+
+  const clampedLow = getScreenMetrics({ safeTop: -10 })
+  assert.equal(clampedLow.safeTop, 0)
+
+  const rounded = getScreenMetrics({ safeTop: 12.8 })
+  assert.equal(rounded.safeTop, 13)
+
+  const legacyNumber = getScreenMetrics(20)
+  assert.equal(legacyNumber.safeTop, 20)
+})
+
+test('getScreenMetrics applies square safeTop for target sources without runtime device dependency', async () => {
+  const { getScreenMetrics, SYSTEM_HEADER_HEIGHT_SQUARE } = await import(
+    '../utils/screen-utils.js'
+  )
+  const originalHmSetting = globalThis.hmSetting
+
+  try {
+    globalThis.hmSetting = {
+      getDeviceInfo() {
+        return { width: 390, height: 450, deviceSource: 224 }
+      }
+    }
+
+    const targetSquare = getScreenMetrics()
+    assert.equal(targetSquare.safeTop, SYSTEM_HEADER_HEIGHT_SQUARE)
+
+    globalThis.hmSetting = {
+      getDeviceInfo() {
+        return { width: 390, height: 450, deviceSource: 227 }
+      }
+    }
+
+    const nonTargetSource = getScreenMetrics()
+    assert.equal(nonTargetSource.safeTop, 0)
+
+    globalThis.hmSetting = {
+      getDeviceInfo() {
+        return { width: 454, height: 454, deviceSource: 227 }
+      }
+    }
+
+    const roundMetrics = getScreenMetrics()
+    assert.equal(roundMetrics.isRound, true)
+    assert.equal(roundMetrics.safeTop, 0)
+  } finally {
+    if (originalHmSetting === undefined) {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+  }
 })
 
 // ============================================
