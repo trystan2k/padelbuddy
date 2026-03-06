@@ -91,5 +91,14 @@ msgstr "Dados limpos"
 msgid "settings.clearFailed"
 msgstr "Falha ao limpar"
 
+msgid "settings.vibrationFeedback"
+msgstr "Feedback de Vibração"
+
+msgid "settings.gameSettings"
+msgstr "Configurações do Jogo"
+
+msgid "gameSettings.title"
+msgstr "Configurações do Jogo"
+
 msgid "settings.version"
 msgstr "Versão:"

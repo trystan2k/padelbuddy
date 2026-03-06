@@ -1,5 +1,6 @@
 import { gettext } from 'i18n'
 import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
+import { loadHapticFeedbackEnabled } from '../utils/haptic-feedback-settings.js'
 import { resolveLayout } from '../utils/layout-engine.js'
 import { createStandardPageLayout } from '../utils/layout-presets.js'
 import {
@@ -109,6 +110,10 @@ const SUMMARY_LAYOUT = {
   }
 }
 
+const SUMMARY_LOAD_HAPTIC_PULSE_COUNT = 3
+const SUMMARY_LOAD_HAPTIC_PULSE_SPACING_MS = 700
+const SUMMARY_LOAD_HAPTIC_SCENE = 25
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -162,18 +167,112 @@ function createSummaryViewModel(matchState) {
 Page({
   onInit() {
     this.widgets = []
+    this.vibrate = null
+    this.hapticFeedbackEnabled = loadHapticFeedbackEnabled()
+    this.hasTriggeredSummaryLoadHapticFeedback = false
+    this.summaryLoadHapticPulseTimers = []
     this.finishedMatchState = null
+
+    if (
+      typeof hmSensor !== 'undefined' &&
+      typeof hmSensor.createSensor === 'function' &&
+      isRecord(hmSensor.id)
+    ) {
+      try {
+        const vibrate = hmSensor.createSensor(hmSensor.id.VIBRATE)
+        this.vibrate = vibrate || null
+      } catch {
+        this.vibrate = null
+      }
+    }
+
     this.refreshFinishedMatchState()
   },
 
   build() {
+    this.triggerSummaryLoadHapticFeedback()
     this.renderSummaryScreen()
     this.registerGestureHandler()
   },
 
   onDestroy() {
+    this.clearSummaryLoadHapticPulseTimers()
+
+    try {
+      this.vibrate?.stop()
+    } catch {
+      // Non-fatal: summary haptic stop failed.
+    }
     this.clearWidgets()
     this.unregisterGestureHandler()
+  },
+
+  clearSummaryLoadHapticPulseTimers() {
+    if (!Array.isArray(this.summaryLoadHapticPulseTimers)) {
+      this.summaryLoadHapticPulseTimers = []
+      return
+    }
+
+    if (typeof clearTimeout === 'function') {
+      this.summaryLoadHapticPulseTimers.forEach((timerId) => {
+        clearTimeout(timerId)
+      })
+    }
+
+    this.summaryLoadHapticPulseTimers = []
+  },
+
+  triggerSummaryLoadHapticFeedback() {
+    if (this.hasTriggeredSummaryLoadHapticFeedback) {
+      return
+    }
+
+    this.hasTriggeredSummaryLoadHapticFeedback = true
+
+    if (!this.hapticFeedbackEnabled) {
+      return
+    }
+
+    const vibrate = this.vibrate
+
+    if (!vibrate) {
+      return
+    }
+
+    const triggerPulse = () => {
+      try {
+        vibrate.stop()
+        vibrate.scene = SUMMARY_LOAD_HAPTIC_SCENE
+        vibrate.start()
+      } catch {
+        // Non-fatal: summary haptic feedback unavailable.
+      }
+    }
+
+    triggerPulse()
+
+    if (typeof setTimeout !== 'function') {
+      triggerPulse()
+      triggerPulse()
+      return
+    }
+
+    for (
+      let pulseIndex = 1;
+      pulseIndex < SUMMARY_LOAD_HAPTIC_PULSE_COUNT;
+      pulseIndex += 1
+    ) {
+      const timerId = setTimeout(() => {
+        const timerIndex = this.summaryLoadHapticPulseTimers.indexOf(timerId)
+        if (timerIndex >= 0) {
+          this.summaryLoadHapticPulseTimers.splice(timerIndex, 1)
+        }
+
+        triggerPulse()
+      }, pulseIndex * SUMMARY_LOAD_HAPTIC_PULSE_SPACING_MS)
+
+      this.summaryLoadHapticPulseTimers.push(timerId)
+    }
   },
 
   registerGestureHandler() {

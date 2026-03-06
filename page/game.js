@@ -1,5 +1,6 @@
 import { gettext } from 'i18n'
 import { TOKENS } from '../utils/design-tokens.js'
+import { loadHapticFeedbackEnabled } from '../utils/haptic-feedback-settings.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { addPoint, removePoint } from '../utils/scoring-engine.js'
@@ -83,6 +84,8 @@ function createRuntimeStateFingerprint(matchState) {
 Page({
   onInit() {
     this.widgets = []
+    this.vibrate = null
+    this.hapticFeedbackEnabled = loadHapticFeedbackEnabled()
     this.lastAcceptedScoringInteractionAt = null
     this.hasAttemptedSummaryNavigation = false
     this.isSessionAccessGranted = false
@@ -95,6 +98,19 @@ Page({
     this.pendingRuntimeStatePersistence = null
     this.isRuntimeStatePersistenceInFlight = false
     this.lastPersistedRuntimeStateSignature = null
+
+    if (
+      typeof hmSensor !== 'undefined' &&
+      typeof hmSensor.createSensor === 'function' &&
+      isRecord(hmSensor.id)
+    ) {
+      try {
+        const vibrate = hmSensor.createSensor(hmSensor.id.VIBRATE)
+        this.vibrate = vibrate || null
+      } catch {
+        this.vibrate = null
+      }
+    }
 
     // Validate session synchronously before build() runs.
     this.validateSessionAccess()
@@ -128,10 +144,35 @@ Page({
 
   onDestroy() {
     this.resetManualFinishConfirmState()
+    try {
+      this.vibrate?.stop()
+    } catch {
+      // Non-fatal: haptic stop failed.
+    }
     this.releaseScreenOn()
     this.handleLifecycleAutoSave()
     this.clearWidgets()
     this.unregisterGestureHandler()
+  },
+
+  triggerHapticFeedback() {
+    if (!this.hapticFeedbackEnabled) {
+      return
+    }
+
+    const vibrate = this.vibrate
+
+    if (!vibrate) {
+      return
+    }
+
+    try {
+      vibrate.stop()
+      vibrate.scene = 24
+      vibrate.start()
+    } catch {
+      // Non-fatal: haptic feedback unavailable.
+    }
   },
 
   clearManualFinishConfirmTimer() {
@@ -901,6 +942,7 @@ Page({
       onMatchFinished: () => this.handleMatchFinishedTransition(),
       onAddPointForTeam: (team) => this.handleAddPointForTeam(team),
       onRemovePointForTeam: (team) => this.handleRemovePointForTeam(team),
+      onTriggerHapticFeedback: () => this.triggerHapticFeedback(),
       onBackToHome: () => this.handleBackToHome(),
       onManualFinishTap: () => this.handleManualFinishTap()
     })

@@ -191,6 +191,9 @@ async function loadGamePageDefinition() {
   const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
   const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
   const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const hapticFeedbackSettingsUrl = toProjectFileUrl(
+    'utils/haptic-feedback-settings.js'
+  )
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
@@ -238,6 +241,10 @@ async function loadGamePageDefinition() {
     .replace(
       "from '../utils/design-tokens.js'",
       `from '${designTokensUrl.href}'`
+    )
+    .replace(
+      "from '../utils/haptic-feedback-settings.js'",
+      `from '${hapticFeedbackSettingsUrl.href}'`
     )
     .replace(
       "from '../utils/layout-engine.js'",

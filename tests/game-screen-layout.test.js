@@ -80,6 +80,9 @@ async function loadGamePageDefinition() {
   const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
   const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
   const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const hapticFeedbackSettingsUrl = toProjectFileUrl(
+    'utils/haptic-feedback-settings.js'
+  )
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
@@ -127,6 +130,10 @@ async function loadGamePageDefinition() {
     .replace(
       "from '../utils/design-tokens.js'",
       `from '${designTokensUrl.href}'`
+    )
+    .replace(
+      "from '../utils/haptic-feedback-settings.js'",
+      `from '${hapticFeedbackSettingsUrl.href}'`
     )
     .replace(
       "from '../utils/layout-engine.js'",
@@ -2154,4 +2161,28 @@ test('game gesture handler does not throw when hmApp is unavailable', async () =
       globalThis.hmApp = originalHmApp
     }
   }
+})
+
+test('game haptic trigger does not start vibration when setting is disabled', async () => {
+  await runWithRenderedGamePage(390, 450, ({ page }) => {
+    let stopCalls = 0
+    let startCalls = 0
+
+    page.vibrate = {
+      scene: 0,
+      stop() {
+        stopCalls += 1
+      },
+      start() {
+        startCalls += 1
+      }
+    }
+    page.hapticFeedbackEnabled = false
+
+    page.triggerHapticFeedback()
+
+    assert.equal(stopCalls, 0)
+    assert.equal(startCalls, 0)
+    assert.equal(page.vibrate.scene, 0)
+  })
 })

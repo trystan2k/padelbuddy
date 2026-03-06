@@ -91,6 +91,14 @@ msgstr "Data cleared"
 msgid "settings.clearFailed"
 msgstr "Clear failed"
 
+msgid "settings.vibrationFeedback"
+msgstr "Vibration Feedback"
+
+msgid "settings.gameSettings"
+msgstr "Game Settings"
+
+msgid "gameSettings.title"
+msgstr "Game Settings"
+
 msgid "settings.version"
 msgstr "Version:"
-
