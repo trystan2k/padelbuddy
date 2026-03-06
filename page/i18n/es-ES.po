@@ -91,5 +91,14 @@ msgstr "Datos borrados"
 msgid "settings.clearFailed"
 msgstr "Error al borrar"
 
+msgid "settings.vibrationFeedback"
+msgstr "Retroalimentación de Vibración"
+
+msgid "settings.gameSettings"
+msgstr "Ajustes del Juego"
+
+msgid "gameSettings.title"
+msgstr "Ajustes del Juego"
+
 msgid "settings.version"
 msgstr "Versión:"

@@ -31,6 +31,7 @@
             "page/summary",
             "page/history",
             "page/history-detail",
+            "page/game-settings",
             "page/settings"
           ]
         },
@@ -63,6 +64,7 @@
             "page/summary",
             "page/history",
             "page/history-detail",
+            "page/game-settings",
             "page/settings"
           ]
         },

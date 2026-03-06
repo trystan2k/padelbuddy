@@ -136,6 +136,18 @@ Page({
     }
   },
 
+  navigateToGameSettingsPage() {
+    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
+      return
+    }
+
+    try {
+      hmApp.gotoPage({ url: 'page/game-settings' })
+    } catch {
+      // Ignore navigation errors
+    }
+  },
+
   // type_id 1 = normal, type_id 2 = danger (red), type_id 3 = version (muted)
   updateListData(confirmMode) {
     if (!this.scrollList) return
@@ -143,13 +155,18 @@ Page({
     this.scrollList.setProperty(hmUI.prop.UPDATE_DATA, {
       data_type_config: [
         { start: 0, end: 0, type_id: 1 },
-        { start: 1, end: 1, type_id: confirmMode ? 2 : 1 },
-        { start: 2, end: 2, type_id: 3 }
+        { start: 1, end: 1, type_id: 1 },
+        { start: 2, end: 2, type_id: confirmMode ? 2 : 1 },
+        { start: 3, end: 3, type_id: 3 }
       ],
-      data_type_config_count: 3,
+      data_type_config_count: 4,
       data_array: [
         {
           label: gettext('settings.previousMatches'),
+          icon: 'chevron-icon.png'
+        },
+        {
+          label: gettext('settings.gameSettings'),
           icon: 'chevron-icon.png'
         },
         {
@@ -162,7 +179,7 @@ Page({
           version: `${gettext('settings.version')} ${APP_VERSION}`
         }
       ],
-      data_count: 3,
+      data_count: 4,
       on_page: 1
     })
   },
@@ -171,6 +188,8 @@ Page({
     if (index === 0) {
       this.navigateToHistoryPage()
     } else if (index === 1) {
+      this.navigateToGameSettingsPage()
+    } else if (index === 2) {
       if (this.clearConfirmMode) {
         // Second tap - confirm
         this.clearConfirmMode = false
@@ -216,7 +235,7 @@ Page({
         }, 3000)
       }
     }
-    // index === 2 is version item - do nothing (non-clickable)
+    // index === 3 is version item - do nothing (non-clickable)
   },
 
   renderSettingsScreen() {
@@ -270,7 +289,7 @@ Page({
 
       // Text positioning (starts from left, limited width)
       const textX = padding
-      const textW = Math.round(listEl.w * 0.75) // Limit text width to 75%
+      const textW = Math.round(listEl.w * 0.75)
 
       // Icon positioning (immediately after text, not at far right edge)
       const iconX = textX + textW + padding
@@ -279,6 +298,7 @@ Page({
       // Version text (centered, smaller)
       const versionTextH = Math.round(versionTextSize * 1.4)
       const versionTextY = Math.round((rowHeight - versionTextH) / 2)
+      const scrollListHeight = Math.min(rowHeight * 3, listEl.h)
 
       // Item configs: type_id 1 = normal, type_id 2 = danger (red), type_id 3 = version (muted)
       const itemConfigNormal = {
@@ -353,7 +373,7 @@ Page({
         x: listEl.x,
         y: listEl.y,
         w: listEl.w,
-        h: rowHeight * 4,
+        h: scrollListHeight,
         item_space: 0,
         item_config: [itemConfigNormal, itemConfigDanger, itemConfigVersion],
         item_config_count: 3,
@@ -362,19 +382,21 @@ Page({
             label: gettext('settings.previousMatches'),
             icon: 'chevron-icon.png'
           },
+          { label: gettext('settings.gameSettings'), icon: 'chevron-icon.png' },
           { label: gettext('settings.clearAppData'), icon: 'delete-icon.png' },
           { version: `${gettext('settings.version')} ${APP_VERSION}` }
         ],
-        data_count: 3,
+        data_count: 4,
         item_click_func: (_list, index) => {
           this.handleListItemClick(index)
         },
         data_type_config: [
           { start: 0, end: 0, type_id: 1 },
           { start: 1, end: 1, type_id: 1 },
-          { start: 2, end: 2, type_id: 3 }
+          { start: 2, end: 2, type_id: 1 },
+          { start: 3, end: 3, type_id: 3 }
         ],
-        data_type_config_count: 3
+        data_type_config_count: 4
       })
     }
 

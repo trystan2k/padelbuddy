@@ -9,6 +9,10 @@
 
 import { ACTIVE_SESSION_FILE_PATH } from './active-session-storage.js'
 import {
+  clearHapticFeedbackEnabled,
+  HAPTIC_FEEDBACK_STORAGE_KEY
+} from './haptic-feedback-settings.js'
+import {
   clearMatchHistory as clearHistoryViaRemove,
   HISTORY_STORAGE_KEY,
   keyToFilename,
@@ -116,6 +120,16 @@ export function clearAllAppData() {
   } catch (_e) {
     // Ignore error
   }
+
+  // 5. Reset haptic feedback preference to default (missing key => enabled).
+  try {
+    clearHapticFeedbackEnabled()
+  } catch (_e) {
+    success = false
+  }
+
+  // Also overwrite the preference file directly as a reliability fallback.
+  overwriteWithNull(keyToFilename(HAPTIC_FEEDBACK_STORAGE_KEY))
 
   return success
 }

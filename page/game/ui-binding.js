@@ -232,7 +232,8 @@ export function renderGameScreen(options = {}) {
   renderActiveState(layout, viewModel, {
     createWidget: createWidgetCallback,
     onAddPointForTeam: options.onAddPointForTeam,
-    onRemovePointForTeam: options.onRemovePointForTeam
+    onRemovePointForTeam: options.onRemovePointForTeam,
+    onTriggerHapticFeedback: options.onTriggerHapticFeedback
   })
 
   renderFooterElements(layout, {
@@ -357,7 +358,8 @@ export function renderActiveState(layout, viewModel, options = {}) {
   if (teamAScoreEl) {
     renderScoreButton(teamAScoreEl, viewModel.teamA.points, 'teamA', {
       createWidget: createWidgetCallback,
-      onAddPointForTeam: options.onAddPointForTeam
+      onAddPointForTeam: options.onAddPointForTeam,
+      onTriggerHapticFeedback: options.onTriggerHapticFeedback
     })
   }
 
@@ -365,7 +367,8 @@ export function renderActiveState(layout, viewModel, options = {}) {
   if (teamBScoreEl) {
     renderScoreButton(teamBScoreEl, viewModel.teamB.points, 'teamB', {
       createWidget: createWidgetCallback,
-      onAddPointForTeam: options.onAddPointForTeam
+      onAddPointForTeam: options.onAddPointForTeam,
+      onTriggerHapticFeedback: options.onTriggerHapticFeedback
     })
   }
 
@@ -385,7 +388,8 @@ export function renderActiveState(layout, viewModel, options = {}) {
   if (teamAMinusEl) {
     renderMinusButton(teamAMinusEl, 'teamA', halfWidth, 0, {
       createWidget: createWidgetCallback,
-      onRemovePointForTeam: options.onRemovePointForTeam
+      onRemovePointForTeam: options.onRemovePointForTeam,
+      onTriggerHapticFeedback: options.onTriggerHapticFeedback
     })
   }
 
@@ -393,7 +397,8 @@ export function renderActiveState(layout, viewModel, options = {}) {
   if (teamBMinusEl) {
     renderMinusButton(teamBMinusEl, 'teamB', halfWidth, halfWidth, {
       createWidget: createWidgetCallback,
-      onRemovePointForTeam: options.onRemovePointForTeam
+      onRemovePointForTeam: options.onRemovePointForTeam,
+      onTriggerHapticFeedback: options.onTriggerHapticFeedback
     })
   }
 }
@@ -407,6 +412,10 @@ export function renderScoreButton(element, points, team, options = {}) {
   const onAddPointForTeam =
     typeof options.onAddPointForTeam === 'function'
       ? options.onAddPointForTeam
+      : noop
+  const onTriggerHapticFeedback =
+    typeof options.onTriggerHapticFeedback === 'function'
+      ? options.onTriggerHapticFeedback
       : noop
 
   const scoreTextSize = getFontSize('scoreDisplay')
@@ -422,7 +431,10 @@ export function renderScoreButton(element, points, team, options = {}) {
     color: TOKENS.colors.text,
     text_size: scoreTextSize,
     text: String(points),
-    click_func: () => onAddPointForTeam(team)
+    click_func: () => {
+      onAddPointForTeam(team)
+      onTriggerHapticFeedback()
+    }
   })
 }
 
@@ -442,6 +454,10 @@ export function renderMinusButton(
     typeof options.onRemovePointForTeam === 'function'
       ? options.onRemovePointForTeam
       : noop
+  const onTriggerHapticFeedback =
+    typeof options.onTriggerHapticFeedback === 'function'
+      ? options.onTriggerHapticFeedback
+      : noop
 
   const MIN_TOUCH_SIZE = 48
   const buttonWidth = Math.max(element.w, MIN_TOUCH_SIZE)
@@ -457,7 +473,10 @@ export function renderMinusButton(
     h: buttonHeight,
     variant: 'secondary',
     text: '−',
-    onClick: () => onRemovePointForTeam(team)
+    onClick: () => {
+      onRemovePointForTeam(team)
+      onTriggerHapticFeedback()
+    }
   })
 
   const visualRadius = Math.round(Math.min(element.w, element.h) / 2)

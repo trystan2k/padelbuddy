@@ -227,6 +227,9 @@ async function loadSummaryPageDefinition() {
   )
   const validationUrl = toProjectFileUrl('utils/validation.js')
   const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const hapticFeedbackSettingsUrl = toProjectFileUrl(
+    'utils/haptic-feedback-settings.js'
+  )
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
@@ -265,6 +268,10 @@ async function loadSummaryPageDefinition() {
     .replace(
       "from '../utils/design-tokens.js'",
       `from '${designTokensUrl.href}'`
+    )
+    .replace(
+      "from '../utils/haptic-feedback-settings.js'",
+      `from '${hapticFeedbackSettingsUrl.href}'`
     )
     .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
     .replace(
@@ -689,6 +696,38 @@ test('summary start-new-game button ignores accidental double taps while flow is
 
       // Test that multiple buttons or interactions work
       assert.equal(buttons.length >= 1, true)
+    }
+  )
+})
+
+test('summary haptic trigger does not start pulses when setting is disabled', async () => {
+  await runSummaryPageScenario(
+    {
+      matchStorageLoadResponses: [serializePersistedMatchState()]
+    },
+    async ({ page }) => {
+      let stopCalls = 0
+      let startCalls = 0
+
+      page.vibrate = {
+        scene: 0,
+        stop() {
+          stopCalls += 1
+        },
+        start() {
+          startCalls += 1
+        }
+      }
+      page.hapticFeedbackEnabled = false
+      page.hasTriggeredSummaryLoadHapticFeedback = false
+      page.clearSummaryLoadHapticPulseTimers()
+
+      page.triggerSummaryLoadHapticFeedback()
+
+      assert.equal(stopCalls, 0)
+      assert.equal(startCalls, 0)
+      assert.equal(page.summaryLoadHapticPulseTimers.length, 0)
+      assert.equal(page.hasTriggeredSummaryLoadHapticFeedback, true)
     }
   )
 })
