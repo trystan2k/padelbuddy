@@ -4821,21 +4821,85 @@
         "description": "Implement a global safe top area that automatically adjusts layout positioning for square devices (GTS 3/GTS 3 Pro) to prevent app headers from rendering behind the fixed system header.",
         "details": "Implement a safe top area solution for GTS 3 square devices to prevent app content overlap with the system header.\n\n**Implementation Steps:**\n\n1. **Update utils/screen-utils.js:**\n   - Add `safeTop` property to getScreenMetrics() return object\n   - For GTS 3 (square, isRound=false, height=450px): return safeTop = 45-50px (~11% of height)\n   - For GTR 3 (round, isRound=true): return safeTop = 0 (no change)\n   - Store system header height as a configurable constant (SYSTEM_HEADER_HEIGHT_SQUARE) for easy tuning\n   - Add optional parameter to getScreenMetrics() to allow per-page safeTop override\n\n2. **Update utils/layout-presets.js:**\n   - Modify createStandardPageLayout() to accept and use safeTop parameter from screen metrics\n   - Default header section top position to safeTop value instead of hardcoded top: 0\n   - Maintain backward compatibility for existing pages that don't pass safeTop (default to 0 if not provided)\n   - Update TOKENS.spacing.headerTop usage to consider safeTop offset\n\n3. **Update utils/layout-engine.js:**\n   - Ensure section resolution passes through and respects safeTop from screen metrics\n   - No breaking changes to existing behavior\n   - Support percentage-based layouts with safeTop offset applied correctly\n\n**Technical Considerations:**\n- Device detection already exists via isRound property in screen-utils.js\n- GTS 3/GTS 3 Pro use deviceSource 224, 225 (design: 390x450px)\n- GTR 3 uses deviceSource 227 (design: 454x454px)\n- System header height is approximately 11% of screen height on GTS 3 (start with 45-50px, adjust during testing)\n- Current header position uses TOKENS.spacing.headerTop (4%)\n- Zero regression on round screens (safeTop=0 ensures this)\n- Layout engine already supports percentage-based positioning",
         "testStrategy": "1. **GTR 3 (Round) Regression Testing:**\n   - Run app on GTR 3 simulator\n   - Verify all pages render identically to before (index, setup, game, summary, history, history-detail, game-settings, settings)\n   - Confirm no layout shifts or spacing changes\n   - Verify round screen safe insets still work correctly\n\n2. **GTS 3 (Square) Functional Testing:**\n   - Run app on GTS 3 simulator\n   - Verify app header appears below system header on all pages\n   - Confirm no overlap between app content and system header\n   - Check that app name and time in system header are fully visible\n   - Test all pages: index, setup, game, summary, history, history-detail, game-settings, settings\n\n3. **Safe Top Area Validation:**\n   - Adjust SYSTEM_HEADER_HEIGHT_SQUARE constant and verify safeTop updates accordingly\n   - Test percentage-based layouts still calculate correctly with safeTop offset\n   - Verify safeTop can be overridden per-page if needed (add temporary override to one page for testing)\n\n4. **Code Quality:**\n   - Run npm run complete-check and ensure it passes\n   - Verify no console errors on either device simulator\n\n5. **Visual QA Checklist:**\n   - [ ] GTS 3: App content starts below system header (no overlap)\n   - [ ] GTR 3: Layout remains unchanged (no regression)\n   - [ ] All pages render correctly on both devices\n   - [ ] Spacing is consistent across all pages on GTS 3",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "41",
           "63"
         ],
         "priority": "high",
-        "subtasks": [],
-        "updatedAt": "2026-03-06T12:20:08.645Z"
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Add safeTop property to screen-utils.js",
+            "description": "Add safeTop property to getScreenMetrics() return object with device-specific logic for square vs round screens",
+            "dependencies": [],
+            "details": "In utils/screen-utils.js, add safeTop property to getScreenMetrics() return object. For GTS 3 (square, isRound=false, height=450px): return safeTop = 45-50px (~11% of height). For GTR 3 (round, isRound=true): return safeTop = 0 (no change). Store system header height as configurable constant SYSTEM_HEADER_HEIGHT_SQUARE for easy tuning. Add optional parameter to getScreenMetrics() to allow per-page safeTop override.",
+            "status": "done",
+            "testStrategy": "Unit test: Import screen-utils.js in test script, call getScreenMetrics() and verify safeTop property exists with correct values for square (45-50px) and round (0px) device configurations.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-06T14:17:52.689Z"
+          },
+          {
+            "id": 2,
+            "title": "Update layout-presets.js to use safeTop parameter",
+            "description": "Modify createStandardPageLayout() to accept and use safeTop parameter from screen metrics for header positioning",
+            "dependencies": [
+              1
+            ],
+            "details": "In utils/layout-presets.js, modify createStandardPageLayout() to accept safeTop parameter from screen metrics. Default header section top position to safeTop value instead of hardcoded top: 0. Maintain backward compatibility for existing pages that don't pass safeTop (default to 0 if not provided). Update TOKENS.spacing.headerTop usage to consider safeTop offset.",
+            "status": "done",
+            "testStrategy": "Unit test: Call createStandardPageLayout() with and without safeTop parameter. Verify header top position is correctly set to safeTop when provided, and defaults to 0 when omitted.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-06T14:17:52.693Z"
+          },
+          {
+            "id": 3,
+            "title": "Update layout-engine.js to pass through safeTop",
+            "description": "Ensure section resolution in layout engine passes through and respects safeTop from screen metrics",
+            "dependencies": [
+              2
+            ],
+            "details": "In utils/layout-engine.js, ensure section resolution passes through and respects safeTop from screen metrics. No breaking changes to existing behavior. Support percentage-based layouts with safeTop offset applied correctly. Verify that safeTop is properly propagated through the section resolution process without affecting existing round screen layouts.",
+            "status": "done",
+            "testStrategy": "Unit test: Mock getScreenMetrics() returning safeTop values, call layout engine functions, and verify safeTop is correctly passed to section resolution and applied to layout calculations.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-06T14:17:52.696Z"
+          },
+          {
+            "id": 4,
+            "title": "GTR 3 round screen regression testing",
+            "description": "Verify no layout changes on round devices (GTR 3) to ensure zero regression after safeTop implementation",
+            "dependencies": [
+              3
+            ],
+            "details": "Run app on GTR 3 simulator and verify all pages render identically to before (index, setup, game, summary, history, history-detail, game-settings, settings). Confirm no layout shifts or spacing changes. Verify round screen safe insets still work correctly. Since safeTop=0 for round screens, the behavior should be unchanged from current implementation.",
+            "status": "done",
+            "testStrategy": "Integration test: Deploy to GTR 3 simulator, navigate through all pages, visually compare screenshots with baseline. Measure header positions and verify they match exactly before the changes.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-06T14:17:52.706Z"
+          },
+          {
+            "id": 5,
+            "title": "GTS 3 square screen functionality testing",
+            "description": "Verify safe top area prevents header overlap on GTS 3 square devices and all app pages render correctly",
+            "dependencies": [
+              3
+            ],
+            "details": "Run app on GTS 3 simulator and verify app headers render below the system header without overlap. Test all pages (index, setup, game, summary, history, history-detail, game-settings, settings). Confirm safe top area (45-50px) is correctly applied. Test per-page safeTop override functionality using the optional parameter. Adjust SYSTEM_HEADER_HEIGHT_SQUARE constant if needed based on visual testing.",
+            "status": "done",
+            "testStrategy": "Integration test: Deploy to GTS 3 simulator, verify system header is visible and not overlapped by app content. Navigate all pages and confirm headers start below system header. Test optional safeTop override on specific pages.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-06T14:17:52.709Z"
+          }
+        ],
+        "updatedAt": "2026-03-06T14:17:52.709Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-06T12:20:08.645Z",
+      "lastModified": "2026-03-06T14:17:52.709Z",
       "taskCount": 72,
-      "completedCount": 67,
+      "completedCount": 68,
       "tags": [
         "master"
       ]

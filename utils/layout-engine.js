@@ -39,6 +39,7 @@ import {
  */
 export function resolveLayout(schema, metrics) {
   try {
+    const safeSchema = ensureSchema(schema)
     const resolvedMetrics = metrics || getScreenMetrics()
     const { width, height, isRound } = resolvedMetrics
 
@@ -46,13 +47,18 @@ export function resolveLayout(schema, metrics) {
     const safeWidth = ensureNumber(width, 390)
     const safeHeight = ensureNumber(height, 450)
     const safeIsRound = Boolean(isRound)
+    const safeTop = clamp(
+      ensureNumber(
+        resolvedMetrics?.safeTop,
+        ensureNumber(safeSchema.safeTop, 0)
+      ),
+      0,
+      safeHeight
+    )
 
     // Initialize result containers
     const resolvedSections = {}
     const resolvedElements = {}
-
-    // Validate schema
-    const safeSchema = ensureSchema(schema)
 
     // Pass 1: Resolve sections (with error handling)
     try {
@@ -61,7 +67,8 @@ export function resolveLayout(schema, metrics) {
         resolvedSections,
         safeWidth,
         safeHeight,
-        safeIsRound
+        safeIsRound,
+        safeTop
       )
     } catch (sectionError) {
       // Log in development, continue with empty sections
@@ -115,9 +122,10 @@ export function safeResolveLayout(schema, metrics) {
  */
 function ensureSchema(schema) {
   if (!schema || typeof schema !== 'object') {
-    return { sections: {}, elements: {} }
+    return { safeTop: 0, sections: {}, elements: {} }
   }
   return {
+    safeTop: schema.safeTop,
     sections: schema.sections || {},
     elements: schema.elements || {}
   }
@@ -209,6 +217,13 @@ function parseValue(value, context) {
   return 0
 }
 
+function isSectionReferenceExpression(value) {
+  return (
+    typeof value === 'string' &&
+    /^(\w+)\.(\w+)(\s*[+-]\s*\d+(?:\.\d+)?(%|px)?)?$/.test(value)
+  )
+}
+
 /**
  * Gets a property value from a resolved section.
  *
@@ -261,14 +276,14 @@ function normalizeSection(section) {
  * Parses gap value to pixels.
  *
  * @param {*} gap - The gap value to parse
- * @param {number} height - Screen height for percentage calculation
+ * @param {number} verticalBase - Vertical base dimension for percentage calculation
  * @returns {number} The gap in pixels
  */
-function parseGap(gap, height) {
+function parseGap(gap, verticalBase) {
   if (gap == null) return 0
   if (typeof gap === 'number') return gap
   if (typeof gap === 'string' && gap.endsWith('%')) {
-    return parseValue(gap, { baseDimension: height })
+    return parseValue(gap, { baseDimension: verticalBase })
   }
   return 0
 }
@@ -326,9 +341,11 @@ function calculateSideInset(
  * @param {number} width - Screen width
  * @param {number} height - Screen height
  * @param {boolean} isRound - Whether screen is round
+ * @param {number} safeTop - Reserved top inset for system UI
  */
-function resolveSections(sections, resolved, width, height, isRound) {
+function resolveSections(sections, resolved, width, height, isRound, safeTop) {
   const sectionNames = Object.keys(sections)
+  const verticalBase = Math.max(0, height - safeTop)
 
   // Track sections that need deferred resolution
   const fillSections = []
@@ -386,12 +403,30 @@ function resolveSections(sections, resolved, width, height, isRound) {
     }
 
     // Resolve simple sections immediately
-    resolveSection(name, safeSection, resolved, width, height, isRound)
+    resolveSection(
+      name,
+      safeSection,
+      resolved,
+      width,
+      height,
+      isRound,
+      safeTop,
+      verticalBase
+    )
   })
 
   // Second pass: resolve sections with expression-based top positions
   expressionSections.forEach(({ name, section: safeSection }) => {
-    resolveSection(name, safeSection, resolved, width, height, isRound)
+    resolveSection(
+      name,
+      safeSection,
+      resolved,
+      width,
+      height,
+      isRound,
+      safeTop,
+      verticalBase
+    )
   })
 
   // Third pass: resolve bottom-anchored sections
@@ -414,7 +449,9 @@ function resolveSections(sections, resolved, width, height, isRound) {
       resolved,
       width,
       height,
-      isRound
+      isRound,
+      safeTop,
+      verticalBase
     )
   })
 
@@ -425,7 +462,9 @@ function resolveSections(sections, resolved, width, height, isRound) {
       resolved,
       width,
       height,
-      isRound
+      isRound,
+      safeTop,
+      verticalBase
     )
   })
 
@@ -437,36 +476,67 @@ function resolveSections(sections, resolved, width, height, isRound) {
       resolved,
       width,
       height,
-      isRound
+      isRound,
+      safeTop,
+      verticalBase
     )
   }
 
   // Fifth pass: resolve sections that depend on fill sections
   dependentSections.forEach(({ name, section: safeSection }) => {
-    resolveSection(name, safeSection, resolved, width, height, isRound)
+    resolveSection(
+      name,
+      safeSection,
+      resolved,
+      width,
+      height,
+      isRound,
+      safeTop,
+      verticalBase
+    )
   })
 }
 
 /**
  * Resolves a single section with top/after positioning.
  */
-function resolveSection(name, safeSection, resolved, width, height, isRound) {
-  let top = 0
+function resolveSection(
+  name,
+  safeSection,
+  resolved,
+  width,
+  height,
+  isRound,
+  safeTop,
+  verticalBase
+) {
+  let top = safeTop
 
   if (safeSection.top != null) {
-    top = parseValue(safeSection.top, {
-      baseDimension: height,
+    const parsedTop = parseValue(safeSection.top, {
+      baseDimension: verticalBase,
       sections: resolved,
       refType: 'y'
     })
+
+    if (isSectionReferenceExpression(safeSection.top)) {
+      top = parsedTop
+    } else {
+      top = safeTop + parsedTop
+    }
   } else if (safeSection.after) {
     const afterSection = resolved[safeSection.after]
     if (afterSection) {
-      top = afterSection.y + afterSection.h + parseGap(safeSection.gap, height)
+      top =
+        afterSection.y +
+        afterSection.h +
+        parseGap(safeSection.gap, verticalBase)
     }
   }
 
-  const sectionHeight = calculateSectionHeight(safeSection, height)
+  top = Math.max(safeTop, top)
+
+  const sectionHeight = calculateSectionHeight(safeSection, verticalBase)
   const sideInset = calculateSideInset(
     safeSection,
     width,
@@ -499,7 +569,9 @@ function resolveBottomAnchoredSection(
   resolved,
   width,
   height,
-  isRound
+  isRound,
+  safeTop,
+  verticalBase
 ) {
   // Parse bottom value - it represents distance from screen bottom
   // bottom: 0 means bottom edge at height, so actual bottom Y = height - 0 = height
@@ -524,27 +596,29 @@ function resolveBottomAnchoredSection(
         )
         const offset =
           exprMatch[5] === '%'
-            ? Math.round(pct(height, clamp(parseFloat(exprMatch[4]), 0, 100)))
+            ? Math.round(
+                pct(verticalBase, clamp(parseFloat(exprMatch[4]), 0, 100))
+              )
             : ensureNumber(parseFloat(exprMatch[4]), 0)
         bottomY = exprMatch[3] === '+' ? baseValue + offset : baseValue - offset
       } else if (safeSection.bottom.endsWith('%')) {
         // bottom: '10%' means 10% from bottom, so bottomY = height - 10%
         const pctValue = parseValue(safeSection.bottom, {
-          baseDimension: height
+          baseDimension: verticalBase
         })
         bottomY = height - pctValue
       } else {
         // Treat as pixel value
         const pxValue = parseValue(safeSection.bottom, {
-          baseDimension: height
+          baseDimension: verticalBase
         })
         bottomY = height - pxValue
       }
     }
   }
 
-  const sectionHeight = calculateSectionHeight(safeSection, height)
-  const top = Math.max(0, bottomY - sectionHeight)
+  const sectionHeight = calculateSectionHeight(safeSection, verticalBase)
+  const top = Math.max(safeTop, bottomY - sectionHeight)
   const sideInset = calculateSideInset(
     safeSection,
     width,
@@ -571,7 +645,9 @@ function resolveFillSections(
   resolved,
   width,
   height,
-  isRound
+  isRound,
+  safeTop,
+  verticalBase
 ) {
   // Calculate total fixed height (non-fill sections)
   let totalFixedHeight = 0
@@ -582,10 +658,10 @@ function resolveFillSections(
     const safeSection = normalizeSection(section)
 
     if (safeSection.height !== 'fill') {
-      totalFixedHeight += calculateSectionHeight(safeSection, height)
+      totalFixedHeight += calculateSectionHeight(safeSection, verticalBase)
       // Add gap if this section has an 'after' reference
       if (safeSection.after) {
-        totalFixedHeight += parseGap(safeSection.gap, height)
+        totalFixedHeight += parseGap(safeSection.gap, verticalBase)
       }
     }
   })
@@ -593,29 +669,39 @@ function resolveFillSections(
   // Also add gaps from fill sections themselves (they reduce available space)
   fillSections.forEach(({ section: safeSection }) => {
     if (safeSection.after) {
-      totalFixedHeight += parseGap(safeSection.gap, height)
+      totalFixedHeight += parseGap(safeSection.gap, verticalBase)
     }
   })
 
-  const remainingHeight = Math.max(0, height - totalFixedHeight)
+  const remainingHeight = Math.max(0, verticalBase - totalFixedHeight)
   const fillHeightEach = Math.floor(remainingHeight / fillSections.length)
 
   fillSections.forEach(({ name, section: safeSection }, index) => {
     // Calculate top position
-    let top = 0
+    let top = safeTop
     if (safeSection.top != null) {
-      top = parseValue(safeSection.top, {
-        baseDimension: height,
+      const parsedTop = parseValue(safeSection.top, {
+        baseDimension: verticalBase,
         sections: resolved,
         refType: 'y'
       })
+
+      if (isSectionReferenceExpression(safeSection.top)) {
+        top = parsedTop
+      } else {
+        top = safeTop + parsedTop
+      }
     } else if (safeSection.after) {
       const afterSection = resolved[safeSection.after]
       if (afterSection) {
         top =
-          afterSection.y + afterSection.h + parseGap(safeSection.gap, height)
+          afterSection.y +
+          afterSection.h +
+          parseGap(safeSection.gap, verticalBase)
       }
     }
+
+    top = Math.max(safeTop, top)
 
     const isLast = index === fillSections.length - 1
     const sectionHeight = isLast
@@ -644,17 +730,17 @@ function resolveFillSections(
  * Calculates section height from definition.
  *
  * @param {Object} section - Normalized section definition
- * @param {number} height - Screen height for percentage calculation
+ * @param {number} verticalBase - Vertical base dimension for percentage calculation
  * @returns {number} Section height in pixels
  */
-function calculateSectionHeight(section, height) {
+function calculateSectionHeight(section, verticalBase) {
   if (section.height == null || section.height === 'fill') return 0
 
   if (typeof section.height === 'number') {
     return section.height
   }
 
-  return parseValue(section.height, { baseDimension: height }) || 0
+  return parseValue(section.height, { baseDimension: verticalBase }) || 0
 }
 
 /**
