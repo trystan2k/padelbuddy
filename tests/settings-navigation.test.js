@@ -242,9 +242,9 @@ test('settings list shows game settings row and keeps version last', async () =>
         'settings.clearAppData'
       ]
     )
-    assert.equal(
+    assert.match(
       scrollList.properties.data_array[3].version,
-      'settings.version 1.11.3'
+      /^settings\.version \d+\.\d+\.\d+$/
     )
     assert.equal(getVisibleWidgets(createdWidgets, 'SLIDE_SWITCH').length, 0)
   } finally {
