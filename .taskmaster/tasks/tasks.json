@@ -4989,9 +4989,10 @@
             "description": "Update the app.json manifest header fields to comply with Zepp OS v3.6 schema requirements",
             "dependencies": [],
             "details": "Set minVersion to '3.6', ensure version matches baseline from Task 73 ('1.0.0' or appropriate), verify appId matches new 3.6+ identifier, and add or update target field to specify v3 compatibility mode",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use Zepp OS CLI validation tool to verify app.json conforms to v3 schema, run JSON linter to ensure no syntax errors, verify minVersion is exactly '3.6'",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T16:10:09.700Z"
           },
           {
             "id": 2,
@@ -5001,9 +5002,10 @@
               1
             ],
             "details": "Add screenFamily array with four entries: {w: 390, h: 450, type: 'square'} for square screens, and three round screen configurations {w: 454, h: 454, type: 'round'}, {w: 466, h: 466, type: 'round'}, {w: 480, h: 480, type: 'round'}",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Launch Zepp OS simulator and test loading app on w390-s (square) and w454-r, w466-r, w480-r (round) device profiles to verify screen-family targets are properly recognized",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T16:10:09.719Z"
           },
           {
             "id": 3,
@@ -5013,9 +5015,10 @@
               1
             ],
             "details": "Review all permissions in app.json, ensure storage_data permission is present for match state persistence, remove any deprecated or unused permissions, and verify all permissions follow v3 schema formatting requirements",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run validation tool to confirm permissions are properly formatted, verify storage_data permission is listed, cross-reference with actual usage in codebase to ensure no unused or missing permissions",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T16:10:09.726Z"
           },
           {
             "id": 4,
@@ -5025,9 +5028,10 @@
               1
             ],
             "details": "Verify and register all pages: page/index (Home), page/setup (Setup), page/game (Game), page/summary (Summary), page/history (History List), page/history-detail (History Detail), page/settings (Settings), page/game-settings (Game Settings). Ensure correct v3 path format, unique virtualKey values, and no duplicate or orphaned entries",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Use validation tool to verify all page entries have correct paths, cross-check virtualKey values for uniqueness, build project to confirm no missing page file references",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T16:10:09.743Z"
           },
           {
             "id": 5,
@@ -5039,12 +5043,13 @@
               4
             ],
             "details": "Remove deprecated v2 i18n entries if using localized v2 format, remove watchface property if not applicable, ensure no legacy configuration properties remain, and add design system configuration entries if required by the new layout system",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Run complete schema validation to ensure no deprecated properties remain, build project successfully, perform final review of app.json to confirm clean v3 structure",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T16:10:09.792Z"
           }
         ],
-        "updatedAt": "2026-03-13T15:14:09.826Z"
+        "updatedAt": "2026-03-13T16:10:09.792Z"
       },
       {
         "id": "75",
@@ -5126,7 +5131,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-13T15:14:09.827Z",
+      "lastModified": "2026-03-13T16:10:09.793Z",
       "taskCount": 79,
       "completedCount": 70,
       "tags": [
