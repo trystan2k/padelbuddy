@@ -1,0 +1,4 @@
+What: Updated platform adapter storage.setItem to reject both thrown and silent JSON serialization failures, and aligned manual mocks for gesture callback validation and storage failure handling.
+Why: PR #73 review requested code-only follow-up fixes so production and test mocks fail consistently for unsupported storage values and invalid gesture registrations.
+Where: utils/platform-adapters.js, tests/__mocks__/platform-adapters.js, tests/platform-adapters.test.js
+Learned: JSON.stringify can fail silently by returning undefined for values like undefined/functions/symbols, so adapter guards must check the serialized result type in addition to catching exceptions.
