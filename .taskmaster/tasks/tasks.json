@@ -5057,13 +5057,78 @@
         "description": "Implement lightweight adapter interfaces for router, gesture, toast, device info, display keep-awake, storage, and haptics to abstract Zepp 3.6 platform APIs, including mock implementations for testing and comprehensive migration documentation.",
         "details": "Create a new `utils/platform-adapters.js` file that exports adapter interfaces for the following Zepp 3.6 platform capabilities:\n\n**1. Router Adapter**\n- `navigateTo(pagePath, params)` - Navigate to a page with parameters\n- `redirectTo(pagePath, params)` - Replace current page\n- `navigateBack(delta)` - Go back in navigation stack\n- Mock implementation: Store navigation history in memory array\n\n**2. Gesture Adapter**\n- `registerGesture(element, gestureType, callback)` - Register swipe/tap handlers\n- `unregisterGesture(element, gestureType)` - Remove gesture listener\n- Gesture types: 'swipe-up', 'swipe-down', 'swipe-left', 'swipe-right', 'tap'\n- Mock implementation: Trigger callbacks via test helper function\n\n**3. Toast Adapter**\n- `showToast(message, duration)` - Display toast notification\n- `hideToast()` - Dismiss active toast\n- Mock implementation: Store last toast in memory for verification\n\n**4. Device Info Adapter**\n- `getDeviceInfo()` - Return device model, screen metrics, platform version\n- `isRoundScreen()` - Boolean for round screen detection\n- Mock implementation: Return configurable test device object\n\n**5. Display Keep-Awake Adapter**\n- `setKeepAwake(enabled)` - Enable/disable screen stay-on\n- `getKeepAwakeStatus()` - Return current state\n- Mock implementation: Store boolean state in memory\n\n**6. Storage Adapter**\n- `setItem(key, value)` - Store string data\n- `getItem(key)` - Retrieve stored data\n- `removeItem(key)` - Delete stored data\n- `clear()` - Clear all storage\n- Mock implementation: Use in-memory Map for test isolation\n\n**7. Haptics Adapter**\n- `vibrate(duration)` - Trigger vibration\n- `vibratePattern(pattern)` - Vibrate with pattern array\n- Mock implementation: Record vibration calls for test verification\n\n**Migration Documentation**\nCreate `docs/PLATFORM_ADAPTERS.md` with:\n1. Overview of adapter pattern and benefits\n2. Side-by-side comparison of old vs new API usage\n3. Migration code examples for each adapter\n4. Breaking changes list\n5. Usage examples in pages/components\n\n**Testing Infrastructure**\nCreate `tests/__mocks__/platform-adapters.js` with Jest-compatible mocks that track method calls and return values for assertion verification.",
         "testStrategy": "1. **Interface Existence Test**: Import `utils/platform-adapters.js` and verify all 7 adapter objects are exported with their required methods.\n\n2. **Mock Functionality Test**: Import test mocks and verify:\n   - Router mock tracks navigation calls in history array\n   - Storage mock uses isolated Map storage\n   - Haptics mock records vibration patterns\n   - All mock methods reset properly between tests\n\n3. **Integration Test**: Create a test page that uses each adapter and verify:\n   - Router navigation works without Zepp runtime\n   - Toast displays without native widget\n   - Storage persists data in test environment\n   - Device info returns consistent mock data\n\n4. **Documentation Review**: Have a developer verify `docs/PLATFORM_ADAPTERS.md` contains:\n   - Complete API reference for all adapters\n   - Before/after code examples for migration\n   - Clear usage instructions for component developers\n   - All breaking changes documented\n\n5. **Mock Isolation Test**: Run multiple tests using storage adapter and verify no cross-test data contamination occurs.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "73",
           "74"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Router, Gesture, and Toast adapters",
+            "description": "Implement the first three adapter interfaces in utils/platform-adapters.js with routing, gesture handling, and toast notification capabilities.",
+            "dependencies": [],
+            "details": "Create utils/platform-adapters.js file. Implement Router adapter with navigateTo(pagePath, params), redirectTo(pagePath, params), and navigateBack(delta) methods using in-memory history array for mock. Implement Gesture adapter with registerGesture(element, gestureType, callback) and unregisterGesture(element, gestureType) supporting swipe-up, swipe-down, swipe-left, swipe-right, and tap types. Implement Toast adapter with showToast(message, duration) and hideToast() methods storing last toast in memory.",
+            "status": "done",
+            "testStrategy": "Import adapters and verify all methods exist. Test router navigation history tracking, gesture registration/unregistration, and toast state storage.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T17:20:35.345Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Device Info, Keep-Awake, and Storage adapters",
+            "description": "Add Device Info, Display Keep-Awake, and Storage adapter interfaces to the platform-adapters.js file.",
+            "dependencies": [
+              1
+            ],
+            "details": "Extend utils/platform-adapters.js with DeviceInfo adapter implementing getDeviceInfo() returning device model, screen metrics, platform version, and isRoundScreen() boolean. Add KeepAwake adapter with setKeepAwake(enabled) and getKeepAwakeStatus() methods storing boolean state in memory. Implement Storage adapter with setItem(key, value), getItem(key), removeItem(key), and clear() methods using in-memory Map for test isolation.",
+            "status": "done",
+            "testStrategy": "Verify device info returns configurable test object, keep-awake state changes persist, and storage operations work with isolated Map for test environments.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T17:20:35.351Z"
+          },
+          {
+            "id": 3,
+            "title": "Implement Haptics adapter and finalize adapter exports",
+            "description": "Complete the Haptics adapter and ensure all seven adapters are properly exported from the platform-adapters module.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add Haptics adapter to utils/platform-adapters.js with vibrate(duration) and vibratePattern(pattern) methods recording vibration calls for test verification. Finalize module exports to include all seven adapters: router, gesture, toast, deviceInfo, keepAwake, storage, and haptics. Ensure consistent API patterns across all adapters and validate mock implementations work correctly.",
+            "status": "done",
+            "testStrategy": "Verify haptics vibration calls are recorded for test assertions. Confirm all 7 adapters export correctly with required methods.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T17:20:35.355Z"
+          },
+          {
+            "id": 4,
+            "title": "Create Jest-compatible mock implementations",
+            "description": "Build comprehensive mock implementations in tests/__mocks__/platform-adapters.js for unit testing.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create tests/__mocks__/platform-adapters.js with Jest-compatible mocks that track all method calls, parameters, and return values for assertion verification. Implement call tracking arrays for each adapter method, configurable return values, and helper functions to reset mock state between tests. Ensure mocks mirror the real adapter interfaces exactly for seamless substitution in test environments.",
+            "status": "done",
+            "testStrategy": "Import mocks in test file, verify all methods track calls correctly, confirm reset functionality clears tracked state, and validate return values are configurable.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T17:20:35.359Z"
+          },
+          {
+            "id": 5,
+            "title": "Create migration documentation",
+            "description": "Write comprehensive documentation in docs/PLATFORM_ADAPTERS.md explaining the adapter pattern and migration path.",
+            "dependencies": [
+              4
+            ],
+            "details": "Create docs/PLATFORM_ADAPTERS.md with sections: 1) Overview of adapter pattern and benefits for Zepp 3.6 abstraction, 2) Side-by-side comparison of old vs new API usage for each adapter, 3) Migration code examples for router, gesture, toast, device info, keep-awake, storage, and haptics, 4) Breaking changes list with version notes, 5) Usage examples in pages and components demonstrating proper integration.",
+            "status": "done",
+            "testStrategy": "Review documentation completeness by verifying all 7 adapters are documented, code examples are syntactically correct, and migration path is clear for developers.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T17:20:35.364Z"
+          }
+        ],
+        "updatedAt": "2026-03-13T17:20:35.364Z"
       },
       {
         "id": "76",
@@ -5131,9 +5196,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-13T16:10:09.793Z",
+      "lastModified": "2026-03-13T17:20:35.364Z",
       "taskCount": 79,
-      "completedCount": 70,
+      "completedCount": 71,
       "tags": [
         "master"
       ]
