@@ -6,6 +6,7 @@ const DEFAULT_DEVICE_INFO = {
 }
 const DEFAULT_TOAST_DURATION = 2000
 const DEFAULT_VIBRATION_DURATION = 50
+const STORAGE_CLONE_FAILURE = Symbol('storage-clone-failure')
 
 const state = createInitialState()
 
@@ -42,6 +43,10 @@ export const router = {
 
 export const gesture = {
   registerGesture(element, gestureType, callback) {
+    if (typeof callback !== 'function') {
+      return false
+    }
+
     state.gestures.push({
       element,
       gestureType: normalizeGestureType(gestureType),
@@ -110,14 +115,23 @@ export const keepAwake = {
 
 export const storage = {
   setItem(key, value) {
-    state.storage.set(String(key), cloneValue(value))
+    const clonedValue = cloneValue(value)
+
+    if (clonedValue === STORAGE_CLONE_FAILURE) {
+      return null
+    }
+
+    state.storage.set(String(key), clonedValue)
     return value
   },
 
   getItem(key) {
-    return state.storage.has(String(key))
-      ? cloneValue(state.storage.get(String(key)))
-      : null
+    if (!state.storage.has(String(key))) {
+      return null
+    }
+
+    const clonedValue = cloneValue(state.storage.get(String(key)))
+    return clonedValue === STORAGE_CLONE_FAILURE ? null : clonedValue
   },
 
   removeItem(key) {
@@ -290,11 +304,17 @@ function normalizeGestureType(gestureType) {
 }
 
 function cloneValue(value) {
-  if (typeof value === 'undefined') {
-    return value
-  }
+  try {
+    const serializedValue = JSON.stringify(value)
 
-  return JSON.parse(JSON.stringify(value))
+    if (typeof serializedValue !== 'string') {
+      return STORAGE_CLONE_FAILURE
+    }
+
+    return JSON.parse(serializedValue)
+  } catch {
+    return STORAGE_CLONE_FAILURE
+  }
 }
 
 function ensureFiniteNumber(value, fallback) {

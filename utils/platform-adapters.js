@@ -364,11 +364,9 @@ export const storage = {
   setItem(key, value) {
     const normalizedKey = String(key)
     const runtimeStorage = resolveRuntimeStorage()
-    let serializedValue = null
+    const serializedValue = serializeStorageValue(value)
 
-    try {
-      serializedValue = serializeStorageValue(value)
-    } catch {
+    if (typeof serializedValue !== 'string') {
       return null
     }
 
@@ -852,7 +850,17 @@ function normalizeVibrationPattern(pattern) {
 }
 
 function serializeStorageValue(value) {
-  return `${STORAGE_VALUE_PREFIX}${JSON.stringify(value)}`
+  try {
+    const serializedValue = JSON.stringify(value)
+
+    if (typeof serializedValue !== 'string') {
+      return null
+    }
+
+    return `${STORAGE_VALUE_PREFIX}${serializedValue}`
+  } catch {
+    return null
+  }
 }
 
 function deserializeStorageValue(value) {

@@ -220,6 +220,26 @@ test('platform adapters return null and preserve prior value when setItem cannot
   })
 })
 
+test('platform adapters return null for silent serialization failures and preserve prior value', async () => {
+  await withRuntimeGlobals({}, async () => {
+    const platformAdapters = await importFresh('utils/platform-adapters.js')
+
+    platformAdapters.storage.setItem('settings', { enabled: true })
+
+    assert.equal(platformAdapters.storage.setItem('settings', undefined), null)
+    assert.deepEqual(platformAdapters.storage.getItem('settings'), {
+      enabled: true
+    })
+    assert.equal(
+      platformAdapters.storage.setItem('settings', () => true),
+      null
+    )
+    assert.deepEqual(platformAdapters.storage.getItem('settings'), {
+      enabled: true
+    })
+  })
+})
+
 test('platform adapters prefer modern-style runtime shims when available', async () => {
   const runtimeCalls = {
     router: [],
@@ -606,6 +626,33 @@ test('platform adapter mock tracks router, toast, storage, keep-awake, device, h
     { type: 'vibratePattern', pattern: [20, 20, 20] }
   ])
   assert.equal(getGestureRegistrations().length, 1)
+})
+
+test('platform adapter mock rejects non-function gesture callbacks', () => {
+  const gestureElement = { id: 'invalid-callback' }
+
+  assert.equal(
+    mockGesture.registerGesture(gestureElement, 'RIGHT', null),
+    false
+  )
+  assert.deepEqual(getGestureRegistrations(), [])
+})
+
+test('platform adapter mock storage preserves prior value when cloning fails', () => {
+  const circularValue = {}
+
+  circularValue.self = circularValue
+
+  mockStorage.setItem('settings', { enabled: true })
+
+  assert.equal(mockStorage.setItem('settings', undefined), null)
+  assert.deepEqual(mockStorage.getItem('settings'), {
+    enabled: true
+  })
+  assert.equal(mockStorage.setItem('settings', circularValue), null)
+  assert.deepEqual(mockStorage.getItem('settings'), {
+    enabled: true
+  })
 })
 
 test('platform adapter mock normalizes toast and haptics like production adapters', () => {
