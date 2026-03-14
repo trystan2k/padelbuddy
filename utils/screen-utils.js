@@ -222,7 +222,8 @@ function resolveScreenFamily({
 
   if (
     screenShape === 'square' &&
-    SQUARE_DEVICE_SOURCES.has(Number(deviceSource))
+    SQUARE_DEVICE_SOURCES.has(Number(deviceSource)) &&
+    isWithinScreenFamilyTolerance(SCREEN_FAMILY_W390_S, width, height)
   ) {
     return SCREEN_FAMILY_W390_S
   }
@@ -261,14 +262,25 @@ function matchScreenFamilyByDimensions(width, height, screenShape) {
 
       return (
         config.screenShape === screenShape &&
-        Math.abs(width - config.width) <= SCREEN_DIMENSION_TOLERANCE &&
-        Math.abs(height - config.height) <= SCREEN_DIMENSION_TOLERANCE
+        isWithinScreenFamilyTolerance(screenFamily, width, height)
       )
     }) ?? null
   )
 }
 
-function resolveScreenShape(screenShape, width, height) {
+function isWithinScreenFamilyTolerance(screenFamily, width, height) {
+  const config = SCREEN_FAMILY_CONFIGS[screenFamily]
+  if (!config) {
+    return false
+  }
+
+  return (
+    Math.abs(width - config.width) <= SCREEN_DIMENSION_TOLERANCE &&
+    Math.abs(height - config.height) <= SCREEN_DIMENSION_TOLERANCE
+  )
+}
+
+export function resolveScreenShape(screenShape, width, height) {
   if (typeof screenShape === 'string') {
     const normalizedShape = screenShape.trim().toLowerCase()
 

@@ -353,6 +353,28 @@ test('no duplicate ensureNumber in design-tokens', async () => {
   )
 })
 
+test('platform-adapters reuses resolveScreenShape from screen-utils', async () => {
+  const fs = await import('node:fs/promises')
+  const path = await import('node:path')
+
+  const platformAdaptersPath = path.join(
+    process.cwd(),
+    'utils/platform-adapters.js'
+  )
+  const content = await fs.readFile(platformAdaptersPath, 'utf-8')
+
+  assert.ok(
+    content.includes(
+      "import { getScreenMetrics, resolveScreenShape } from './screen-utils.js'"
+    ),
+    'platform-adapters should import resolveScreenShape from screen-utils.js'
+  )
+  assert.ok(
+    !content.includes('function resolveScreenShape('),
+    'platform-adapters should not define a duplicate resolveScreenShape helper'
+  )
+})
+
 test('no duplicate getScreenMetrics method in game.js', async () => {
   const fs = await import('node:fs/promises')
   const path = await import('node:path')

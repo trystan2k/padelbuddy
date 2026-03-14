@@ -11,13 +11,7 @@
  * The flat structure of TOKENS prepares for easy theming support.
  */
 
-import {
-  getScreenMetrics,
-  SCREEN_FAMILY_W390_S,
-  SCREEN_FAMILY_W454_R,
-  SCREEN_FAMILY_W466_R,
-  SCREEN_FAMILY_W480_R
-} from './screen-utils.js'
+import { getScreenMetrics } from './screen-utils.js'
 
 /**
  * Centralized design tokens for the Padel Buddy app.
@@ -78,24 +72,7 @@ export const TOKENS = Object.freeze({
   }
 })
 
-const FAMILY_TOKEN_OVERRIDES = Object.freeze({
-  [SCREEN_FAMILY_W390_S]: Object.freeze({
-    typography: Object.freeze({}),
-    sizing: Object.freeze({})
-  }),
-  [SCREEN_FAMILY_W454_R]: Object.freeze({
-    typography: Object.freeze({}),
-    sizing: Object.freeze({})
-  }),
-  [SCREEN_FAMILY_W466_R]: Object.freeze({
-    typography: Object.freeze({}),
-    sizing: Object.freeze({})
-  }),
-  [SCREEN_FAMILY_W480_R]: Object.freeze({
-    typography: Object.freeze({}),
-    sizing: Object.freeze({})
-  })
-})
+const FAMILY_TOKEN_OVERRIDES = Object.freeze({})
 
 const DEFAULT_FAMILY_TOKENS = Object.freeze({
   typography: Object.freeze({}),

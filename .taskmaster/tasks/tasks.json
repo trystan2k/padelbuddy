@@ -5229,9 +5229,10 @@
             "description": "Update utils/screen-utils.js to detect and return metrics for w390-s, w454-r, w466-r, and w480-r device families",
             "dependencies": [],
             "details": "Modify getScreenMetrics() function to return a screen family property based on screen dimensions. Remove all hardcoded GTS 3 (w454-r) assumptions from existing utility functions. Add configuration objects for each family containing status bar heights, safe area insets, and other family-specific properties. Implement detection logic that maps screen width/height to the correct family identifier.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests to verify getScreenMetrics() returns correct family identifier for all four target screen sizes. Verify family-specific configuration values are returned accurately for each device type.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T15:24:17.129Z"
           },
           {
             "id": 2,
@@ -5241,9 +5242,10 @@
               1
             ],
             "details": "For w390-s square devices, define a standard top padding/reservation value for system status indicators. Add comprehensive JSDoc comments in screen-utils.js explaining the status bar policy. Create a helper function getStatusBarHeight() that returns family-appropriate padding values. Ensure the policy accounts for Zepp OS system UI behavior on square screens.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Visual inspection on w390-s simulator to confirm header elements do not overlap system status indicators. Code review to ensure JSDoc documentation is complete and accurate.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T15:24:17.136Z"
           },
           {
             "id": 3,
@@ -5251,9 +5253,10 @@
             "description": "Refactor utils/design-tokens.js to support family-specific spacing, fonts, and safe areas",
             "dependencies": [],
             "details": "Review and restructure design-tokens.js to export family-specific configurations for all four target families. Define distinct spacing scales, font sizes, and safe area insets for w390-s, w454-r, w466-r, and w480-r. Ensure tokens can be dynamically selected based on the current screen family. Add scaling ratios for assets and icons appropriate to each resolution.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit tests verifying design tokens return correct values for each screen family. Cross-reference token values against device specifications to ensure accuracy.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T15:24:17.141Z"
           },
           {
             "id": 4,
@@ -5265,9 +5268,10 @@
               3
             ],
             "details": "Audit page/index.js and page/game.js for hardcoded pixel values and magic numbers. Replace all legacy hardcoded positions and sizes with calculations using getScreenMetrics() and design tokens. Implement consistent header rendering that properly accounts for status bar padding on square devices. Ensure all layout logic adapts based on current screen family detection.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Visual inspection on all four device simulators to verify layouts render correctly without overlap or clipping. Regression test on original GTS 3 to ensure no functionality loss.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T15:24:17.146Z"
           },
           {
             "id": 5,
@@ -5277,12 +5281,13 @@
               4
             ],
             "details": "Conduct comprehensive audit of all assets in assets/ directory. Verify scaling ratios are correct for each screen family resolution. Identify any missing assets and create placeholder PNGs or icons for unsupported families. Update asset loading logic to select appropriately sized assets based on current screen family. Document required asset dimensions for each family.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Visual verification on each device simulator that assets display at correct sizes and quality. Automated script to check all required asset files exist.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T15:24:17.150Z"
           }
         ],
-        "updatedAt": "2026-03-14T10:35:28.955Z"
+        "updatedAt": "2026-03-14T15:24:17.150Z"
       },
       {
         "id": "78",
@@ -5322,7 +5327,7 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-14T10:35:28.955Z",
+      "lastModified": "2026-03-14T15:24:17.150Z",
       "taskCount": 79,
       "completedCount": 73,
       "tags": [
