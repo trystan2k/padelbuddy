@@ -118,6 +118,7 @@ export function getColor(path) {
  * Uses centralized getScreenMetrics() from screen-utils.js.
  *
  * @param {string} typographyKey - The typography token key (e.g., 'pageTitle', 'body')
+ * @param {Object} [metrics=getScreenMetrics()] - Optional screen metrics used to resolve width and any family token overrides
  * @returns {number} The calculated font size in pixels, rounded to nearest integer
  * @throws {Error} If the typography key doesn't exist
  *

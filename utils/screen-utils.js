@@ -281,6 +281,15 @@ function isWithinScreenFamilyTolerance(screenFamily, width, height) {
   )
 }
 
+/**
+ * Resolves the effective screen shape from an explicit shape hint or width/height heuristics.
+ * Accepts long-form values (`round`, `square`) and shorthand runtime variants (`r`, `s`).
+ *
+ * @param {string} [screenShape] - Optional runtime-reported screen shape hint
+ * @param {number} width - Screen width in pixels
+ * @param {number} height - Screen height in pixels
+ * @returns {'round'|'square'} The normalized screen shape
+ */
 export function resolveScreenShape(screenShape, width, height) {
   if (typeof screenShape === 'string') {
     const normalizedShape = screenShape.trim().toLowerCase()
