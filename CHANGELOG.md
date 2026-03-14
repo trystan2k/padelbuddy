@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0](https://github.com/trystan2k/padelbuddy/compare/v3.1.0...v3.2.0) (2026-03-14)
+
+### Features
+
+* localStorage-first persistence with schema migration ([1cf581e](https://github.com/trystan2k/padelbuddy/commit/1cf581ee28ffbc6ec1de612d488090fad9834952))
+
 ## [3.1.0](https://github.com/trystan2k/padelbuddy/compare/v3.0.0...v3.1.0) (2026-03-13)
 
 ### Features
