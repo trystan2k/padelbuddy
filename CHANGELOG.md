@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.3.0](https://github.com/trystan2k/padelbuddy/compare/v3.2.0...v3.3.0) (2026-03-14)
+
+### Features
+
+* rebuild screen adaptation for multi-family support ([2697329](https://github.com/trystan2k/padelbuddy/commit/2697329173f35bfb8c9e7f6923f034805d992428))
+
 ## [3.2.0](https://github.com/trystan2k/padelbuddy/compare/v3.1.0...v3.2.0) (2026-03-14)
 
 ### Features
