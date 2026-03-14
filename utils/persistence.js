@@ -47,6 +47,14 @@ function saveStorageSchemaMetadata(previousVersion, currentVersion) {
   }
 }
 
+function canSerializeStorageValue(value) {
+  try {
+    return typeof JSON.stringify(value) === 'string'
+  } catch {
+    return false
+  }
+}
+
 export function ensureStorageSchema() {
   const previousVersion = normalizeSchemaVersion(
     storage.getItem(STORAGE_SCHEMA_VERSION_KEY)
@@ -99,8 +107,13 @@ export function saveState(key, value, options = {}) {
     return false
   }
 
+  if (!canSerializeStorageValue(value)) {
+    return false
+  }
+
   try {
-    return storage.setItem(key, value) !== null
+    storage.setItem(key, value)
+    return true
   } catch {
     return false
   }
