@@ -1,6 +1,5 @@
 import {
   getActiveSession,
-  migrateLegacySessions,
   saveActiveSession,
   updateActiveSession
 } from './utils/active-session-storage.js'
@@ -10,53 +9,15 @@ import {
   isMatchState as isPersistedMatchState,
   MATCH_STATUS as PERSISTED_MATCH_STATUS
 } from './utils/match-state-schema.js'
+import { ensureStorageSchema } from './utils/persistence.js'
 import { addPoint, removePoint as undoPoint } from './utils/scoring-engine.js'
 import { isRecord, toNonNegativeInteger } from './utils/validation.js'
 
-/**
- * @param {Record<string, unknown>} appInstance
- * @param {import('./utils/match-state.js').MatchState} nextState
- * @returns {import('./utils/match-state.js').MatchState}
- */
 function applyNextState(appInstance, nextState) {
   appInstance.globalData.matchState = nextState
   return nextState
 }
 
-const STARTUP_MIGRATION_FLAG_KEY = '_didRunLegacySessionMigration'
-
-/**
- * @param {Record<string, unknown>} appInstance
- */
-function runStartupSessionMigration(appInstance) {
-  if (!isRecord(appInstance)) {
-    return
-  }
-
-  if (!isRecord(appInstance.globalData)) {
-    appInstance.globalData = {}
-  }
-
-  if (appInstance.globalData[STARTUP_MIGRATION_FLAG_KEY] === true) {
-    return
-  }
-
-  try {
-    migrateLegacySessions()
-  } catch {
-    // Best-effort startup migration; never block app initialization.
-  } finally {
-    appInstance.globalData[STARTUP_MIGRATION_FLAG_KEY] = true
-  }
-}
-
-/**
- * Persist the current runtime match state directly from globalData.
- * Called as a last-resort safety net from app.onDestroy when the page
- * onDestroy may not have had a chance to flush (e.g. hard OS kill scenario).
- *
- * @param {Record<string, unknown>} globalData
- */
 function emergencyPersistMatchState(globalData) {
   try {
     const runtimeState = globalData?.matchState
@@ -65,8 +26,6 @@ function emergencyPersistMatchState(globalData) {
       return
     }
 
-    // Prefer the latest validated persisted snapshot cached by game.js.
-    // Fallback to the runtime state shape as a best-effort write attempt.
     const schemaSnapshot = globalData?._lastPersistedSchemaState
     const stateToPersist =
       isRecord(schemaSnapshot) &&
@@ -117,7 +76,7 @@ function emergencyPersistMatchState(globalData) {
 
     saveActiveSession(stateToPersist, { preserveUpdatedAt: true })
   } catch {
-    // Never let app.onDestroy throw — it would prevent proper app teardown.
+    // Never let app.onDestroy throw.
   }
 }
 
@@ -146,8 +105,6 @@ App({
   },
 
   onCreate(_options) {
-    // Ensure that if the screen turns off while the app is active,
-    // the watch re-launches this app instead of returning to the watchface.
     if (
       typeof hmApp !== 'undefined' &&
       typeof hmApp.setScreenKeep === 'function'
@@ -155,13 +112,14 @@ App({
       hmApp.setScreenKeep(true)
     }
 
-    runStartupSessionMigration(this)
+    try {
+      ensureStorageSchema()
+    } catch {
+      // Best-effort schema bootstrap; never block app initialization.
+    }
   },
 
   onDestroy(_options) {
-    // Safety-net: persist current match state in case page.onDestroy was skipped
-    // (e.g. OS hard-kill). If page.onDestroy already ran, this is a no-op because
-    // the state on disk already matches globalData.
     emergencyPersistMatchState(this.globalData)
   }
 })

@@ -13,7 +13,10 @@ import {
   matchStorage,
   ZeppOsStorageAdapter
 } from '../utils/match-storage.js'
-import { createHmFsMock } from './helpers/hmfs-mock.js'
+import {
+  createLocalStorageMock,
+  withMockLocalStorage
+} from './helpers/local-storage-mock.js'
 
 test('persistence module exports canonical storage key and initialized service', () => {
   assert.equal(ACTIVE_MATCH_SESSION_STORAGE_KEY, STORAGE_KEY)
@@ -336,67 +339,55 @@ test('MatchStorage supports sequential save-load cycles with latest state wins',
 })
 
 test('MatchStorage saveMatchState keeps updatedAt deterministic with canonical persistence', () => {
-  const { mock } = createHmFsMock()
-  const originalHmFS = globalThis.hmFS
+  const { storage: localStorage } = createLocalStorageMock()
   const originalDateNow = Date.now
   const dateNowValues = [1700000003000, 1700000004000]
   const state = createDefaultMatchState()
   const storage = new MatchStorage()
 
-  globalThis.hmFS = mock
   Date.now = () => dateNowValues.shift() ?? 1700000004000
 
   try {
-    storage.saveMatchState(state)
-    const persistedState = getActiveSession()
+    withMockLocalStorage(localStorage, () => {
+      storage.saveMatchState(state)
+      const persistedState = getActiveSession()
 
-    assert.notEqual(persistedState, null)
-    assert.equal(state.updatedAt, 1700000003000)
-    assert.equal(persistedState?.updatedAt, 1700000003000)
+      assert.notEqual(persistedState, null)
+      assert.equal(state.updatedAt, 1700000003000)
+      assert.equal(persistedState?.updatedAt, 1700000003000)
+    })
   } finally {
     Date.now = originalDateNow
-
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
   }
 })
 
 test('MatchStorage saveMatchState preserves persisted startedAt on subsequent saves', () => {
-  const { mock } = createHmFsMock()
-  const originalHmFS = globalThis.hmFS
+  const { storage: localStorage } = createLocalStorageMock()
   const originalDateNow = Date.now
   const dateNowValues = [1700000005000, 1700000006000]
   const state = createDefaultMatchState()
   const storage = new MatchStorage()
 
-  globalThis.hmFS = mock
   Date.now = () => dateNowValues.shift() ?? 1700000006000
 
   try {
-    storage.saveMatchState(state)
-    const firstPersisted = getActiveSession()
-    assert.notEqual(firstPersisted, null)
+    withMockLocalStorage(localStorage, () => {
+      storage.saveMatchState(state)
+      const firstPersisted = getActiveSession()
+      assert.notEqual(firstPersisted, null)
 
-    state.timing.startedAt = '2040-01-01T00:00:00.000Z'
-    storage.saveMatchState(state)
+      state.timing.startedAt = '2040-01-01T00:00:00.000Z'
+      storage.saveMatchState(state)
 
-    const secondPersisted = getActiveSession()
-    assert.notEqual(secondPersisted, null)
-    assert.equal(
-      secondPersisted?.timing?.startedAt,
-      firstPersisted?.timing?.startedAt
-    )
+      const secondPersisted = getActiveSession()
+      assert.notEqual(secondPersisted, null)
+      assert.equal(
+        secondPersisted?.timing?.startedAt,
+        firstPersisted?.timing?.startedAt
+      )
+    })
   } finally {
     Date.now = originalDateNow
-
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
   }
 })
 

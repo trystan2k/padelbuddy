@@ -1,110 +1,79 @@
 import {
-  resolveFsReadOnlyFlag,
-  resolveFsWriteCreateTruncateFlags
-} from './constants.js'
-import {
+  STORAGE_KEY as ACTIVE_SESSION_STORAGE_KEY,
   CURRENT_SCHEMA_VERSION,
   deserializeMatchSession,
   isMatchState,
-  STORAGE_KEY as LEGACY_ACTIVE_SESSION_STORAGE_KEY,
   MATCH_STATUS,
-  migrateMatchState,
   readTimestampCandidate,
-  SETS_NEEDED_TO_WIN,
-  SETS_TO_PLAY,
-  serializeMatchState,
   toIsoTimestampSafe
 } from './match-state-schema.js'
-import { sessionsEqual } from './object-helpers.js'
-import {
-  clearLegacyActiveSession,
-  MATCH_STATE_STORAGE_KEY as LEGACY_RUNTIME_STORAGE_KEY,
-  loadLegacyActiveSession
-} from './storage.js'
+import { deleteState, loadState, saveState } from './persistence.js'
 import {
   cloneMatchStateOrNull as cloneSession,
-  isNonNegativeInteger,
-  isPositiveInteger,
   isRecord,
-  isTeamIdentifier,
-  normalizeSetHistory,
-  toNonNegativeIntegerWithRequiredFallback as toNonNegativeInteger,
-  toPersistedPointValue,
-  toPositiveIntegerWithRequiredFallback as toPositiveInteger
+  toNonNegativeIntegerWithRequiredFallback as toNonNegativeInteger
 } from './validation.js'
 
 /**
- * @typedef {import('./match-state-schema.js').MatchState & {
- *   teams?: {
- *     teamA?: { id?: string, label?: string },
- *     teamB?: { id?: string, label?: string }
- *   },
- *   winnerTeam?: 'teamA' | 'teamB',
- *   winner?: { team?: 'teamA' | 'teamB' },
- *   completedAt?: number,
- *   createdAt?: string | number,
- *   created_at?: string | number,
- *   startedAt?: string | number,
- *   started_at?: string | number,
- *   startTime?: string | number,
- *   start_time?: string | number,
- *   matchStartTime?: string | number,
- *   match_start_time?: string | number
- * }} ActiveSession
- */
-
-/**
- * @typedef {{
- *   migrated: boolean,
- *   source: string | null,
- *   didCleanupLegacy: boolean,
- *   reason: string | null
- * }} LegacyMigrationResult
+ * @typedef {import('./match-state-schema.js').MatchState} ActiveSession
  */
 
 const LOG_PREFIX = '[active-session-storage]'
-
-export const ACTIVE_SESSION_FILE_PATH = '/data/active_session.json'
-
-const LEGACY_ACTIVE_SESSION_FILE_PATH = keyToFilename(
-  LEGACY_ACTIVE_SESSION_STORAGE_KEY
-)
-
-const SOURCE_PRIORITY = Object.freeze({
-  canonical: 0,
-  'legacy-active-file': 1,
-  'legacy-runtime-storage': 2
-})
-
-const ACTIVE_TEAM = 'teamA'
-const OPPOSING_TEAM = 'teamB'
 let isAtomicUpdateInFlight = false
+
+function log(level, message, context) {
+  if (typeof console === 'undefined') {
+    return
+  }
+
+  const method =
+    level === 'warn' && typeof console.warn === 'function'
+      ? console.warn
+      : typeof console.log === 'function'
+        ? console.log
+        : null
+
+  if (!method) {
+    return
+  }
+
+  if (typeof context === 'undefined') {
+    method(`${LOG_PREFIX} ${message}`)
+    return
+  }
+
+  method(`${LOG_PREFIX} ${message}`, context)
+}
+
+function reviveStoredSession(value) {
+  if (typeof value === 'string') {
+    return deserializeMatchSession(value)
+  }
+
+  if (isMatchState(value)) {
+    return value
+  }
+
+  if (!isRecord(value)) {
+    return null
+  }
+
+  try {
+    return deserializeMatchSession(JSON.stringify(value))
+  } catch {
+    return null
+  }
+}
 
 /**
  * @returns {ActiveSession | null}
  */
 export function getActiveSession() {
-  const canonicalSession = loadSessionFromPath(
-    ACTIVE_SESSION_FILE_PATH,
-    'canonical',
-    false
-  )
-
-  if (canonicalSession) {
-    return canonicalSession
-  }
-
-  const legacyActiveSession = loadSessionFromPath(
-    LEGACY_ACTIVE_SESSION_FILE_PATH,
-    'legacy-active-file',
-    true
-  )
-
-  if (legacyActiveSession) {
-    return legacyActiveSession
-  }
-
-  return normalizeLegacyRuntimeState(loadLegacyActiveSession())
+  return loadState(ACTIVE_SESSION_STORAGE_KEY, {
+    fallback: null,
+    revive: reviveStoredSession,
+    validate: isMatchState
+  })
 }
 
 /**
@@ -118,44 +87,36 @@ export function saveActiveSession(session, options = {}) {
     return false
   }
 
-  if (!isHmFsAvailable()) {
-    return false
-  }
-
   const updatedAt =
     options.preserveUpdatedAt === true
       ? toNonNegativeInteger(session.updatedAt, Date.now())
       : Date.now()
 
-  const existingCanonicalSession = loadSessionFromPath(
-    ACTIVE_SESSION_FILE_PATH,
-    'canonical',
-    false
-  )
-
+  const existingSession = getActiveSession()
   const nextSession = applySessionWriteNormalization({
     session,
-    existingCanonicalSession,
+    existingSession,
     updatedAt,
     allowStartTimeRepair: options.allowStartTimeRepair === true
   })
 
-  const payload = serializeMatchState(nextSession)
+  const didSave = saveState(ACTIVE_SESSION_STORAGE_KEY, nextSession, {
+    validate: isMatchState
+  })
 
-  if (!writeTextFile(ACTIVE_SESSION_FILE_PATH, payload)) {
-    log('warn', 'failed to persist active session to canonical path', {
-      path: ACTIVE_SESSION_FILE_PATH
+  if (!didSave) {
+    log('warn', 'failed to persist active session to LocalStorage', {
+      key: ACTIVE_SESSION_STORAGE_KEY
     })
-    return false
   }
 
-  return true
+  return didSave
 }
 
 /**
  * @param {{
  *   session: ActiveSession,
- *   existingCanonicalSession: ActiveSession | null,
+ *   existingSession: ActiveSession | null,
  *   updatedAt: number,
  *   allowStartTimeRepair: boolean
  * }} params
@@ -165,8 +126,8 @@ function applySessionWriteNormalization(params) {
   const updatedAt = toNonNegativeInteger(params.updatedAt, Date.now())
   const updatedAtIso = toIsoTimestampSafe(updatedAt)
 
-  const existingTiming = isRecord(params.existingCanonicalSession?.timing)
-    ? params.existingCanonicalSession.timing
+  const existingTiming = isRecord(params.existingSession?.timing)
+    ? params.existingSession.timing
     : null
   const sessionTiming = isRecord(params.session?.timing)
     ? params.session.timing
@@ -175,16 +136,13 @@ function applySessionWriteNormalization(params) {
   const createdAtTimestamp =
     readTimestampCandidate(sessionTiming?.createdAt) ??
     readTimestampCandidate(existingTiming?.createdAt) ??
-    readTimestampCandidate(params.session?.createdAt) ??
-    readTimestampCandidate(params.session?.created_at) ??
     updatedAt
 
   const existingStartedAtTimestamp = readTimestampCandidate(
     existingTiming?.startedAt
   )
-  const requestedStartedAtTimestamp = readPreferredStartTimestamp(
-    params.session,
-    sessionTiming
+  const requestedStartedAtTimestamp = readTimestampCandidate(
+    sessionTiming?.startedAt
   )
 
   let nextStartedAtTimestamp = requestedStartedAtTimestamp
@@ -208,7 +166,6 @@ function applySessionWriteNormalization(params) {
 
   if (nextStartedAtTimestamp === null) {
     nextStartedAtTimestamp = createdAtTimestamp
-    log('info', 'derived missing match start time from created_at semantics')
   }
 
   const finishedAt =
@@ -321,485 +278,12 @@ export function updateActiveSessionPartial(patch, options = {}) {
  * @returns {boolean}
  */
 export function clearActiveSession() {
-  let didClearLegacyRuntime = true
-
-  try {
-    clearLegacyActiveSession()
-  } catch {
-    log('warn', 'failed to clear legacy runtime storage key', {
-      key: LEGACY_RUNTIME_STORAGE_KEY
-    })
-    didClearLegacyRuntime = false
-  }
-
-  if (!isHmFsAvailable()) {
-    return false
-  }
-
-  const didClearCanonical = removeFile(ACTIVE_SESSION_FILE_PATH)
-  const didClearLegacyActiveFile = removeFile(LEGACY_ACTIVE_SESSION_FILE_PATH)
-
-  if (!didClearCanonical) {
-    log('warn', 'failed to clear canonical active session path', {
-      path: ACTIVE_SESSION_FILE_PATH
-    })
-  }
-
-  if (!didClearLegacyActiveFile) {
-    log('warn', 'failed to clear legacy active-session path', {
-      path: LEGACY_ACTIVE_SESSION_FILE_PATH
-    })
-  }
-
-  return didClearCanonical && didClearLegacyActiveFile && didClearLegacyRuntime
+  return deleteState(ACTIVE_SESSION_STORAGE_KEY)
 }
 
-/**
- * @returns {LegacyMigrationResult}
- */
-export function migrateLegacySessions() {
-  const candidates = []
-  const canonicalCandidate = loadSessionCandidate(
-    ACTIVE_SESSION_FILE_PATH,
-    'canonical',
-    false
-  )
-  const legacyActiveCandidate = loadSessionCandidate(
-    LEGACY_ACTIVE_SESSION_FILE_PATH,
-    'legacy-active-file',
-    true
-  )
-  const legacyRuntimeCandidate = createRuntimeCandidate(
-    loadLegacyActiveSession(),
-    'legacy-runtime-storage'
-  )
-
-  if (canonicalCandidate) {
-    candidates.push(canonicalCandidate)
-  }
-  if (legacyActiveCandidate) {
-    candidates.push(legacyActiveCandidate)
-  }
-  if (legacyRuntimeCandidate) {
-    candidates.push(legacyRuntimeCandidate)
-  }
-
-  const bestCandidate = pickMostRecentCandidate(candidates)
-
-  if (!bestCandidate) {
-    log('debug', 'no migratable legacy session found')
-    return {
-      migrated: false,
-      source: null,
-      didCleanupLegacy: false,
-      reason: 'no-legacy-session'
-    }
-  }
-
-  const shouldWriteCanonical =
-    !canonicalCandidate ||
-    bestCandidate.source !== 'canonical' ||
-    !areSessionsEquivalent(canonicalCandidate.session, bestCandidate.session)
-
-  if (shouldWriteCanonical) {
-    const didSaveCanonical = saveActiveSession(bestCandidate.session, {
-      preserveUpdatedAt: true,
-      allowStartTimeRepair: true
-    })
-
-    if (!didSaveCanonical) {
-      return {
-        migrated: false,
-        source: bestCandidate.source,
-        didCleanupLegacy: false,
-        reason: 'canonical-write-failed'
-      }
-    }
-
-    log('info', 'migrated active session into canonical path', {
-      source: bestCandidate.source,
-      updatedAt: bestCandidate.updatedAt
-    })
-  } else {
-    log('debug', 'canonical active session already up-to-date')
-  }
-
-  const didCleanupLegacy = cleanupLegacyArtifacts()
-
-  return {
-    migrated: shouldWriteCanonical,
-    source: bestCandidate.source,
-    didCleanupLegacy,
-    reason: null
-  }
-}
-
-/**
- * @param {string} path
- * @param {string} source
- * @param {boolean} allowLegacyRuntimeFallback
- * @returns {ActiveSession | null}
- */
-function loadSessionFromPath(path, source, allowLegacyRuntimeFallback) {
-  const serialized = readTextFile(path)
-
-  if (serialized === null) {
-    return null
-  }
-
-  return deserializeSession(serialized, source, allowLegacyRuntimeFallback)
-}
-
-/**
- * @param {string} path
- * @param {string} source
- * @param {boolean} allowLegacyRuntimeFallback
- * @returns {{ source: string, session: ActiveSession, updatedAt: number } | null}
- */
-function loadSessionCandidate(path, source, allowLegacyRuntimeFallback) {
-  const session = loadSessionFromPath(path, source, allowLegacyRuntimeFallback)
-
-  if (!session) {
-    return null
-  }
-
-  return {
-    source,
-    session,
-    updatedAt: toNonNegativeInteger(session.updatedAt, 0)
-  }
-}
-
-/**
- * @param {unknown} value
- * @param {string} source
- * @returns {{ source: string, session: ActiveSession, updatedAt: number } | null}
- */
-function createRuntimeCandidate(value, source) {
-  const session = normalizeLegacyRuntimeState(value)
-
-  if (!session) {
-    return null
-  }
-
-  return {
-    source,
-    session,
-    updatedAt: toNonNegativeInteger(session.updatedAt, 0)
-  }
-}
-
-/**
- * @param {Array<{ source: string, session: ActiveSession, updatedAt: number }>} candidates
- * @returns {{ source: string, session: ActiveSession, updatedAt: number } | null}
- */
-function pickMostRecentCandidate(candidates) {
-  let bestCandidate = null
-
-  for (const candidate of candidates) {
-    if (!bestCandidate) {
-      bestCandidate = candidate
-      continue
-    }
-
-    if (candidate.updatedAt > bestCandidate.updatedAt) {
-      bestCandidate = candidate
-      continue
-    }
-
-    if (candidate.updatedAt < bestCandidate.updatedAt) {
-      continue
-    }
-
-    const candidatePriority =
-      SOURCE_PRIORITY[candidate.source] ?? Number.MAX_SAFE_INTEGER
-    const bestCandidatePriority =
-      SOURCE_PRIORITY[bestCandidate.source] ?? Number.MAX_SAFE_INTEGER
-
-    if (candidatePriority < bestCandidatePriority) {
-      bestCandidate = candidate
-    }
-  }
-
-  return bestCandidate
-}
-
-/**
- * @param {ActiveSession} leftSession
- * @param {ActiveSession} rightSession
- * @returns {boolean}
- */
-function areSessionsEquivalent(leftSession, rightSession) {
-  return sessionsEqual(leftSession, rightSession)
-}
-
-/**
- * @param {string} serialized
- * @param {string} source
- * @param {boolean} allowLegacyRuntimeFallback
- * @returns {ActiveSession | null}
- */
-function deserializeSession(serialized, source, allowLegacyRuntimeFallback) {
-  if (typeof serialized !== 'string' || serialized.length === 0) {
-    return null
-  }
-
-  try {
-    const parsed = JSON.parse(serialized)
-
-    const canonicalSession = deserializeMatchSession(serialized)
-
-    if (canonicalSession) {
-      return withHistoryCompatibilityMetadata(canonicalSession, parsed)
-    }
-
-    if (allowLegacyRuntimeFallback) {
-      return normalizeLegacyRuntimeState(parsed)
-    }
-
-    return null
-  } catch {
-    log('debug', 'failed to deserialize active session payload', { source })
-    return null
-  }
-}
-
-/**
- * @param {unknown} runtimeState
- * @returns {ActiveSession | null}
- */
-function normalizeLegacyRuntimeState(runtimeState) {
-  if (!looksLikeLegacyRuntimeState(runtimeState)) {
-    return null
-  }
-
-  const { setsToPlay, setsNeededToWin } = resolveSetConfiguration(
-    runtimeState.setsToPlay,
-    runtimeState.setsNeededToWin
-  )
-
-  const normalizedSession = {
-    status:
-      runtimeState.status === MATCH_STATUS.FINISHED
-        ? MATCH_STATUS.FINISHED
-        : MATCH_STATUS.ACTIVE,
-    setsToPlay,
-    setsNeededToWin,
-    setsWon: {
-      teamA: toNonNegativeInteger(runtimeState?.setsWon?.teamA, 0),
-      teamB: toNonNegativeInteger(runtimeState?.setsWon?.teamB, 0)
-    },
-    currentSet: {
-      number: toPositiveInteger(
-        runtimeState?.currentSetStatus?.number,
-        toPositiveInteger(runtimeState?.currentSet, 1)
-      ),
-      games: {
-        teamA: toNonNegativeInteger(
-          runtimeState?.currentSetStatus?.teamAGames,
-          toNonNegativeInteger(runtimeState?.teamA?.games, 0)
-        ),
-        teamB: toNonNegativeInteger(
-          runtimeState?.currentSetStatus?.teamBGames,
-          toNonNegativeInteger(runtimeState?.teamB?.games, 0)
-        )
-      }
-    },
-    currentGame: {
-      points: {
-        teamA: toPersistedPointValue(runtimeState?.teamA?.points),
-        teamB: toPersistedPointValue(runtimeState?.teamB?.points)
-      }
-    },
-    setHistory: normalizeSetHistory(runtimeState?.setHistory),
-    updatedAt: toNonNegativeInteger(runtimeState.updatedAt, Date.now()),
-    schemaVersion: CURRENT_SCHEMA_VERSION,
-    timing: runtimeState?.timing,
-    createdAt: runtimeState?.createdAt,
-    created_at: runtimeState?.created_at,
-    startedAt: runtimeState?.startedAt,
-    started_at: runtimeState?.started_at,
-    startTime: runtimeState?.startTime,
-    start_time: runtimeState?.start_time,
-    matchStartTime: runtimeState?.matchStartTime,
-    match_start_time: runtimeState?.match_start_time
-  }
-
-  const migratedSession = migrateMatchState(normalizedSession)
-
-  if (!isMatchState(migratedSession)) {
-    return null
-  }
-
-  return withHistoryCompatibilityMetadata(migratedSession, runtimeState)
-}
-
-/**
- * @param {unknown} setsToPlay
- * @param {unknown} setsNeededToWin
- * @returns {{ setsToPlay: import('./match-state-schema.js').SetsToPlay, setsNeededToWin: import('./match-state-schema.js').SetsNeededToWin }}
- */
-function resolveSetConfiguration(setsToPlay, setsNeededToWin) {
-  const normalizedSetsToPlay =
-    setsToPlay === SETS_TO_PLAY.ONE ||
-    setsToPlay === SETS_TO_PLAY.THREE ||
-    setsToPlay === SETS_TO_PLAY.FIVE
-      ? setsToPlay
-      : null
-
-  const normalizedSetsNeededToWin =
-    setsNeededToWin === SETS_NEEDED_TO_WIN.ONE ||
-    setsNeededToWin === SETS_NEEDED_TO_WIN.TWO ||
-    setsNeededToWin === SETS_NEEDED_TO_WIN.THREE
-      ? setsNeededToWin
-      : null
-
-  if (
-    normalizedSetsToPlay === SETS_TO_PLAY.ONE &&
-    normalizedSetsNeededToWin === SETS_NEEDED_TO_WIN.ONE
-  ) {
-    return {
-      setsToPlay: SETS_TO_PLAY.ONE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.ONE
-    }
-  }
-
-  if (
-    normalizedSetsToPlay === SETS_TO_PLAY.THREE &&
-    normalizedSetsNeededToWin === SETS_NEEDED_TO_WIN.TWO
-  ) {
-    return {
-      setsToPlay: SETS_TO_PLAY.THREE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.TWO
-    }
-  }
-
-  if (
-    normalizedSetsToPlay === SETS_TO_PLAY.FIVE &&
-    normalizedSetsNeededToWin === SETS_NEEDED_TO_WIN.THREE
-  ) {
-    return {
-      setsToPlay: SETS_TO_PLAY.FIVE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.THREE
-    }
-  }
-
-  if (normalizedSetsNeededToWin === SETS_NEEDED_TO_WIN.ONE) {
-    return {
-      setsToPlay: SETS_TO_PLAY.ONE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.ONE
-    }
-  }
-
-  if (normalizedSetsNeededToWin === SETS_NEEDED_TO_WIN.THREE) {
-    return {
-      setsToPlay: SETS_TO_PLAY.FIVE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.THREE
-    }
-  }
-
-  if (normalizedSetsToPlay === SETS_TO_PLAY.ONE) {
-    return {
-      setsToPlay: SETS_TO_PLAY.ONE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.ONE
-    }
-  }
-
-  if (normalizedSetsToPlay === SETS_TO_PLAY.FIVE) {
-    return {
-      setsToPlay: SETS_TO_PLAY.FIVE,
-      setsNeededToWin: SETS_NEEDED_TO_WIN.THREE
-    }
-  }
-
-  return {
-    setsToPlay: SETS_TO_PLAY.THREE,
-    setsNeededToWin: SETS_NEEDED_TO_WIN.TWO
-  }
-}
-
-/**
- * @param {ActiveSession} session
- * @param {unknown} source
- * @returns {ActiveSession}
- */
-function withHistoryCompatibilityMetadata(session, source) {
-  const nextSession = {
-    ...session
-  }
-
-  if (!isRecord(source)) {
-    return nextSession
-  }
-
-  const teamALabel = source?.teams?.teamA?.label
-  const teamBLabel = source?.teams?.teamB?.label
-
-  if (typeof teamALabel === 'string' && typeof teamBLabel === 'string') {
-    nextSession.teams = {
-      teamA: {
-        id: ACTIVE_TEAM,
-        label: teamALabel
-      },
-      teamB: {
-        id: OPPOSING_TEAM,
-        label: teamBLabel
-      }
-    }
-  }
-
-  if (
-    source.winnerTeam === ACTIVE_TEAM ||
-    source.winnerTeam === OPPOSING_TEAM
-  ) {
-    nextSession.winnerTeam = source.winnerTeam
-  }
-
-  if (isRecord(source.winner) && isTeamIdentifier(source.winner.team)) {
-    nextSession.winner = {
-      team: source.winner.team
-    }
-  }
-
-  if (Number.isInteger(source.completedAt) && source.completedAt >= 0) {
-    nextSession.completedAt = source.completedAt
-  }
-
-  return nextSession
-}
-
-/**
- * @returns {boolean}
- */
-function cleanupLegacyArtifacts() {
-  let didCleanup = true
-
-  try {
-    clearLegacyActiveSession()
-  } catch {
-    log('warn', 'failed to clear legacy runtime storage key', {
-      key: LEGACY_RUNTIME_STORAGE_KEY
-    })
-    didCleanup = false
-  }
-
-  if (!removeFile(LEGACY_ACTIVE_SESSION_FILE_PATH)) {
-    log('warn', 'failed to clear legacy active-session file path', {
-      path: LEGACY_ACTIVE_SESSION_FILE_PATH
-    })
-    didCleanup = false
-  }
-
-  return didCleanup
-}
-
-/**
- * @param {() => ActiveSession | null} callback
- * @returns {ActiveSession | null}
- */
 function withAtomicUpdateLock(callback) {
   if (isAtomicUpdateInFlight) {
-    log('warn', 'atomic active session update skipped due to in-flight update')
+    log('warn', 'ignored nested active session update')
     return null
   }
 
@@ -810,364 +294,4 @@ function withAtomicUpdateLock(callback) {
   } finally {
     isAtomicUpdateInFlight = false
   }
-}
-
-/**
- * @param {unknown} value
- * @returns {boolean}
- */
-function looksLikeLegacyRuntimeState(value) {
-  return (
-    isRecord(value) &&
-    isRecord(value.teamA) &&
-    isRecord(value.teamB) &&
-    isRecord(value.currentSetStatus) &&
-    hasLegacyRuntimeScoreShape(value) &&
-    (value.status === MATCH_STATUS.ACTIVE ||
-      value.status === MATCH_STATUS.FINISHED)
-  )
-}
-
-/**
- * @param {Record<string, any>} value
- * @returns {boolean}
- */
-function hasLegacyRuntimeScoreShape(value) {
-  return (
-    isRecord(value.setsWon) &&
-    isNonNegativeInteger(value.setsWon.teamA) &&
-    isNonNegativeInteger(value.setsWon.teamB) &&
-    isPositiveInteger(value.currentSetStatus.number) &&
-    isNonNegativeInteger(value.currentSetStatus.teamAGames) &&
-    isNonNegativeInteger(value.currentSetStatus.teamBGames) &&
-    isLegacyPointValue(value.teamA.points) &&
-    isLegacyPointValue(value.teamB.points)
-  )
-}
-
-/**
- * @param {unknown} value
- * @returns {boolean}
- */
-function isLegacyPointValue(value) {
-  return value === 'Ad' || value === 'Game' || isNonNegativeInteger(value)
-}
-
-/**
- * @param {ActiveSession} session
- * @param {Record<string, any> | null} sessionTiming
- * @returns {number | null}
- */
-function readPreferredStartTimestamp(session, sessionTiming) {
-  let earliestTimestamp = null
-
-  const candidates = [
-    sessionTiming?.startedAt,
-    session?.matchStartTime,
-    session?.match_start_time,
-    session?.startedAt,
-    session?.started_at,
-    session?.startTime,
-    session?.start_time
-  ]
-
-  for (const candidateValue of candidates) {
-    const candidateTimestamp = readTimestampCandidate(candidateValue)
-
-    if (candidateTimestamp === null) {
-      continue
-    }
-
-    if (earliestTimestamp === null || candidateTimestamp < earliestTimestamp) {
-      earliestTimestamp = candidateTimestamp
-    }
-  }
-
-  return earliestTimestamp
-}
-
-/**
- * @returns {boolean}
- */
-function isHmFsAvailable() {
-  return (
-    typeof hmFS !== 'undefined' &&
-    typeof hmFS.open === 'function' &&
-    typeof hmFS.close === 'function' &&
-    typeof hmFS.read === 'function' &&
-    typeof hmFS.write === 'function' &&
-    typeof hmFS.stat === 'function'
-  )
-}
-
-/**
- * @param {string} filePath
- * @returns {string}
- */
-function resolveFilePath(filePath) {
-  if (typeof filePath !== 'string' || filePath.length === 0) {
-    return ''
-  }
-
-  if (filePath.startsWith('data://')) {
-    return filePath.slice('data://'.length)
-  }
-
-  if (filePath.startsWith('/data/')) {
-    return filePath.slice('/data/'.length)
-  }
-
-  return filePath
-}
-
-/**
- * @param {string} filePath
- * @returns {string | null}
- */
-function readTextFile(filePath) {
-  if (!isHmFsAvailable()) {
-    return null
-  }
-
-  const resolvedPath = resolveFilePath(filePath)
-  let fileDescriptor = -1
-
-  try {
-    const [statInfo, statError] = hmFS.stat(resolvedPath)
-
-    if (statError !== 0 || !statInfo || statInfo.size <= 0) {
-      return null
-    }
-
-    const readFlag = resolveFsReadOnlyFlag(hmFS)
-    fileDescriptor = hmFS.open(resolvedPath, readFlag)
-
-    if (fileDescriptor < 0) {
-      return null
-    }
-
-    const buffer = new Uint8Array(statInfo.size)
-    const readResult = hmFS.read(
-      fileDescriptor,
-      buffer.buffer,
-      0,
-      statInfo.size
-    )
-
-    if (readResult < 0) {
-      return null
-    }
-
-    const decoded = decodeUtf8(buffer)
-    return decoded.length > 0 ? decoded : null
-  } catch {
-    return null
-  } finally {
-    if (fileDescriptor >= 0) {
-      try {
-        hmFS.close(fileDescriptor)
-      } catch {
-        // Ignore close failures.
-      }
-    }
-  }
-}
-
-/**
- * @param {string} filePath
- * @param {string} content
- * @returns {boolean}
- */
-function writeTextFile(filePath, content) {
-  if (!isHmFsAvailable()) {
-    return false
-  }
-
-  const resolvedPath = resolveFilePath(filePath)
-  let fileDescriptor = -1
-
-  try {
-    const bytes = encodeUtf8(content)
-    const writeFlags = resolveFsWriteCreateTruncateFlags(hmFS)
-
-    fileDescriptor = hmFS.open(resolvedPath, writeFlags)
-
-    if (fileDescriptor < 0) {
-      return false
-    }
-
-    const writeResult = hmFS.write(
-      fileDescriptor,
-      bytes.buffer,
-      0,
-      bytes.length
-    )
-    return writeResult >= 0
-  } catch {
-    return false
-  } finally {
-    if (fileDescriptor >= 0) {
-      try {
-        hmFS.close(fileDescriptor)
-      } catch {
-        // Ignore close failures.
-      }
-    }
-  }
-}
-
-/**
- * @param {string} filePath
- * @returns {boolean}
- */
-function removeFile(filePath) {
-  if (!isHmFsAvailable()) {
-    return false
-  }
-
-  const resolvedPath = resolveFilePath(filePath)
-
-  try {
-    const [statInfo, statError] = hmFS.stat(resolvedPath)
-
-    if (statError !== 0 || !statInfo) {
-      return true
-    }
-
-    const removeResult = hmFS.remove(resolvedPath)
-    return removeResult === undefined || removeResult >= 0
-  } catch {
-    return false
-  }
-}
-
-/**
- * @param {'debug' | 'info' | 'warn'} level
- * @param {string} message
- * @param {Record<string, unknown>} [context]
- */
-function log(level, message, context = {}) {
-  if (typeof console === 'undefined') {
-    return
-  }
-
-  const text = `${LOG_PREFIX} ${message}`
-
-  if (level === 'warn' && typeof console.warn === 'function') {
-    console.warn(text, context)
-    return
-  }
-
-  if (level === 'info' && typeof console.info === 'function') {
-    console.info(text, context)
-    return
-  }
-
-  if (level === 'debug' && typeof console.debug === 'function') {
-    console.debug(text, context)
-    return
-  }
-
-  if (typeof console.log === 'function') {
-    console.log(text, context)
-  }
-}
-
-/**
- * @param {string} str
- * @returns {Uint8Array}
- */
-function encodeUtf8(str) {
-  const bytes = []
-
-  for (let i = 0; i < str.length; i += 1) {
-    let code = str.charCodeAt(i)
-
-    if (code >= 0xd800 && code <= 0xdbff) {
-      const high = code
-      const low = str.charCodeAt(i + 1)
-
-      if (low >= 0xdc00 && low <= 0xdfff) {
-        code = ((high - 0xd800) << 10) + (low - 0xdc00) + 0x10000
-        i += 1
-      }
-    }
-
-    if (code < 0x80) {
-      bytes.push(code)
-    } else if (code < 0x800) {
-      bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f))
-    } else if (code < 0x10000) {
-      bytes.push(
-        0xe0 | (code >> 12),
-        0x80 | ((code >> 6) & 0x3f),
-        0x80 | (code & 0x3f)
-      )
-    } else {
-      bytes.push(
-        0xf0 | (code >> 18),
-        0x80 | ((code >> 12) & 0x3f),
-        0x80 | ((code >> 6) & 0x3f),
-        0x80 | (code & 0x3f)
-      )
-    }
-  }
-
-  return new Uint8Array(bytes)
-}
-
-/**
- * @param {Uint8Array} bytes
- * @returns {string}
- */
-function decodeUtf8(bytes) {
-  let decoded = ''
-  let index = 0
-
-  while (index < bytes.length) {
-    const byte = bytes[index]
-    let code
-
-    if (byte < 0x80) {
-      code = byte
-      index += 1
-    } else if ((byte & 0xe0) === 0xc0) {
-      code = ((byte & 0x1f) << 6) | (bytes[index + 1] & 0x3f)
-      index += 2
-    } else if ((byte & 0xf0) === 0xe0) {
-      code =
-        ((byte & 0x0f) << 12) |
-        ((bytes[index + 1] & 0x3f) << 6) |
-        (bytes[index + 2] & 0x3f)
-      index += 3
-    } else {
-      code =
-        ((byte & 0x07) << 18) |
-        ((bytes[index + 1] & 0x3f) << 12) |
-        ((bytes[index + 2] & 0x3f) << 6) |
-        (bytes[index + 3] & 0x3f)
-      index += 4
-    }
-
-    if (code >= 0x10000) {
-      const offset = code - 0x10000
-      decoded += String.fromCharCode(
-        0xd800 + (offset >> 10),
-        0xdc00 + (offset & 0x3ff)
-      )
-      continue
-    }
-
-    decoded += String.fromCharCode(code)
-  }
-
-  return decoded
-}
-
-/**
- * @param {string} key
- * @returns {string}
- */
-function keyToFilename(key) {
-  return `${key.replace(/[^a-zA-Z0-9._-]/g, '_')}.json`
 }

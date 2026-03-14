@@ -9,123 +9,72 @@ import {
   saveHapticFeedbackEnabled
 } from '../utils/haptic-feedback-settings.js'
 import {
-  createHmFsMock,
-  readFileStoreKey,
-  storageKeyToFilename
-} from './helpers/hmfs-mock.js'
-
-const HAPTIC_FEEDBACK_FILENAME = storageKeyToFilename(
-  HAPTIC_FEEDBACK_STORAGE_KEY
-)
+  STORAGE_SCHEMA_META_KEY,
+  STORAGE_SCHEMA_VERSION_KEY
+} from '../utils/persistence.js'
+import {
+  createLocalStorageMock,
+  withMockLocalStorage
+} from './helpers/local-storage-mock.js'
 
 test('loadHapticFeedbackEnabled defaults to true when key is missing', () => {
-  const originalHmFS = globalThis.hmFS
-  const { mock } = createHmFsMock()
+  const { storage } = createLocalStorageMock()
 
-  globalThis.hmFS = mock
-
-  try {
+  withMockLocalStorage(storage, () => {
     assert.equal(loadHapticFeedbackEnabled(), true)
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
+  })
 })
 
-test('saveHapticFeedbackEnabled persists false value', () => {
-  const originalHmFS = globalThis.hmFS
-  const { mock, fileStore } = createHmFsMock()
+test('saveHapticFeedbackEnabled persists boolean preferences', () => {
+  const { storage, has } = createLocalStorageMock()
 
-  globalThis.hmFS = mock
-
-  try {
-    saveHapticFeedbackEnabled(false)
-
-    assert.equal(
-      readFileStoreKey(fileStore, HAPTIC_FEEDBACK_STORAGE_KEY),
-      'false'
-    )
+  withMockLocalStorage(storage, () => {
+    assert.equal(saveHapticFeedbackEnabled(false), false)
+    assert.equal(has(HAPTIC_FEEDBACK_STORAGE_KEY), true)
     assert.equal(loadHapticFeedbackEnabled(), false)
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
-})
-
-test('saveHapticFeedbackEnabled enables only when value is true boolean', () => {
-  const originalHmFS = globalThis.hmFS
-  const { mock, fileStore } = createHmFsMock()
-
-  globalThis.hmFS = mock
-
-  try {
-    assert.equal(saveHapticFeedbackEnabled(1), false)
-    assert.equal(
-      readFileStoreKey(fileStore, HAPTIC_FEEDBACK_STORAGE_KEY),
-      'false'
-    )
 
     assert.equal(saveHapticFeedbackEnabled(true), true)
-    assert.equal(
-      readFileStoreKey(fileStore, HAPTIC_FEEDBACK_STORAGE_KEY),
-      'true'
-    )
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
+    assert.equal(loadHapticFeedbackEnabled(), true)
+  })
 })
 
-test('clearHapticFeedbackEnabled resets to default true', () => {
-  const originalHmFS = globalThis.hmFS
-  const { mock, fileStore } = createHmFsMock()
+test('clearHapticFeedbackEnabled resets the preference to default', () => {
+  const { storage, has } = createLocalStorageMock()
 
-  globalThis.hmFS = mock
-
-  try {
+  withMockLocalStorage(storage, () => {
     saveHapticFeedbackEnabled(false)
     assert.equal(loadHapticFeedbackEnabled(), false)
 
-    clearHapticFeedbackEnabled()
-
-    assert.equal(fileStore.has(HAPTIC_FEEDBACK_FILENAME), false)
+    assert.equal(clearHapticFeedbackEnabled(), true)
+    assert.equal(has(HAPTIC_FEEDBACK_STORAGE_KEY), false)
     assert.equal(loadHapticFeedbackEnabled(), true)
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
+  })
 })
 
-test('clearAllAppData resets haptic setting to default enabled', () => {
-  const originalHmFS = globalThis.hmFS
-  const { mock } = createHmFsMock()
+test('clearAllAppData clears the haptic preference', () => {
+  const { storage, has } = createLocalStorageMock()
 
-  globalThis.hmFS = mock
-
-  try {
+  withMockLocalStorage(storage, () => {
     saveHapticFeedbackEnabled(false)
     assert.equal(loadHapticFeedbackEnabled(), false)
 
-    clearAllAppData()
-
+    assert.equal(clearAllAppData(), true)
+    assert.equal(has(HAPTIC_FEEDBACK_STORAGE_KEY), false)
     assert.equal(loadHapticFeedbackEnabled(), true)
-  } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-  }
+  })
+})
+
+test('clearAllAppData removes storage schema markers', () => {
+  const { storage, has } = createLocalStorageMock()
+
+  withMockLocalStorage(storage, () => {
+    saveHapticFeedbackEnabled(false)
+
+    assert.equal(has(STORAGE_SCHEMA_VERSION_KEY), true)
+    assert.equal(has(STORAGE_SCHEMA_META_KEY), true)
+
+    assert.equal(clearAllAppData(), true)
+    assert.equal(has(STORAGE_SCHEMA_VERSION_KEY), false)
+    assert.equal(has(STORAGE_SCHEMA_META_KEY), false)
+  })
 })

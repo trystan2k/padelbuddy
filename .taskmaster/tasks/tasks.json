@@ -5136,13 +5136,79 @@
         "description": "Implement a modern LocalStorage-first persistence layer for active session, history, and settings data while preserving backward compatibility, add migration scripts from legacy storage format, and evaluate necessity of @zos/fs fallback mechanism.",
         "details": "Implement a robust persistence strategy that prioritizes LocalStorage for storing application state (active match session, match history, user settings) while maintaining existing schema semantics to ensure data compatibility.\n\n**Implementation Steps:**\n\n1. **Create New Persistence Module (`utils/persistence.js`):**\n   - Implement `saveState(key, data)` function using LocalStorage API as primary storage\n   - Implement `loadState(key)` function with LocalStorage lookup\n   - Implement `deleteState(key)` function for data cleanup\n   - Implement `clearAllState()` function for full data reset\n   - Add schema version tracking constant (e.g., `CURRENT_SCHEMA_VERSION = 2`)\n\n2. **Implement Schema Migration System:**\n   - Create `migrateStorage()` function that checks stored schema version\n   - Define migration handlers for each version increment:\n     - `migrateV1ToV2()`: Transform legacy @zos/fs data structure to LocalStorage format\n     - `migrateV2ToV3()`: Placeholder for future schema changes\n   - Store migration metadata (original version, migration timestamp)\n   - Implement rollback capability for failed migrations\n\n3. **Preserve Existing Schema Semantics:**\n   - Audit current storage schema for `ACTIVE_MATCH_SESSION`, `MATCH_HISTORY`, and `USER_SETTINGS`\n   - Document existing data structures and ensure new persistence maintains same keys and value formats\n   - Update all existing storage calls in:\n     - `page/index.js` (Home Screen - loadState for resume game)\n     - `page/game.js` (Game Screen - active session updates)\n     - `page/history.js` (History Screen - match history retrieval)\n     - `page/settings.js` (Settings Screen - user settings)\n     - `page/summary.js` (Summary Screen - finished match storage)\n\n4. **Evaluate @zos/fs Fallback Necessity:**\n   - Research LocalStorage availability and limitations in Zepp OS 3.6+\n   - Determine if file system fallback is needed for:\n     - Devices with limited LocalStorage capacity\n     - Large data sets exceeding LocalStorage quotas\n     - Legacy device compatibility\n   - If fallback needed: Implement dual-layer storage with automatic failover\n   - If not needed: Document rationale and remove @zos/fs dependencies\n\n5. **Create Migration Script:**\n   - Implement one-time migration script `scripts/migrate-storage.js`\n   - Script should:\n     - Check for existing data in old storage format\n     - Backup existing data before migration\n     - Transform and write data to new LocalStorage format\n     - Update schema version marker\n     - Log migration results for debugging\n   - Add migration trigger in app initialization (`utils/app-init.js`)\n\n6. **Add Error Handling and Recovery:**\n   - Implement try-catch blocks around all storage operations\n   - Add data validation on read operations\n   - Implement graceful degradation if storage fails\n   - Add logging for storage operations in debug mode\n\n**Schema Version Tracking:**\n- Store schema version in `STORAGE_SCHEMA_VERSION` key\n- Increment version when breaking changes occur\n- Migration runs automatically when version mismatch detected\n\n**Data Preservation Guarantees:**\n- All existing user data must remain accessible after migration\n- No data loss during upgrade process\n- Support for reverting to previous app version if needed",
         "testStrategy": "1. **Migration Path Testing:**\n   - Create test fixture with legacy storage format (v1 schema)\n   - Run migration script and verify data transforms correctly to v2 schema\n   - Verify `STORAGE_SCHEMA_VERSION` is updated\n   - Test migration rollback when corruption detected\n   - Verify idempotent migration (running twice doesn't cause issues)\n\n2. **Data Preservation Testing:**\n   - Populate active match session with complex state (multiple sets, tie-break, etc.)\n   - Run migration and verify all match data remains intact\n   - Verify match history entries are preserved with correct timestamps\n   - Verify user settings (custom scores, defaults) migrate correctly\n   - Test with empty storage (no migration needed)\n\n3. **LocalStorage-First Verification:**\n   - Verify `saveState` writes to LocalStorage API\n   - Verify `loadState` reads from LocalStorage\n   - Test persistence across app restarts\n   - Test with rapid save/load operations (stress test)\n\n4. **Backward Compatibility Tests:**\n   - Deploy app with old storage format\n   - Upgrade to new version and verify automatic migration occurs\n   - Verify all screens (Home, Game, History, Settings, Summary) load data correctly\n   - Test \"Resume Game\" functionality post-migration\n   - Test \"Start New Game\" properly clears migrated data\n\n5. **Fallback Testing (if implemented):**\n   - Simulate LocalStorage quota exceeded error\n   - Verify automatic failover to @zos/fs works\n   - Test data retrieval from fallback storage\n   - Verify graceful degradation if both fail\n\n6. **Integration Tests:**\n   - Run full game flow (Setup -> Play -> Finish -> Summary) with new persistence\n   - Verify score updates persist in real-time\n   - Verify history list updates after match completion\n   - Test settings changes persist across app sessions\n   - Verify undo/redo operations work with new storage layer\n\n7. **Edge Case Testing:**\n   - Test with corrupted storage data\n   - Test with null/undefined values\n   - Test with extremely large history arrays\n   - Test with concurrent save operations\n   - Test storage clear and restore functionality",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "75",
           "73"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Core LocalStorage Persistence Module",
+            "description": "Implement the foundational persistence layer using LocalStorage API with CRUD operations and error handling.",
+            "dependencies": [],
+            "details": "Create utils/persistence.js with saveState(key, data) using LocalStorage.setItem, loadState(key) using LocalStorage.getItem, deleteState(key) using LocalStorage.removeItem, clearAllState() for full data reset. Add CURRENT_SCHEMA_VERSION constant (value 2). Wrap all operations in try-catch blocks for graceful error handling. Add JSON parsing validation on loadState to handle corrupted data. Implement debug logging for storage operations.",
+            "status": "done",
+            "testStrategy": "Write unit tests verifying save/load/delete operations persist data correctly. Test error handling with corrupted JSON data and quota exceeded scenarios.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T23:13:04.221Z"
+          },
+          {
+            "id": 2,
+            "title": "Implement Schema Migration Framework",
+            "description": "Build the migration system to handle data structure version transitions from legacy format to LocalStorage.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create migrateStorage() function that reads STORAGE_SCHEMA_VERSION and compares to CURRENT_SCHEMA_VERSION. Implement migrateV1ToV2() to transform legacy @zos/fs data structure to LocalStorage format. Create migrateV2ToV3() as placeholder for future schema changes. Add rollback capability by storing original data backup before migration. Store migration metadata (originalVersion, migrationTimestamp) in STORAGE_METADATA key. Add debug logging for each migration step.",
+            "status": "done",
+            "testStrategy": "Create test fixture with v1 schema data, run migration, verify data transforms correctly to v2 format. Test idempotent migration (running twice should not corrupt data).",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T23:13:04.227Z"
+          },
+          {
+            "id": 3,
+            "title": "Audit Schema and Update Page References",
+            "description": "Document existing data structures and migrate all page modules to use the new persistence module.",
+            "dependencies": [
+              1
+            ],
+            "details": "Audit and document current schema for ACTIVE_MATCH_SESSION, MATCH_HISTORY, USER_SETTINGS keys and their value formats. Update page/index.js to import and use persistence.loadState for resume game functionality. Update page/game.js to use persistence.saveState for active session updates. Update page/history.js to use persistence.loadState for match history retrieval. Update page/settings.js to use persistence for user settings. Update page/summary.js to use persistence.saveState for finished match storage. Ensure all data structures remain identical to preserve compatibility.",
+            "status": "done",
+            "testStrategy": "Run static analysis to confirm no direct @zos/fs calls remain in page files. Manual testing to verify each page correctly loads and saves data.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T23:13:04.231Z"
+          },
+          {
+            "id": 4,
+            "title": "Create Migration Script with Backup and Validation",
+            "description": "Implement one-time migration script that safely transitions existing user data to the new storage format.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create scripts/migrate-storage.js that checks for existing data in old @zos/fs format. Implement backup functionality to save existing data to a temporary key before migration. Transform data to new LocalStorage format using the migration framework. Update STORAGE_SCHEMA_VERSION marker after successful migration. Log migration results including success/failure status and data counts for debugging. Add migration trigger in utils/app-init.js to run automatically on app launch when version mismatch detected. Ensure migration only runs once per schema version.",
+            "status": "done",
+            "testStrategy": "Test migration with populated legacy data, verify all data preserved in new format. Test rollback scenario when migration fails mid-process.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T23:57:55.303Z"
+          },
+          {
+            "id": 5,
+            "title": "Evaluate @zos/fs Fallback Necessity and Complete Integration",
+            "description": "Determine if file system fallback is required for Zepp OS constraints and finalize the persistence implementation.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Research LocalStorage availability and limitations in Zepp OS 3.6+ documentation. Test LocalStorage quota limits with large match history data sets. Determine if file system fallback is needed for limited capacity devices or legacy compatibility. If fallback needed: implement dual-layer storage in persistence.js with automatic failover from LocalStorage to @zos/fs. If not needed: document rationale in code comments and remove @zos/fs dependencies. Add graceful degradation if all storage mechanisms fail. Finalize error handling and recovery paths.",
+            "status": "done",
+            "testStrategy": "Test on Zepp OS simulator with various device targets. Verify storage works correctly with typical match history sizes. Test behavior when LocalStorage quota is exceeded.",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-13T23:13:04.237Z"
+          }
+        ],
+        "updatedAt": "2026-03-13T23:57:55.303Z"
       },
       {
         "id": "77",
@@ -5196,9 +5262,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-13T17:20:35.364Z",
+      "lastModified": "2026-03-13T23:57:55.304Z",
       "taskCount": 79,
-      "completedCount": 71,
+      "completedCount": 72,
       "tags": [
         "master"
       ]
