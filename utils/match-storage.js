@@ -172,8 +172,7 @@ export class MatchStorage {
       }
     }
 
-    // Always clear canonical/legacy filesystem artifacts as a safety-net.
-    removeActiveSession()
+    return removeActiveSession()
   }
 }
 
@@ -197,7 +196,7 @@ export function saveActiveSession(state) {
 }
 
 export function clearActiveSession() {
-  matchStorage.clearMatchState()
+  return matchStorage.clearMatchState()
 }
 
 /**
@@ -215,7 +214,7 @@ export function loadMatchState() {
 }
 
 export function clearMatchState() {
-  clearActiveSession()
+  return clearActiveSession()
 }
 
 /**

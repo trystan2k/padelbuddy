@@ -5,6 +5,8 @@ This document defines the canonical persisted match session contract used by act
 - Canonical schema: `docs/schema/match-session.json`
 - Runtime owner: `utils/match-state-schema.js`
 - Current version: `schemaVersion = 2`
+- Runtime persistence: LocalStorage-first via `utils/persistence.js`
+- Legacy Zepp OS v1 storage migration is not supported on the mainline app
 
 ## Contract shape
 
@@ -41,18 +43,20 @@ These mirrors are derived from canonical groups and must stay aligned.
 
 - Create (`utils/match-session-init.js`): initializes `timing.startedAt` once from the creation timestamp.
 - Save/update (`utils/match-storage.js`, `utils/active-session-storage.js`): keeps existing persisted `timing.startedAt` stable unless `allowStartTimeRepair` is explicitly enabled.
-- Load/deserialize (`utils/match-state-schema.js`): canonicalizes legacy aliases into `timing.startedAt`.
-- Migrate (`utils/active-session-storage.js#migrateLegacySessions`): allows explicit start-time repair and cleanup of legacy artifacts.
+- Load/deserialize (`utils/match-state-schema.js`): canonicalizes schema-level aliases into `timing.startedAt`.
+- Storage bootstrap (`utils/persistence.js`): ensures LocalStorage schema markers exist without importing legacy Zepp OS v1 data.
 
 ## Migration flow
 
-Runtime migration path is managed in `utils/match-state-schema.js`:
+Schema migration inside the active-session payload is managed in `utils/match-state-schema.js`:
 
 1. `v0` (no schemaVersion) -> `v1`
-2. `v1` (legacy top-level-only structure) -> `v2` canonical contract
+2. `v1` (top-level-only structure) -> `v2` canonical contract
 
-`deserializeMatchSession` attempts migration and returns `null` for invalid payloads.
-`migrateMatchState` attempts migration and falls back to a default empty session when migration fails.
+`deserializeMatchSession` attempts schema normalization and returns `null` for invalid payloads.
+`migrateMatchState` attempts schema normalization and falls back to a default empty session when migration fails.
+
+Storage-layer migration is separate: `utils/persistence.js` only bootstraps and tracks the LocalStorage schema version for the Zepp OS 3.x app line, and does not import legacy Zepp OS v1 persisted data.
 
 ## Backward compatibility policy
 

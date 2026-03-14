@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { createHmFsMock } from './helpers/hmfs-mock.js'
+import {
+  createLocalStorageMock,
+  withMockLocalStorage
+} from './helpers/local-storage-mock.js'
 import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let settingsPageImportCounter = 0
@@ -319,10 +322,8 @@ test('settings game settings row navigates to dedicated page', async () => {
 test('game settings page renders vibration setting switch enabled by default', async () => {
   const originalHmUI = globalThis.hmUI
   const originalHmSetting = globalThis.hmSetting
-  const originalHmFS = globalThis.hmFS
-
   const { hmUI, createdWidgets } = createHmUiRecorder()
-  const hmFsMock = createHmFsMock()
+  const { storage } = createLocalStorageMock()
 
   globalThis.hmUI = hmUI
   globalThis.hmSetting = {
@@ -330,32 +331,36 @@ test('game settings page renders vibration setting switch enabled by default', a
       return { width: 390, height: 450 }
     }
   }
-  globalThis.hmFS = hmFsMock.mock
 
   try {
-    const definition = await loadGameSettingsPageDefinition()
-    const page = { ...definition }
+    await withMockLocalStorage(storage, async () => {
+      const definition = await loadGameSettingsPageDefinition()
+      const page = { ...definition }
 
-    page.onInit()
-    page.build()
+      page.onInit()
+      page.build()
 
-    const visibleTexts = getVisibleWidgets(createdWidgets, 'TEXT').map(
-      (widget) => widget.properties.text
-    )
-    const slideSwitch = getVisibleWidgets(createdWidgets, 'SLIDE_SWITCH')[0]
+      const visibleTexts = getVisibleWidgets(createdWidgets, 'TEXT').map(
+        (widget) => widget.properties.text
+      )
+      const slideSwitch = getVisibleWidgets(createdWidgets, 'SLIDE_SWITCH')[0]
 
-    assert.equal(visibleTexts.includes('gameSettings.title'), true)
-    assert.equal(visibleTexts.includes('settings.vibrationFeedback'), true)
-    assert.ok(slideSwitch)
-    assert.equal(slideSwitch.properties.checked, true)
-    assert.equal(slideSwitch.properties.select_bg, 'switch_on.png')
-    assert.equal(slideSwitch.properties.un_select_bg, 'switch_off.png')
-    assert.equal(slideSwitch.properties.slide_src, 'switch_thumb.png')
-    assert.equal(typeof slideSwitch.properties.slide_select_x, 'number')
-    assert.equal(typeof slideSwitch.properties.slide_un_select_x, 'number')
-    assert.equal(slideSwitch.properties.slide_un_select_x, 0)
-    assert.equal(slideSwitch.properties.slide_select_x > 0, true)
-    assert.equal(typeof slideSwitch.properties.checked_change_func, 'function')
+      assert.equal(visibleTexts.includes('gameSettings.title'), true)
+      assert.equal(visibleTexts.includes('settings.vibrationFeedback'), true)
+      assert.ok(slideSwitch)
+      assert.equal(slideSwitch.properties.checked, true)
+      assert.equal(slideSwitch.properties.select_bg, 'switch_on.png')
+      assert.equal(slideSwitch.properties.un_select_bg, 'switch_off.png')
+      assert.equal(slideSwitch.properties.slide_src, 'switch_thumb.png')
+      assert.equal(typeof slideSwitch.properties.slide_select_x, 'number')
+      assert.equal(typeof slideSwitch.properties.slide_un_select_x, 'number')
+      assert.equal(slideSwitch.properties.slide_un_select_x, 0)
+      assert.equal(slideSwitch.properties.slide_select_x > 0, true)
+      assert.equal(
+        typeof slideSwitch.properties.checked_change_func,
+        'function'
+      )
+    })
   } finally {
     if (typeof originalHmUI === 'undefined') {
       delete globalThis.hmUI
@@ -367,12 +372,6 @@ test('game settings page renders vibration setting switch enabled by default', a
       delete globalThis.hmSetting
     } else {
       globalThis.hmSetting = originalHmSetting
-    }
-
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
     }
   }
 })
@@ -380,48 +379,47 @@ test('game settings page renders vibration setting switch enabled by default', a
 test('game settings switch persists vibration preference across reload', async () => {
   const originalHmUI = globalThis.hmUI
   const originalHmSetting = globalThis.hmSetting
-  const originalHmFS = globalThis.hmFS
-
-  const hmFsMock = createHmFsMock()
+  const { storage } = createLocalStorageMock()
 
   globalThis.hmSetting = {
     getDeviceInfo() {
       return { width: 390, height: 450 }
     }
   }
-  globalThis.hmFS = hmFsMock.mock
 
   try {
-    const definition = await loadGameSettingsPageDefinition()
+    await withMockLocalStorage(storage, async () => {
+      const definition = await loadGameSettingsPageDefinition()
 
-    const firstRender = createHmUiRecorder()
-    globalThis.hmUI = firstRender.hmUI
+      const firstRender = createHmUiRecorder()
+      globalThis.hmUI = firstRender.hmUI
 
-    const firstPage = { ...definition }
-    firstPage.onInit()
-    firstPage.build()
+      const firstPage = { ...definition }
+      firstPage.onInit()
+      firstPage.build()
 
-    const firstSwitch = getVisibleWidgets(
-      firstRender.createdWidgets,
-      'SLIDE_SWITCH'
-    )[0]
-    assert.ok(firstSwitch)
+      const firstSwitch = getVisibleWidgets(
+        firstRender.createdWidgets,
+        'SLIDE_SWITCH'
+      )[0]
+      assert.ok(firstSwitch)
 
-    firstSwitch.properties.checked_change_func(firstSwitch, false)
+      firstSwitch.properties.checked_change_func(firstSwitch, false)
 
-    const secondRender = createHmUiRecorder()
-    globalThis.hmUI = secondRender.hmUI
+      const secondRender = createHmUiRecorder()
+      globalThis.hmUI = secondRender.hmUI
 
-    const secondPage = { ...definition }
-    secondPage.onInit()
-    secondPage.build()
+      const secondPage = { ...definition }
+      secondPage.onInit()
+      secondPage.build()
 
-    const secondSwitch = getVisibleWidgets(
-      secondRender.createdWidgets,
-      'SLIDE_SWITCH'
-    )[0]
-    assert.ok(secondSwitch)
-    assert.equal(secondSwitch.properties.checked, false)
+      const secondSwitch = getVisibleWidgets(
+        secondRender.createdWidgets,
+        'SLIDE_SWITCH'
+      )[0]
+      assert.ok(secondSwitch)
+      assert.equal(secondSwitch.properties.checked, false)
+    })
   } finally {
     if (typeof originalHmUI === 'undefined') {
       delete globalThis.hmUI
@@ -433,12 +431,6 @@ test('game settings switch persists vibration preference across reload', async (
       delete globalThis.hmSetting
     } else {
       globalThis.hmSetting = originalHmSetting
-    }
-
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
     }
   }
 })
@@ -448,7 +440,7 @@ test('app routes register game settings page for the target', async () => {
   const appConfig = JSON.parse(await readFile(appConfigPath, 'utf8'))
 
   assert.equal(
-    appConfig.targets['gt'].module.page.pages.includes('page/game-settings'),
+    appConfig.targets.gt.module.page.pages.includes('page/game-settings'),
     true
   )
 })

@@ -1,6 +1,7 @@
 import { DEFAULT_SETS_TO_PLAY } from '../../utils/constants.js'
 import { createInitialMatchState } from '../../utils/match-state.js'
 import {
+  CURRENT_SCHEMA_VERSION,
   MATCH_STATUS as PERSISTED_MATCH_STATUS,
   toIsoTimestampSafe
 } from '../../utils/match-state-schema.js'
@@ -150,7 +151,7 @@ export function createPersistedMatchStateSnapshot(
         currentSet: { number: 1, games: { teamA: 0, teamB: 0 } },
         currentGame: { points: { teamA: 0, teamB: 0 } },
         setHistory: [],
-        schemaVersion: 1,
+        schemaVersion: CURRENT_SCHEMA_VERSION,
         updatedAt: fallbackTimestamp,
         timing: {
           createdAt: fallbackTimestampIso,

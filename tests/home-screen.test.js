@@ -5,8 +5,6 @@ import { createInitialMatchState } from '../utils/match-state.js'
 import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
 import { matchStorage } from '../utils/match-storage.js'
 import { startNewMatchFlow as runStartNewMatchFlow } from '../utils/start-new-match-flow.js'
-import { MATCH_STATE_STORAGE_KEY } from '../utils/storage.js'
-import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
 import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let homePageImportCounter = 0
@@ -228,7 +226,6 @@ async function runHomePageScenario(options = {}, runAssertions) {
   const originalHmSetting = globalThis.hmSetting
   const originalHmApp = globalThis.hmApp
   const originalGetApp = globalThis.getApp
-  const originalHmFS = globalThis.hmFS
   const originalSettingsStorage = globalThis.settingsStorage
   const originalSetTimeout = globalThis.setTimeout
   const originalClearTimeout = globalThis.clearTimeout
@@ -242,7 +239,6 @@ async function runHomePageScenario(options = {}, runAssertions) {
 
   const { hmUI, createdWidgets } = createHmUiRecorder()
   const navigationCalls = []
-  const removedLegacyStorageKeys = []
   const loadedMatchStorageKeys = []
   const clearedMatchStorageKeys = []
   const app = options.app || {
@@ -294,26 +290,6 @@ async function runHomePageScenario(options = {}, runAssertions) {
     typeof options.clearTimeoutFn === 'function'
       ? options.clearTimeoutFn
       : originalClearTimeout
-  // Build a file-based hmFS mock.
-  // If legacyRuntimeState is provided, pre-seed it as padel-buddy.match-state.json
-  // so the file-based storage layer reads it back.
-  const legacyFilename = storageKeyToFilename(MATCH_STATE_STORAGE_KEY)
-  const initialFiles = {}
-  if (options.legacyRuntimeState) {
-    initialFiles[legacyFilename] = options.legacyRuntimeState
-  }
-  const { mock: hmFsMock } = createHmFsMock(initialFiles)
-
-  // Wrap remove() to map filename → original storage key and push into removedLegacyStorageKeys.
-  const originalRemove = hmFsMock.remove.bind(hmFsMock)
-  hmFsMock.remove = (filename) => {
-    if (filename === legacyFilename) {
-      removedLegacyStorageKeys.push(MATCH_STATE_STORAGE_KEY)
-    }
-    originalRemove(filename)
-  }
-  globalThis.hmFS = hmFsMock
-
   matchStorage.adapter = {
     save() {},
     load(key) {
@@ -346,7 +322,6 @@ async function runHomePageScenario(options = {}, runAssertions) {
       createdWidgets,
       page,
       navigationCalls,
-      removedLegacyStorageKeys,
       loadedMatchStorageKeys,
       clearedMatchStorageKeys,
       getVisibleButtons,
@@ -375,12 +350,6 @@ async function runHomePageScenario(options = {}, runAssertions) {
       delete globalThis.getApp
     } else {
       globalThis.getApp = originalGetApp
-    }
-
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
     }
 
     if (typeof originalSettingsStorage === 'undefined') {
@@ -532,12 +501,10 @@ test('home screen hides Resume for invalid, corrupt, or load-failure payloads', 
 })
 
 test('home screen start button requires confirmation before running hard reset flow', async () => {
-  const savedState = createInitialMatchState(1700000002)
   let startNewMatchFlowCalls = 0
 
   await runHomePageScenario(
     {
-      legacyRuntimeState: JSON.stringify(savedState),
       matchStorageLoadResponses: [
         serializePersistedMatchState({ status: 'active' })
       ],
@@ -550,7 +517,6 @@ test('home screen start button requires confirmation before running hard reset f
       app,
       createdWidgets,
       navigationCalls,
-      removedLegacyStorageKeys,
       clearedMatchStorageKeys
     }) => {
       const startButton = getVisibleButtons(createdWidgets).find(
@@ -562,7 +528,6 @@ test('home screen start button requires confirmation before running hard reset f
       await startButton.properties.click_func()
 
       assert.equal(startNewMatchFlowCalls, 1)
-      assert.deepEqual(removedLegacyStorageKeys, [MATCH_STATE_STORAGE_KEY])
       assert.deepEqual(clearedMatchStorageKeys, [
         ACTIVE_MATCH_SESSION_STORAGE_KEY
       ])

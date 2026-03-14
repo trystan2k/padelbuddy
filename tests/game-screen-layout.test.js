@@ -9,10 +9,18 @@ import {
 import { createScoreViewModel } from '../page/score-view-model.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
-import { STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY } from '../utils/match-state-schema.js'
+import {
+  STORAGE_KEY as ACTIVE_MATCH_SESSION_STORAGE_KEY,
+  createDefaultMatchState,
+  serializeMatchState
+} from '../utils/match-state-schema.js'
 import { SCORE_POINTS } from '../utils/scoring-constants.js'
 import { addPoint } from '../utils/scoring-engine.js'
-import { createHmFsMock, storageKeyToFilename } from './helpers/hmfs-mock.js'
+import { createHmFsMock } from './helpers/hmfs-mock.js'
+import {
+  createLocalStorageMock,
+  withMockLocalStorage
+} from './helpers/local-storage-mock.js'
 import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let gamePageImportCounter = 0
@@ -1704,26 +1712,41 @@ test('game interaction performance metrics flag over-budget high-history team re
  * Creates a serialized match state for testing session persistence
  */
 function createSerializedMatchState(overrides = {}) {
-  const baseState = {
-    status: 'active',
-    setsToPlay: 3,
-    setsNeededToWin: 2,
-    setsWon: { teamA: 0, teamB: 0 },
-    currentSet: { number: 1, games: { teamA: 0, teamB: 0 } },
-    currentGame: { points: { teamA: 0, teamB: 0 } },
-    setHistory: [],
-    updatedAt: Date.now(),
-    schemaVersion: 1,
-    ...overrides
-  }
-  return JSON.stringify(baseState)
+  const baseState = createDefaultMatchState()
+
+  return serializeMatchState({
+    ...baseState,
+    ...overrides,
+    setsWon: {
+      ...baseState.setsWon,
+      ...overrides.setsWon
+    },
+    currentSet: {
+      ...baseState.currentSet,
+      ...overrides.currentSet,
+      games: {
+        ...baseState.currentSet.games,
+        ...overrides.currentSet?.games
+      }
+    },
+    currentGame: {
+      ...baseState.currentGame,
+      ...overrides.currentGame,
+      points: {
+        ...baseState.currentGame.points,
+        ...overrides.currentGame?.points
+      }
+    },
+    setHistory: Array.isArray(overrides.setHistory)
+      ? overrides.setHistory
+      : baseState.setHistory
+  })
 }
 
 /**
  * Helper to run session access guard tests with isolated storage mocking
  */
 async function runSessionGuardTest(storageValue, runAssertions) {
-  const originalHmFS = globalThis.hmFS
   const originalHmApp = globalThis.hmApp
   const originalHmUI = globalThis.hmUI
   const originalHmSetting = globalThis.hmSetting
@@ -1731,15 +1754,11 @@ async function runSessionGuardTest(storageValue, runAssertions) {
 
   const { hmUI, createdWidgets } = createHmUiRecorder()
   const navigationCalls = []
-
-  // Pre-seed the file store with storageValue at ACTIVE_MATCH_SESSION.json
-  // so the file-based storage layer (hmFS) returns it for the session guard check.
-  const initialFiles = {}
-  if (storageValue !== null && storageValue !== undefined) {
-    initialFiles[storageKeyToFilename(ACTIVE_MATCH_SESSION_STORAGE_KEY)] =
-      storageValue
-  }
-  globalThis.hmFS = createHmFsMock(initialFiles).mock
+  const { storage } = createLocalStorageMock(
+    storageValue !== null && storageValue !== undefined
+      ? { [ACTIVE_MATCH_SESSION_STORAGE_KEY]: storageValue }
+      : {}
+  )
 
   globalThis.hmApp = {
     gotoPage(options) {
@@ -1756,7 +1775,6 @@ async function runSessionGuardTest(storageValue, runAssertions) {
       return { width: 390, height: 450 }
     }
   }
-  // Set up getApp state used by runtime restoration tests.
   globalThis.getApp = () => ({
     globalData: {
       matchState: null,
@@ -1765,22 +1783,18 @@ async function runSessionGuardTest(storageValue, runAssertions) {
   })
 
   try {
-    const definition = await loadGamePageDefinition()
-    const page = createPageInstance(definition)
+    await withMockLocalStorage(storage, async () => {
+      const definition = await loadGamePageDefinition()
+      const page = createPageInstance(definition)
 
-    await runAssertions({
-      page,
-      createdWidgets,
-      navigationCalls,
-      getVisibleWidgets
+      await runAssertions({
+        page,
+        createdWidgets,
+        navigationCalls,
+        getVisibleWidgets
+      })
     })
   } finally {
-    if (typeof originalHmFS === 'undefined') {
-      delete globalThis.hmFS
-    } else {
-      globalThis.hmFS = originalHmFS
-    }
-
     if (typeof originalHmApp === 'undefined') {
       delete globalThis.hmApp
     } else {
