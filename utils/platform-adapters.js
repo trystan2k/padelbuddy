@@ -41,7 +41,7 @@ export const router = {
 
     if (legacyApp && typeof legacyApp.gotoPage === 'function') {
       try {
-        legacyApp.gotoPage({ url: payload.url })
+        legacyApp.gotoPage(createLegacyNavigationPayload(payload))
         return true
       } catch {
         // Ignore runtime navigation failures.
@@ -76,7 +76,7 @@ export const router = {
 
     if (legacyApp && typeof legacyApp.gotoPage === 'function') {
       try {
-        legacyApp.gotoPage({ url: payload.url })
+        legacyApp.gotoPage(createLegacyNavigationPayload(payload))
         return true
       } catch {
         // Ignore runtime navigation failures.
@@ -111,6 +111,36 @@ export const router = {
         for (let index = 0; index < normalizedDelta; index += 1) {
           legacyApp.goBack()
         }
+        return true
+      } catch {
+        // Ignore runtime navigation failures.
+      }
+    }
+
+    return false
+  },
+
+  goHome() {
+    const modernRouter = resolveModernRouter()
+    const modernGoHome =
+      resolveFunction(modernRouter, 'home') ||
+      resolveFunction(modernRouter, 'goHome') ||
+      resolveFunction(modernRouter, 'exit')
+
+    if (modernGoHome) {
+      try {
+        modernGoHome()
+        return true
+      } catch {
+        // Ignore runtime navigation failures.
+      }
+    }
+
+    const legacyApp = resolveLegacyApp()
+
+    if (legacyApp && typeof legacyApp.gotoHome === 'function') {
+      try {
+        legacyApp.gotoHome()
         return true
       } catch {
         // Ignore runtime navigation failures.
@@ -424,16 +454,30 @@ export const storage = {
 
     fallbackStorage.removeItem(normalizedKey)
 
-    if (runtimeStorage) {
-      try {
-        runtimeStorage.removeItem?.(normalizedKey)
-        runtimeStorage.deleteItem?.(normalizedKey)
-      } catch {
-        // Ignore runtime storage failures.
-      }
+    if (!runtimeStorage) {
+      return true
     }
 
-    return true
+    const hasRemoveItem = typeof runtimeStorage.removeItem === 'function'
+    const hasDeleteItem = typeof runtimeStorage.deleteItem === 'function'
+
+    if (!hasRemoveItem && !hasDeleteItem) {
+      return false
+    }
+
+    try {
+      if (hasRemoveItem) {
+        runtimeStorage.removeItem(normalizedKey)
+      }
+
+      if (hasDeleteItem) {
+        runtimeStorage.deleteItem(normalizedKey)
+      }
+
+      return true
+    } catch {
+      return false
+    }
   },
 
   clear() {
@@ -441,12 +485,19 @@ export const storage = {
 
     fallbackStorage.clear()
 
-    if (runtimeStorage) {
-      try {
-        runtimeStorage.clear?.()
-      } catch {
-        // Ignore runtime storage failures.
-      }
+    if (!runtimeStorage) {
+      return true
+    }
+
+    if (typeof runtimeStorage.clear !== 'function') {
+      return false
+    }
+
+    try {
+      runtimeStorage.clear()
+      return true
+    } catch {
+      return false
     }
   }
 }
@@ -485,6 +536,8 @@ export const haptics = {
           typeof setTimeout === 'function' &&
           typeof legacySensor.stop === 'function'
         ) {
+          // Legacy vibrate sensors do not expose duration control.
+          // Keep this timer inside the adapter boundary so page modules stay timer-free.
           setTimeout(() => {
             try {
               legacySensor.stop()
@@ -522,11 +575,76 @@ export const haptics = {
       }
     }
 
+    const legacySensor = resolveLegacyVibrateSensor()
+
+    if (
+      legacySensor &&
+      typeof legacySensor.start === 'function' &&
+      typeof legacySensor.stop === 'function' &&
+      typeof setTimeout === 'function' &&
+      normalizedPattern.length > 0
+    ) {
+      try {
+        legacySensor.stop()
+
+        let elapsedMs = 0
+        let shouldVibrate = true
+
+        for (let index = 0; index < normalizedPattern.length; index += 1) {
+          const stepDuration = normalizedPattern[index]
+
+          if (shouldVibrate) {
+            const startDelayMs = elapsedMs
+            setTimeout(() => {
+              try {
+                legacySensor.start()
+              } catch {
+                // Ignore start failures.
+              }
+            }, startDelayMs)
+
+            elapsedMs += stepDuration
+
+            const stopDelayMs = elapsedMs
+            setTimeout(() => {
+              try {
+                legacySensor.stop()
+              } catch {
+                // Ignore stop failures.
+              }
+            }, stopDelayMs)
+          } else {
+            elapsedMs += stepDuration
+          }
+
+          shouldVibrate = !shouldVibrate
+        }
+
+        return true
+      } catch {
+        // Fall through to single legacy vibration.
+      }
+    }
+
     const totalDuration = normalizedPattern.reduce((sum, step) => sum + step, 0)
     return this.vibrate(
       totalDuration > 0 ? totalDuration : DEFAULT_VIBRATION_DURATION
     )
   }
+}
+
+export function resetPlatformAdaptersState() {
+  gestureRegistrations.splice(0, gestureRegistrations.length)
+  legacyGestureDispatcherRegistered = false
+  keepAwakeEnabled = false
+  legacyVibrateSensor = null
+  legacyVibrateSensorResolved = false
+  cachedLocalStorageConstructor = null
+  cachedLocalStorageInstance = null
+  fallbackToastState.visible = false
+  fallbackToastState.message = ''
+  fallbackToastState.duration = DEFAULT_TOAST_DURATION
+  fallbackStorage.clear()
 }
 
 function resolveRuntimeObject(...keys) {
@@ -711,6 +829,19 @@ function createNavigationPayload(pagePath, params) {
     url: buildNavigationUrl(normalizedPath, params),
     params: normalizeParams(params)
   }
+}
+
+function createLegacyNavigationPayload(payload) {
+  const normalizedParams = normalizeParams(payload?.params)
+  const legacyPayload = {
+    url: payload?.url ?? ''
+  }
+
+  if (Object.keys(normalizedParams).length > 0) {
+    legacyPayload.param = normalizedParams
+  }
+
+  return legacyPayload
 }
 
 function buildNavigationUrl(pagePath, params) {

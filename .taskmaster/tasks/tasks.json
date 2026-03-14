@@ -5295,14 +5295,80 @@
         "description": "Migrate all page modules (page/index.js, page/setup.js, page/game.js, page/summary.js, page/history.js, page/history-detail.js, page/settings.js, page/game-settings.js) to Zepp OS 3.6+ APIs. Eliminate reliance on standard JS timers (setTimeout/setInterval) by redesigning debounce, confirmation, and haptic timing logic using platform-compatible mechanisms.",
         "details": "This task completes the migration of application pages to the Zepp OS 3.6+ architecture by updating API calls and removing unsupported timing patterns.\n\n**Implementation Steps:**\n\n1.  **Update Page Imports and API Calls:**\n    - Refactor all 8 target pages to import from `utils/platform-adapters.js` (Task 75) for navigation (router), toasts, and haptics.\n    - Replace direct storage access with the unified `utils/persistence.js` service (Task 76) for loading/saving match sessions, history, and settings.\n    - Update screen metric calls to utilize the multi-family screen adaptation utilities (Task 77) to ensure layouts work on w390-s, w454-r, w466-r, and w480-r devices.\n\n2.  **Audit and Remove Standard JS Timers:**\n    - Perform a codebase search for `setTimeout`, `setInterval`, and `clearTimeout` within the target page directories.\n    - **Debounce Logic:** Identify any input handlers (e.g., rapid button presses) using `setTimeout` for debouncing. Replace with Zepp OS specific native timers or a state-based flagging system that respects the single-threaded runtime constraints.\n    - **Confirmation Dialogs:** Review `page/game.js` and `page/index.js` for confirmation flows. Ensure dialog dismissal does not rely on `setTimeout`. Instead, bind dismissal strictly to user action (button clicks) or lifecycle events (page hide).\n    - **Haptic Feedback:** Ensure vibration calls (e.g., on scoring) are immediate and not wrapped in standard timers. Use the Haptic Adapter from Task 75 to trigger feedback.\n\n3.  **Page-Specific Logic Refactoring:**\n    - `page/game.js`: Ensure the game loop or state updates do not use `setInterval`. Use event-driven updates or `requestAnimationFrame` if available/appropriate for the 3.6 runtime.\n    - `page/setup.js` & `page/settings.js`: Verify that setting changes persist immediately using the new persistence layer without artificial timer delays.\n    - `page/history.js` & `page/history-detail.js`: Ensure list rendering and navigation utilize the 3.6 list APIs for performance, removing any polling timers used for UI refreshes.",
         "testStrategy": "1. **Static Analysis:** Run grep/ripgrep to confirm `setTimeout` and `setInterval` are completely absent from all migrated page files.\n\n2. **Compilation & Simulator Launch:** Build the project for 3.6+ targets. Launch simulators for square (w390-s) and round (w454-r) devices to ensure pages load without runtime API errors.\n\n3. **Functional Navigation Test:** Execute the full user flow: Start Game -> Setup -> Play -> Score (trigger haptics) -> Summary -> History -> Settings. Verify transitions are instant and no 'stuck' states occur due to missing timers.\n\n4. **Debounce & Timing Test:** On the Game Screen, rapidly tap the score button. Verify only one point is registered per expected debounce interval and that the UI updates correctly without delay.\n\n5. **Persistence Integration:** Change a setting in `page/settings.js`, restart the app, and verify the setting persists using the new LocalStorage-first strategy.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "75",
           "76",
           "77"
         ],
         "priority": "high",
-        "subtasks": []
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Update imports and API calls for core pages (index.js, setup.js, game.js, summary.js)",
+            "description": "Refactor four core page modules to use platform-adapters for navigation/toasts/haptics and persistence service for storage",
+            "dependencies": [],
+            "details": "Import router, toasts, and haptics from utils/platform-adapters.js instead of direct API calls. Replace direct storage access with utils/persistence.js service for loading/saving match sessions and settings. Update screen metric calls to use multi-family screen adaptation utilities from Task 77.",
+            "status": "done",
+            "testStrategy": "Verify pages compile without import errors and can navigate between them",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T17:23:22.938Z"
+          },
+          {
+            "id": 2,
+            "title": "Update imports and API calls for history and settings pages",
+            "description": "Refactor history.js, history-detail.js, settings.js, game-settings.js to use platform-adapters and persistence service",
+            "dependencies": [
+              1
+            ],
+            "details": "Import router, toasts, and haptics from utils/platform-adapters.js. Replace direct storage access with utils/persistence.js service for history and settings data. Update screen metric calls to utilize multi-family screen adaptation utilities ensuring layouts work on w390-s, w454-r, w466-r, and w480-r devices.",
+            "status": "done",
+            "testStrategy": "Verify settings save correctly and history pages load and display data",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T17:23:22.945Z"
+          },
+          {
+            "id": 3,
+            "title": "Audit and remove standard JS timers from all page modules",
+            "description": "Search for and eliminate setTimeout, setInterval, and clearTimeout usage across all 8 target page files",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Perform comprehensive codebase search for setTimeout, setInterval, and clearTimeout within page directory. Catalog all timer usages. Remove timer-based delays and replace with platform-compatible mechanisms or direct execution.",
+            "status": "done",
+            "testStrategy": "Run grep/ripgrep to confirm no setTimeout/setInterval remain in page files",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T17:23:22.950Z"
+          },
+          {
+            "id": 4,
+            "title": "Redesign debounce, confirmation, and haptic timing logic",
+            "description": "Replace timer-based debounce and confirmation flows with platform-compatible state-based mechanisms",
+            "dependencies": [
+              3
+            ],
+            "details": "Replace setTimeout-based debounce on input handlers with state-based flagging system. Review page/game.js and page/index.js confirmation dialogs to bind dismissal to user actions or page hide events instead of timers. Ensure haptic feedback uses Haptic Adapter from Task 75 without timer wrappers.",
+            "status": "done",
+            "testStrategy": "Test button rapid-fire handling and confirmation dialog flows work without delays",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T17:23:22.957Z"
+          },
+          {
+            "id": 5,
+            "title": "Refactor page-specific logic for game loop and list rendering",
+            "description": "Update game.js state updates and history pages to use event-driven updates and 3.6 list APIs",
+            "dependencies": [
+              4
+            ],
+            "details": "Refactor page/game.js game loop to use event-driven updates instead of setInterval. Verify page/setup.js and page/settings.js persist changes immediately without artificial delays. Update page/history.js and page/history-detail.js to use Zepp OS 3.6 list APIs for performance, removing any polling timers used for UI refreshes.",
+            "status": "done",
+            "testStrategy": "Test game responsiveness, settings persistence, and history list performance",
+            "parentId": "undefined",
+            "updatedAt": "2026-03-14T17:23:22.962Z"
+          }
+        ],
+        "updatedAt": "2026-03-14T17:23:22.962Z"
       },
       {
         "id": "79",
@@ -5327,9 +5393,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-03-14T15:24:17.150Z",
+      "lastModified": "2026-03-14T17:23:22.962Z",
       "taskCount": 79,
-      "completedCount": 73,
+      "completedCount": 74,
       "tags": [
         "master"
       ]

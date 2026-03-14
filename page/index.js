@@ -1,4 +1,5 @@
 import { gettext } from 'i18n'
+import { flushHomeFeedbackMessage } from '../utils/app-feedback.js'
 import { TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { resolveLayout } from '../utils/layout-engine.js'
@@ -6,6 +7,7 @@ import { createPageWithFooterButton } from '../utils/layout-presets.js'
 import { createInitialMatchState } from '../utils/match-state.js'
 import { MATCH_STATUS as PERSISTED_MATCH_STATUS } from '../utils/match-state-schema.js'
 import { getActiveSession } from '../utils/match-storage.js'
+import { gesture, router } from '../utils/platform-adapters.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
 import { startNewMatchFlow } from '../utils/start-new-match-flow.js'
 import {
@@ -196,6 +198,7 @@ Page({
     this.isStartingNewGame = false
     this.refreshSavedMatchState()
     this.registerGestureHandler()
+    flushHomeFeedbackMessage(gettext)
   },
 
   build() {
@@ -208,45 +211,14 @@ Page({
   },
 
   registerGestureHandler() {
-    if (
-      typeof hmApp === 'undefined' ||
-      typeof hmApp.registerGestureEvent !== 'function'
-    ) {
-      return
-    }
-
-    try {
-      hmApp.registerGestureEvent((event) => {
-        if (event === hmApp.gesture.RIGHT) {
-          // Exit the app and return to watchface
-          // Using gotoHome() instead of goBack() to properly exit the app
-          // (goBack() only navigates the page stack, not exit the app)
-          if (typeof hmApp.gotoHome === 'function') {
-            hmApp.gotoHome()
-          }
-          return true
-        }
-        // For other gestures, don't skip default behavior
-        return false
-      })
-    } catch {
-      // Non-fatal: gesture registration failed
-    }
+    gesture.registerGesture(this, 'RIGHT', () => {
+      router.goHome()
+      return true
+    })
   },
 
   unregisterGestureHandler() {
-    if (
-      typeof hmApp === 'undefined' ||
-      typeof hmApp.unregisterGestureEvent !== 'function'
-    ) {
-      return
-    }
-
-    try {
-      hmApp.unregisterGestureEvent()
-    } catch {
-      // Non-fatal: gesture unregistration failed
-    }
+    gesture.unregisterGesture(this, 'RIGHT')
   },
 
   clearWidgets() {
@@ -466,27 +438,10 @@ Page({
   },
 
   navigateToGamePage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return
-    }
-
-    hmApp.gotoPage({
-      url: 'page/game'
-    })
+    return router.navigateTo('page/game')
   },
 
   navigateToSettings() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
-    }
-
-    try {
-      hmApp.gotoPage({
-        url: 'page/settings'
-      })
-      return true
-    } catch {
-      return false
-    }
+    return router.navigateTo('page/settings')
   }
 })

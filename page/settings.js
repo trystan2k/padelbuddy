@@ -1,8 +1,10 @@
 import { gettext } from 'i18n'
 import { clearAllAppData } from '../utils/app-data-clear.js'
+import { queueHomeFeedbackMessage } from '../utils/app-feedback.js'
 import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
 import { createStandardPageLayout } from '../utils/layout-presets.js'
+import { router, toast } from '../utils/platform-adapters.js'
 import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
@@ -76,7 +78,6 @@ Page({
     this.widgets = []
     this.scrollList = null
     this.clearConfirmMode = false
-    this.confirmTimeout = null
   },
 
   build() {
@@ -84,10 +85,7 @@ Page({
   },
 
   onDestroy() {
-    if (this.confirmTimeout) {
-      clearTimeout(this.confirmTimeout)
-      this.confirmTimeout = null
-    }
+    this.clearConfirmMode = false
     this.clearWidgets()
   },
 
@@ -113,39 +111,26 @@ Page({
   },
 
   navigateToHistoryPage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return
-    }
-
-    try {
-      hmApp.gotoPage({ url: 'page/history' })
-    } catch {
-      // Ignore navigation errors
-    }
+    router.navigateTo('page/history')
   },
 
   navigateToHomePage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return
-    }
-
-    try {
-      hmApp.gotoPage({ url: 'page/index' })
-    } catch {
-      // Ignore navigation errors
-    }
+    router.redirectTo('page/index')
   },
 
   navigateToGameSettingsPage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return
+    router.navigateTo('page/game-settings')
+  },
+
+  resetClearConfirmMode() {
+    if (!this.clearConfirmMode) {
+      return false
     }
 
-    try {
-      hmApp.gotoPage({ url: 'page/game-settings' })
-    } catch {
-      // Ignore navigation errors
-    }
+    this.clearConfirmMode = false
+    this.updateListData(false)
+
+    return true
   },
 
   // type_id 1 = normal, type_id 2 = danger (red), type_id 3 = version (muted)
@@ -185,54 +170,28 @@ Page({
   },
 
   handleListItemClick(index) {
+    if (this.clearConfirmMode && index !== 2) {
+      this.resetClearConfirmMode()
+    }
+
     if (index === 0) {
       this.navigateToHistoryPage()
     } else if (index === 1) {
       this.navigateToGameSettingsPage()
     } else if (index === 2) {
       if (this.clearConfirmMode) {
-        // Second tap - confirm
-        this.clearConfirmMode = false
-        if (this.confirmTimeout) {
-          clearTimeout(this.confirmTimeout)
-          this.confirmTimeout = null
-        }
-        this.updateListData(false)
-
-        // Perform clear
+        this.resetClearConfirmMode()
         const success = clearAllAppData()
 
-        // Show toast
-        if (
-          typeof hmUI !== 'undefined' &&
-          typeof hmUI.showToast === 'function'
-        ) {
-          try {
-            hmUI.showToast({
-              text: success
-                ? gettext('settings.dataCleared')
-                : gettext('settings.clearFailed')
-            })
-          } catch (_e) {
-            // Ignore toast error
-          }
-        }
-
-        // Navigate to home after a brief delay to let toast show
-        setTimeout(() => {
+        if (success) {
+          queueHomeFeedbackMessage('settings.dataCleared')
           this.navigateToHomePage()
-        }, 500)
+        } else {
+          toast.showToast(gettext('settings.clearFailed'))
+        }
       } else {
-        // First tap - enter confirm mode
         this.clearConfirmMode = true
         this.updateListData(true)
-
-        // Auto-reset after 3 seconds
-        this.confirmTimeout = setTimeout(() => {
-          this.clearConfirmMode = false
-          this.confirmTimeout = null
-          this.updateListData(false)
-        }, 3000)
       }
     }
     // index === 3 is version item - do nothing (non-clickable)

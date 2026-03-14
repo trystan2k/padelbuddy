@@ -11,6 +11,7 @@ import {
   getActiveSession,
   saveActiveSession
 } from '../utils/match-storage.js'
+import { router } from '../utils/platform-adapters.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
@@ -326,34 +327,14 @@ Page({
   },
 
   navigateToGamePage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
-    }
-
-    try {
-      hmApp.gotoPage({
-        url: 'page/game'
-      })
-      return true
-    } catch {
-      return false
-    }
+    return router.navigateTo('page/game')
   },
 
   navigateBack() {
     // Navigate directly to home instead of goBack() to avoid returning to
     // game.js when setup was opened from a new-match flow (game redirects
     // back to setup when session is invalid, causing an infinite loop).
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
-    }
-
-    try {
-      hmApp.gotoPage({ url: 'page/index' })
-      return true
-    } catch {
-      return false
-    }
+    return router.redirectTo('page/index')
   },
 
   renderSetupScreen() {

@@ -130,6 +130,7 @@ async function waitForAsyncPageUpdates() {
 
 async function loadHomePageDefinition() {
   const sourceUrl = toProjectFileUrl('page/index.js')
+  const appFeedbackUrl = toProjectFileUrl('utils/app-feedback.js')
   const historyStackUrl = toProjectFileUrl('utils/history-stack.js')
   const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
   const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
@@ -144,7 +145,14 @@ async function loadHomePageDefinition() {
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
+  const platformAdaptersImportUrl = new URL(platformAdaptersUrl.href)
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
+
+  platformAdaptersImportUrl.searchParams.set(
+    'home-screen',
+    String(homePageImportCounter)
+  )
 
   let source = await readFile(sourceUrl, 'utf8')
 
@@ -153,6 +161,7 @@ async function loadHomePageDefinition() {
       "import { gettext } from 'i18n'\n",
       'const gettext = (key) => key\n'
     )
+    .replace("from '../utils/app-feedback.js'", `from '${appFeedbackUrl.href}'`)
     .replace(
       "from '../utils/history-stack.js'",
       `from '${historyStackUrl.href}'`
@@ -185,6 +194,10 @@ async function loadHomePageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersImportUrl.href}'`
     )
     .replace(
       "from '../utils/ui-components.js'",
@@ -320,16 +333,22 @@ async function runHomePageScenario(options = {}, runAssertions) {
     page.build()
     await waitForAsyncPageUpdates()
 
-    return await runAssertions({
-      app,
-      createdWidgets,
-      page,
-      navigationCalls,
-      loadedMatchStorageKeys,
-      clearedMatchStorageKeys,
-      getVisibleButtons,
-      getVisibleButtonLabels
-    })
+    try {
+      return await runAssertions({
+        app,
+        createdWidgets,
+        page,
+        navigationCalls,
+        loadedMatchStorageKeys,
+        clearedMatchStorageKeys,
+        getVisibleButtons,
+        getVisibleButtonLabels
+      })
+    } finally {
+      if (typeof page.onDestroy === 'function') {
+        page.onDestroy()
+      }
+    }
   } finally {
     if (typeof originalHmUI === 'undefined') {
       delete globalThis.hmUI

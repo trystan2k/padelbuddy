@@ -59,6 +59,7 @@ async function loadSetupPageDefinition() {
   const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
@@ -95,6 +96,10 @@ async function loadSetupPageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}'`
     )
     .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
     .replace(

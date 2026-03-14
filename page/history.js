@@ -3,6 +3,7 @@ import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
 import { createStandardPageLayout } from '../utils/layout-presets.js'
 import { loadMatchHistory } from '../utils/match-history-storage.js'
+import { router } from '../utils/platform-adapters.js'
 import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
@@ -142,35 +143,15 @@ Page({
   },
 
   goBack() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.goBack !== 'function') {
-      return
-    }
-
-    try {
-      hmApp.goBack()
-    } catch {
-      // Ignore navigation errors
-    }
+    router.navigateBack()
   },
 
   navigateToHistoryDetail(matchId) {
-    if (
-      !matchId ||
-      typeof hmApp === 'undefined' ||
-      typeof hmApp.gotoPage !== 'function'
-    ) {
+    if (!matchId) {
       return
     }
 
-    try {
-      // Zepp OS v1.0: use separate 'param' property, not query string
-      hmApp.gotoPage({
-        url: 'page/history-detail',
-        param: matchId
-      })
-    } catch {
-      // Ignore navigation errors
-    }
+    router.navigateTo('page/history-detail', { id: matchId })
   },
 
   handleHistoryItemClick(index) {

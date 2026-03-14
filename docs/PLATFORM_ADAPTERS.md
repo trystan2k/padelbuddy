@@ -10,7 +10,7 @@ Task 75 adds a single adapter contract for platform-facing runtime APIs without 
 
 ## Adapter Overview
 
-`utils/platform-adapters.js` exports seven named adapters:
+`utils/platform-adapters.js` exports seven named adapters plus one test/reset helper:
 
 ```js
 import {
@@ -20,7 +20,8 @@ import {
   deviceInfo,
   keepAwake,
   storage,
-  haptics
+  haptics,
+  resetPlatformAdaptersState
 } from '../utils/platform-adapters.js'
 ```
 
@@ -30,11 +31,12 @@ import {
 router.navigateTo(pagePath, params)
 router.redirectTo(pagePath, params)
 router.navigateBack(delta)
+router.goHome()
 ```
 
 - Preferred intent: future Zepp 3.6 routing calls.
-- Current compatibility path: uses modern-style router shims when available, otherwise falls back to legacy `hmApp.gotoPage()` and `hmApp.goBack()`.
-- Param behavior: params are preserved in the payload and appended to the legacy URL as a query string.
+- Current compatibility path: uses modern-style router shims when available, otherwise falls back to legacy `hmApp.gotoPage()`, `hmApp.goBack()`, and `hmApp.gotoHome()`.
+- Param behavior: params are preserved in the payload, appended to the legacy URL as a query string, and passed through the legacy `param` field for v1 `onInit(params)` compatibility.
 
 Before:
 
@@ -46,6 +48,7 @@ After:
 
 ```js
 router.navigateTo('page/setup')
+router.goHome()
 ```
 
 Current migration examples:
@@ -245,6 +248,7 @@ Current migration examples:
 - Prefer one adapter call at the boundary of a page or utility instead of mixing adapter calls with raw `hm*` calls inside the same behavior.
 - Keep existing specialized utilities such as `utils/storage.js` and `utils/screen-utils.js` until their dedicated migration tasks move them over.
 - In tests, import `tests/__mocks__/platform-adapters.js` directly for deterministic assertions instead of trying to emulate Zepp runtime globals by hand.
+- When integration tests import the real adapter module, call `resetPlatformAdaptersState()` between scenarios if you cannot isolate imports.
 
 ## Mock Usage
 

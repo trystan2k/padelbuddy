@@ -541,7 +541,13 @@ test('platform adapters use legacy globals when modern shims are unavailable', a
   }
 
   assert.deepEqual(runtimeCalls.router, [
-    { type: 'gotoPage', payload: { url: 'page/history?filter=recent' } },
+    {
+      type: 'gotoPage',
+      payload: {
+        url: 'page/history?filter=recent',
+        param: { filter: 'recent' }
+      }
+    },
     { type: 'gotoPage', payload: { url: 'page/index' } },
     { type: 'goBack' },
     { type: 'goBack' },
@@ -563,6 +569,87 @@ test('platform adapters use legacy globals when modern shims are unavailable', a
     { type: 'start' },
     { type: 'stop' }
   ])
+})
+
+test('platform adapters expose reset helper for integration isolation', async () => {
+  await withRuntimeGlobals({}, async () => {
+    const platformAdapters = await importFresh('utils/platform-adapters.js')
+    const gestureElement = { id: 'integration-reset' }
+
+    platformAdapters.storage.setItem('isolation-key', { active: true })
+    platformAdapters.keepAwake.setKeepAwake(true)
+    platformAdapters.gesture.registerGesture(
+      gestureElement,
+      'RIGHT',
+      () => true
+    )
+
+    assert.deepEqual(platformAdapters.storage.getItem('isolation-key'), {
+      active: true
+    })
+    assert.equal(platformAdapters.keepAwake.getKeepAwakeStatus(), true)
+    assert.equal(
+      platformAdapters.gesture.unregisterGesture(gestureElement, 'RIGHT'),
+      true
+    )
+
+    platformAdapters.storage.setItem('isolation-key', { active: true })
+    platformAdapters.keepAwake.setKeepAwake(true)
+    platformAdapters.gesture.registerGesture(
+      gestureElement,
+      'RIGHT',
+      () => true
+    )
+
+    platformAdapters.resetPlatformAdaptersState()
+
+    assert.equal(platformAdapters.storage.getItem('isolation-key'), null)
+    assert.equal(platformAdapters.keepAwake.getKeepAwakeStatus(), false)
+    assert.equal(
+      platformAdapters.gesture.unregisterGesture(gestureElement, 'RIGHT'),
+      false
+    )
+  })
+})
+
+test('platform adapters storage.removeItem reports failure when runtime storage lacks removal methods', async () => {
+  await withRuntimeGlobals(
+    {
+      localStorage: {
+        setItem() {},
+        getItem() {
+          return null
+        }
+      }
+    },
+    async () => {
+      const platformAdapters = await importFresh('utils/platform-adapters.js')
+
+      assert.equal(
+        platformAdapters.storage.removeItem('missing-methods'),
+        false
+      )
+    }
+  )
+})
+
+test('platform adapters storage.clear reports failure when runtime storage lacks clear method', async () => {
+  await withRuntimeGlobals(
+    {
+      localStorage: {
+        setItem() {},
+        getItem() {
+          return null
+        },
+        removeItem() {}
+      }
+    },
+    async () => {
+      const platformAdapters = await importFresh('utils/platform-adapters.js')
+
+      assert.equal(platformAdapters.storage.clear(), false)
+    }
+  )
 })
 
 test('platform adapter mock tracks router, toast, storage, keep-awake, device, haptics, and gestures', () => {

@@ -72,6 +72,8 @@ export const TOKENS = Object.freeze({
   }
 })
 
+// Family-specific token overrides are intentionally empty for now.
+// Keep this map as the extension point for future per-family tuning.
 const FAMILY_TOKEN_OVERRIDES = Object.freeze({})
 
 const DEFAULT_FAMILY_TOKENS = Object.freeze({
