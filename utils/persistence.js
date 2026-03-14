@@ -165,8 +165,7 @@ export function deleteState(key) {
   ensureStorageSchema()
 
   try {
-    storage.removeItem(key)
-    return true
+    return storage.removeItem(key) === true
   } catch {
     return false
   }
@@ -188,8 +187,7 @@ export function clearAllState() {
   cachedSchemaVersion = null
 
   try {
-    storage.clear()
-    return true
+    return storage.clear() === true
   } catch {
     return false
   }

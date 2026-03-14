@@ -4,38 +4,30 @@ import { clearMatchState } from './match-storage.js'
 import { clearAllState } from './persistence.js'
 
 export function clearAllAppData() {
-  let success = true
-
   try {
-    if (clearMatchState() !== true) {
-      success = false
-    }
+    clearMatchState()
   } catch {
-    success = false
+    // Ignore key-level cleanup errors and continue with broader clear.
   }
 
   try {
-    if (clearMatchHistory() !== true) {
-      success = false
-    }
+    clearMatchHistory()
   } catch {
-    success = false
+    // Ignore key-level cleanup errors and continue with broader clear.
   }
 
   try {
-    if (clearHapticFeedbackEnabled() !== true) {
-      success = false
-    }
+    clearHapticFeedbackEnabled()
   } catch {
-    success = false
+    // Ignore key-level cleanup errors and continue with broader clear.
   }
 
+  let didClearStorage = false
+
   try {
-    if (clearAllState() !== true) {
-      success = false
-    }
+    didClearStorage = clearAllState() === true
   } catch {
-    success = false
+    didClearStorage = false
   }
 
   try {
@@ -52,5 +44,5 @@ export function clearAllAppData() {
     // Ignore in-memory cleanup errors.
   }
 
-  return success
+  return didClearStorage
 }

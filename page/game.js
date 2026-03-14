@@ -57,6 +57,16 @@ function getCurrentTimestampMs() {
   return 0
 }
 
+function resolveManualFinishConfirmToastText() {
+  const manualFinishConfirmText = gettext('game.manualFinishConfirm')
+
+  if (manualFinishConfirmText === 'game.manualFinishConfirm') {
+    return gettext('settings.clearDataConfirm')
+  }
+
+  return manualFinishConfirmText
+}
+
 function createRuntimeStateFingerprint(matchState) {
   if (!isValidRuntimeMatchState(matchState)) {
     return 'invalid'
@@ -163,7 +173,7 @@ Page({
     }
 
     this.manualFinishConfirmMode = true
-    toast.showToast(gettext('settings.clearDataConfirm'))
+    toast.showToast(resolveManualFinishConfirmToastText())
     this.renderGameScreen()
   },
 

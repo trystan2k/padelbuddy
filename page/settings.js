@@ -1,5 +1,6 @@
 import { gettext } from 'i18n'
 import { clearAllAppData } from '../utils/app-data-clear.js'
+import { queueHomeFeedbackMessage } from '../utils/app-feedback.js'
 import { getFontSize, TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { resolveLayout } from '../utils/layout-engine.js'
 import { createStandardPageLayout } from '../utils/layout-presets.js'
@@ -181,12 +182,13 @@ Page({
       if (this.clearConfirmMode) {
         this.resetClearConfirmMode()
         const success = clearAllAppData()
-        toast.showToast(
-          success
-            ? gettext('settings.dataCleared')
-            : gettext('settings.clearFailed')
-        )
-        this.navigateToHomePage()
+
+        if (success) {
+          queueHomeFeedbackMessage('settings.dataCleared')
+          this.navigateToHomePage()
+        } else {
+          toast.showToast(gettext('settings.clearFailed'))
+        }
       } else {
         this.clearConfirmMode = true
         this.updateListData(true)

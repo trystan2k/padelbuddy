@@ -451,6 +451,7 @@ export const storage = {
   removeItem(key) {
     const normalizedKey = String(key)
     const runtimeStorage = resolveRuntimeStorage()
+    let didRemoveFromRuntime = true
 
     fallbackStorage.removeItem(normalizedKey)
 
@@ -459,15 +460,16 @@ export const storage = {
         runtimeStorage.removeItem?.(normalizedKey)
         runtimeStorage.deleteItem?.(normalizedKey)
       } catch {
-        // Ignore runtime storage failures.
+        didRemoveFromRuntime = false
       }
     }
 
-    return true
+    return didRemoveFromRuntime
   },
 
   clear() {
     const runtimeStorage = resolveRuntimeStorage()
+    let didClearRuntimeStorage = true
 
     fallbackStorage.clear()
 
@@ -475,9 +477,11 @@ export const storage = {
       try {
         runtimeStorage.clear?.()
       } catch {
-        // Ignore runtime storage failures.
+        didClearRuntimeStorage = false
       }
     }
+
+    return didClearRuntimeStorage
   }
 }
 
@@ -515,6 +519,8 @@ export const haptics = {
           typeof setTimeout === 'function' &&
           typeof legacySensor.stop === 'function'
         ) {
+          // Legacy vibrate sensors do not expose duration control.
+          // Keep this timer inside the adapter boundary so page modules stay timer-free.
           setTimeout(() => {
             try {
               legacySensor.stop()
@@ -557,6 +563,20 @@ export const haptics = {
       totalDuration > 0 ? totalDuration : DEFAULT_VIBRATION_DURATION
     )
   }
+}
+
+export function resetPlatformAdaptersState() {
+  gestureRegistrations.splice(0, gestureRegistrations.length)
+  legacyGestureDispatcherRegistered = false
+  keepAwakeEnabled = false
+  legacyVibrateSensor = null
+  legacyVibrateSensorResolved = false
+  cachedLocalStorageConstructor = null
+  cachedLocalStorageInstance = null
+  fallbackToastState.visible = false
+  fallbackToastState.message = ''
+  fallbackToastState.duration = DEFAULT_TOAST_DURATION
+  fallbackStorage.clear()
 }
 
 function resolveRuntimeObject(...keys) {

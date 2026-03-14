@@ -193,7 +193,7 @@ Page({
       return
     }
 
-    haptics.vibrate()
+    haptics.vibratePattern([50, 700, 50, 700, 50])
   },
 
   registerGestureHandler() {

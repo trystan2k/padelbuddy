@@ -130,6 +130,7 @@ async function waitForAsyncPageUpdates() {
 
 async function loadHomePageDefinition() {
   const sourceUrl = toProjectFileUrl('page/index.js')
+  const appFeedbackUrl = toProjectFileUrl('utils/app-feedback.js')
   const historyStackUrl = toProjectFileUrl('utils/history-stack.js')
   const matchStorageUrl = toProjectFileUrl('utils/match-storage.js')
   const matchStateSchemaUrl = toProjectFileUrl('utils/match-state-schema.js')
@@ -160,6 +161,7 @@ async function loadHomePageDefinition() {
       "import { gettext } from 'i18n'\n",
       'const gettext = (key) => key\n'
     )
+    .replace("from '../utils/app-feedback.js'", `from '${appFeedbackUrl.href}'`)
     .replace(
       "from '../utils/history-stack.js'",
       `from '${historyStackUrl.href}'`

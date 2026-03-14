@@ -1,4 +1,5 @@
 import { gettext } from 'i18n'
+import { flushHomeFeedbackMessage } from '../utils/app-feedback.js'
 import { TOKENS, toPercentage } from '../utils/design-tokens.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { resolveLayout } from '../utils/layout-engine.js'
@@ -197,6 +198,7 @@ Page({
     this.isStartingNewGame = false
     this.refreshSavedMatchState()
     this.registerGestureHandler()
+    flushHomeFeedbackMessage(gettext)
   },
 
   build() {

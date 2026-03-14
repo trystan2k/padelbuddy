@@ -119,6 +119,7 @@ function createHistoryEntry(overrides = {}) {
 
 async function loadSettingsPageDefinition() {
   const sourceUrl = toProjectFileUrl('page/settings.js')
+  const appFeedbackUrl = toProjectFileUrl('utils/app-feedback.js')
   const appDataClearUrl = toProjectFileUrl('utils/app-data-clear.js')
   const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
@@ -135,6 +136,7 @@ async function loadSettingsPageDefinition() {
       "import { gettext } from 'i18n'\n",
       'const gettext = (key) => key\n'
     )
+    .replace("from '../utils/app-feedback.js'", `from '${appFeedbackUrl.href}'`)
     .replace(
       "from '../utils/app-data-clear.js'",
       `from '${appDataClearUrl.href}'`
@@ -501,7 +503,7 @@ test('settings clear-data first tap enters confirmation mode', async () => {
   }
 })
 
-test('settings clear-data second tap clears data and navigates home', async () => {
+test('settings clear-data second tap queues feedback and navigates home', async () => {
   const originalHmUI = globalThis.hmUI
   const originalHmSetting = globalThis.hmSetting
   const originalHmApp = globalThis.hmApp
@@ -552,9 +554,98 @@ test('settings clear-data second tap clears data and navigates home', async () =
         scrollList.properties.data_array[2].label,
         'settings.clearAppData'
       )
-      assert.deepEqual(storageMock.snapshot(), {})
       assert.deepEqual(navigationCalls, [{ url: 'page/index' }])
-      assert.equal(shownToasts[0]?.text, 'settings.dataCleared')
+      assert.equal(shownToasts.length, 0)
+      assert.equal(
+        storageMock.snapshot()['padel-buddy.home-feedback-message-key'],
+        '__padel_buddy_platform_adapters__:"settings.dataCleared"'
+      )
+    })
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+
+    if (typeof originalGetApp === 'undefined') {
+      delete globalThis.getApp
+    } else {
+      globalThis.getApp = originalGetApp
+    }
+  }
+})
+
+test('settings clear-data failure keeps user on settings and shows error toast', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+  const originalHmApp = globalThis.hmApp
+  const originalGetApp = globalThis.getApp
+
+  const { hmUI, createdWidgets, shownToasts } = createHmUiRecorder()
+  const { storage } = createLocalStorageMock()
+  const navigationCalls = []
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+  globalThis.hmApp = {
+    gotoPage(payload) {
+      navigationCalls.push(payload)
+    }
+  }
+  globalThis.getApp = () => {
+    throw new Error('app unavailable')
+  }
+
+  try {
+    await withMockLocalStorage(storage, async () => {
+      globalThis.localStorage = {
+        ...globalThis.localStorage,
+        clear() {
+          throw new Error('clear failed')
+        }
+      }
+
+      if (globalThis.__zosStorage) {
+        globalThis.__zosStorage = {
+          ...globalThis.__zosStorage,
+          clear() {
+            throw new Error('clear failed')
+          }
+        }
+      }
+
+      const definition = await loadSettingsPageDefinition()
+      const page = { ...definition }
+
+      page.onInit()
+      page.build()
+
+      const scrollList = getVisibleScrollList(createdWidgets)
+      assert.ok(scrollList)
+
+      scrollList.properties.item_click_func(scrollList, 2)
+      scrollList.properties.item_click_func(scrollList, 2)
+
+      assert.equal(page.clearConfirmMode, false)
+      assert.deepEqual(navigationCalls, [])
+      assert.equal(shownToasts[0]?.text, 'settings.clearFailed')
     })
   } finally {
     if (typeof originalHmUI === 'undefined') {
