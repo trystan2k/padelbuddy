@@ -171,6 +171,23 @@ test('getStatusBarHeight follows family defaults and explicit overrides', async 
   )
 })
 
+test('getScreenMetrics does not force w390-s for square device sources with mismatched dimensions', async () => {
+  const { getScreenMetrics, SCREEN_FAMILY_UNKNOWN } = await import(
+    '../utils/screen-utils.js'
+  )
+
+  const metrics = getScreenMetrics({
+    width: 400,
+    height: 400,
+    screenShape: 'square',
+    deviceSource: 224
+  })
+
+  assert.equal(metrics.screenFamily, SCREEN_FAMILY_UNKNOWN)
+  assert.equal(metrics.statusBarHeight, 0)
+  assert.equal(metrics.safeTop, 0)
+})
+
 // ============================================
 // Test 3: ensureNumber handles various inputs
 // ============================================
