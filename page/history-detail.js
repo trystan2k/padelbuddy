@@ -6,6 +6,7 @@ import {
   deleteMatchFromHistory,
   loadMatchById
 } from '../utils/match-history-storage.js'
+import { router, toast } from '../utils/platform-adapters.js'
 import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
@@ -110,7 +111,6 @@ Page({
     this.widgets = []
     this.matchEntry = null
     this.deleteConfirmMode = false
-    this.confirmTimeout = null
     this.deleteButton = null
     this.parseParams(params)
     // Render screen after loading data (v1.0 compatible - no onShow)
@@ -122,10 +122,7 @@ Page({
   },
 
   onDestroy() {
-    if (this.confirmTimeout) {
-      clearTimeout(this.confirmTimeout)
-      this.confirmTimeout = null
-    }
+    this.deleteConfirmMode = false
     this.deleteButton = null
     this.clearWidgets()
   },
@@ -138,8 +135,9 @@ Page({
 
     let matchId = null
 
-    // Check if params looks like a query string (contains '=' or '?')
-    if (
+    if (params && typeof params === 'object' && typeof params.id === 'string') {
+      matchId = params.id
+    } else if (
       typeof params === 'string' &&
       (params.includes('=') || params.includes('?'))
     ) {
@@ -191,52 +189,30 @@ Page({
   },
 
   goBack() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.goBack !== 'function') {
-      return
-    }
-
-    try {
-      hmApp.goBack()
-    } catch {
-      // Ignore navigation errors
-    }
+    router.navigateBack()
   },
 
   handleDeleteClick() {
-    if (!this.matchEntry) return
+    if (!this.matchEntry) {
+      return false
+    }
 
     if (this.deleteConfirmMode) {
-      // Second tap - execute deletion
       this.deleteConfirmMode = false
-      if (this.confirmTimeout) {
-        clearTimeout(this.confirmTimeout)
-        this.confirmTimeout = null
-      }
-
-      // Perform deletion
       const success = deleteMatchFromHistory(this.matchEntry.id)
 
       if (success) {
-        // Navigate back to history list
         this.goBack()
       } else {
-        // If failed, just reset the icon
         this.updateDeleteButtonIcon(false)
       }
+
+      return success
     } else {
-      // First tap - enter confirm mode
       this.deleteConfirmMode = true
       this.updateDeleteButtonIcon(true)
-
-      // Show toast
-      hmUI.showToast({ text: gettext('history.deleteConfirmToast') })
-
-      // Auto-reset after 3 seconds
-      this.confirmTimeout = setTimeout(() => {
-        this.deleteConfirmMode = false
-        this.confirmTimeout = null
-        this.updateDeleteButtonIcon(false)
-      }, 3000)
+      toast.showToast(gettext('history.deleteConfirmToast'))
+      return true
     }
   },
 
@@ -442,8 +418,12 @@ Page({
         y: deleteEl.y,
         w: deleteEl.w,
         h: deleteEl.h,
-        normal_src: deleteMeta.icon,
-        press_src: deleteMeta.icon,
+        normal_src: this.deleteConfirmMode
+          ? deleteMeta.confirmIcon
+          : deleteMeta.icon,
+        press_src: this.deleteConfirmMode
+          ? deleteMeta.confirmIcon
+          : deleteMeta.icon,
         click_func: () => this.handleDeleteClick()
       })
     }

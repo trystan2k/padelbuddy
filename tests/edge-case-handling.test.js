@@ -93,6 +93,7 @@ async function loadHomePageDefinition() {
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
@@ -134,6 +135,10 @@ async function loadHomePageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}?edge-home=${homePageImportCounter}'`
     )
     .replace(
       "from '../utils/ui-components.js'",
@@ -196,6 +201,7 @@ async function loadGamePageDefinition() {
   )
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
   const objectHelpersUrl = toProjectFileUrl('utils/object-helpers.js')
@@ -253,6 +259,10 @@ async function loadGamePageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}?edge-game=${gamePageImportCounter}'`
     )
     .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
     .replace(

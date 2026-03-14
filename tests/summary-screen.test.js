@@ -234,6 +234,7 @@ async function loadSummaryPageDefinition() {
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
@@ -282,6 +283,10 @@ async function loadSummaryPageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}'`
     )
     .replace(
       "from '../utils/ui-components.js'",
@@ -727,28 +732,29 @@ test('summary haptic trigger does not start pulses when setting is disabled', as
       matchStorageLoadResponses: [serializePersistedMatchState()]
     },
     async ({ page }) => {
-      let stopCalls = 0
-      let startCalls = 0
+      const originalHaptics = globalThis.__zosHaptics
+      const calls = []
 
-      page.vibrate = {
-        scene: 0,
-        stop() {
-          stopCalls += 1
-        },
-        start() {
-          startCalls += 1
+      globalThis.__zosHaptics = {
+        vibrate(duration) {
+          calls.push(duration)
         }
       }
       page.hapticFeedbackEnabled = false
       page.hasTriggeredSummaryLoadHapticFeedback = false
-      page.clearSummaryLoadHapticPulseTimers()
 
-      page.triggerSummaryLoadHapticFeedback()
+      try {
+        page.triggerSummaryLoadHapticFeedback()
 
-      assert.equal(stopCalls, 0)
-      assert.equal(startCalls, 0)
-      assert.equal(page.summaryLoadHapticPulseTimers.length, 0)
-      assert.equal(page.hasTriggeredSummaryLoadHapticFeedback, true)
+        assert.deepEqual(calls, [])
+        assert.equal(page.hasTriggeredSummaryLoadHapticFeedback, true)
+      } finally {
+        if (typeof originalHaptics === 'undefined') {
+          delete globalThis.__zosHaptics
+        } else {
+          globalThis.__zosHaptics = originalHaptics
+        }
+      }
     }
   )
 })
@@ -758,7 +764,7 @@ test('app routes register summary screen for the target', async () => {
   const appConfig = JSON.parse(await readFile(appConfigPath, 'utf8'))
 
   assert.equal(
-    appConfig.targets['gt'].module.page.pages.includes('page/summary'),
+    appConfig.targets.gt.module.page.pages.includes('page/summary'),
     true
   )
 })

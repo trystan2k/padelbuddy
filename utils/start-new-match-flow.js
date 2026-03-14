@@ -1,6 +1,7 @@
 import { createHistoryStack } from './history-stack.js'
 import { createInitialMatchState } from './match-state.js'
 import { clearActiveSession } from './match-storage.js'
+import { router } from './platform-adapters.js'
 
 /**
  * Clears the active session through the unified API.
@@ -89,19 +90,7 @@ export function resetMatchStateManager() {
  * @returns {boolean}
  */
 function navigateToMatchSetupPage() {
-  if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-    return false
-  }
-
-  try {
-    hmApp.gotoPage({
-      url: 'page/setup'
-    })
-
-    return true
-  } catch {
-    return false
-  }
+  return router.navigateTo('page/setup')
 }
 
 /**

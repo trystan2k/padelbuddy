@@ -3,6 +3,13 @@ import { TOKENS } from '../utils/design-tokens.js'
 import { loadHapticFeedbackEnabled } from '../utils/haptic-feedback-settings.js'
 import { createHistoryStack } from '../utils/history-stack.js'
 import { createInitialMatchState } from '../utils/match-state.js'
+import {
+  gesture,
+  haptics,
+  keepAwake,
+  router,
+  toast
+} from '../utils/platform-adapters.js'
 import { addPoint, removePoint } from '../utils/scoring-engine.js'
 import { getScreenMetrics } from '../utils/screen-utils.js'
 import {
@@ -33,9 +40,6 @@ import {
 
 const INTERACTION_LATENCY_TARGET_MS = 100
 const SCORING_DEBOUNCE_WINDOW_MS = 300
-const PERSISTENCE_DEBOUNCE_WINDOW_MS = 180
-const MANUAL_FINISH_CONFIRM_WINDOW_MS = 3000
-const SCORE_HAPTIC_SCENE = 24
 
 function getCurrentTimestampMs() {
   if (
@@ -85,33 +89,13 @@ function createRuntimeStateFingerprint(matchState) {
 Page({
   onInit() {
     this.widgets = []
-    this.vibrate = null
     this.hapticFeedbackEnabled = loadHapticFeedbackEnabled()
     this.lastAcceptedScoringInteractionAt = null
     this.hasAttemptedSummaryNavigation = false
     this.isSessionAccessGranted = false
     this.persistedSessionState = null
     this.manualFinishConfirmMode = false
-    this.manualFinishConfirmTimer = null
-
-    this.persistenceDebounceWindowMs = PERSISTENCE_DEBOUNCE_WINDOW_MS
-    this.runtimeStatePersistenceTimer = null
-    this.pendingRuntimeStatePersistence = null
-    this.isRuntimeStatePersistenceInFlight = false
     this.lastPersistedRuntimeStateSignature = null
-
-    if (
-      typeof hmSensor !== 'undefined' &&
-      typeof hmSensor.createSensor === 'function' &&
-      isRecord(hmSensor.id)
-    ) {
-      try {
-        const vibrate = hmSensor.createSensor(hmSensor.id.VIBRATE)
-        this.vibrate = vibrate || null
-      } catch {
-        this.vibrate = null
-      }
-    }
 
     // Validate session synchronously before build() runs.
     this.validateSessionAccess()
@@ -145,11 +129,6 @@ Page({
 
   onDestroy() {
     this.resetManualFinishConfirmState()
-    try {
-      this.vibrate?.stop()
-    } catch {
-      // Non-fatal: haptic stop failed.
-    }
     this.releaseScreenOn()
     this.handleLifecycleAutoSave()
     this.clearWidgets()
@@ -161,37 +140,12 @@ Page({
       return
     }
 
-    const vibrate = this.vibrate
-
-    if (!vibrate) {
-      return
-    }
-
-    try {
-      vibrate.stop()
-      vibrate.scene = SCORE_HAPTIC_SCENE
-      vibrate.start()
-    } catch {
-      // Non-fatal: haptic feedback unavailable.
-    }
-  },
-
-  clearManualFinishConfirmTimer() {
-    if (this.manualFinishConfirmTimer === null) {
-      return
-    }
-
-    if (typeof clearTimeout === 'function') {
-      clearTimeout(this.manualFinishConfirmTimer)
-    }
-
-    this.manualFinishConfirmTimer = null
+    haptics.vibrate()
   },
 
   resetManualFinishConfirmState(options = {}) {
     const wasInConfirmMode = this.manualFinishConfirmMode === true
 
-    this.clearManualFinishConfirmTimer()
     this.manualFinishConfirmMode = false
 
     const shouldRerender = isRecord(options) && options.rerender === true
@@ -199,25 +153,6 @@ Page({
     if (shouldRerender && wasInConfirmMode) {
       this.renderGameScreen()
     }
-  },
-
-  startManualFinishConfirmWindow() {
-    this.clearManualFinishConfirmTimer()
-
-    if (typeof setTimeout !== 'function') {
-      return
-    }
-
-    this.manualFinishConfirmTimer = setTimeout(() => {
-      this.manualFinishConfirmTimer = null
-
-      if (!this.manualFinishConfirmMode) {
-        return
-      }
-
-      this.manualFinishConfirmMode = false
-      this.renderGameScreen()
-    }, MANUAL_FINISH_CONFIRM_WINDOW_MS)
   },
 
   handleManualFinishTap() {
@@ -228,18 +163,7 @@ Page({
     }
 
     this.manualFinishConfirmMode = true
-
-    if (typeof hmUI !== 'undefined' && typeof hmUI.showToast === 'function') {
-      try {
-        hmUI.showToast({
-          text: gettext('settings.clearDataConfirm')
-        })
-      } catch {
-        // Non-fatal: toast failed.
-      }
-    }
-
-    this.startManualFinishConfirmWindow()
+    toast.showToast(gettext('settings.clearDataConfirm'))
     this.renderGameScreen()
   },
 
@@ -254,72 +178,24 @@ Page({
   },
 
   registerGestureHandler() {
-    if (
-      typeof hmApp === 'undefined' ||
-      typeof hmApp.registerGestureEvent !== 'function'
-    ) {
-      return
-    }
-
-    try {
-      hmApp.registerGestureEvent((event) => {
-        if (event === hmApp.gesture.RIGHT) {
-          this.resetManualFinishConfirmState()
-          // Save state before navigating
-          this.saveCurrentRuntimeState({ force: true })
-          // Navigate directly to Home Screen
-          this.navigateToHomePage()
-          // Return true to skip default goBack() behavior
-          return true
-        }
-        // For other gestures, don't skip default behavior
-        return false
-      })
-    } catch {
-      // Non-fatal: gesture registration failed
-    }
+    gesture.registerGesture(this, 'RIGHT', () => {
+      this.resetManualFinishConfirmState()
+      this.saveCurrentRuntimeState({ force: true })
+      this.navigateToHomePage()
+      return true
+    })
   },
 
   unregisterGestureHandler() {
-    if (
-      typeof hmApp === 'undefined' ||
-      typeof hmApp.unregisterGestureEvent !== 'function'
-    ) {
-      return
-    }
-
-    try {
-      hmApp.unregisterGestureEvent()
-    } catch {
-      // Non-fatal: gesture unregistration failed
-    }
+    gesture.unregisterGesture(this, 'RIGHT')
   },
 
   keepScreenOn() {
-    try {
-      // v1 API: set bright screen time to maximum (seconds). Cancel must be called on destroy.
-      if (
-        typeof hmSetting !== 'undefined' &&
-        typeof hmSetting.setBrightScreen === 'function'
-      ) {
-        hmSetting.setBrightScreen(2147483)
-      }
-    } catch {
-      // Non-fatal: may be unavailable in simulator.
-    }
+    keepAwake.setKeepAwake(true)
   },
 
   releaseScreenOn() {
-    try {
-      if (
-        typeof hmSetting !== 'undefined' &&
-        typeof hmSetting.setBrightScreenCancel === 'function'
-      ) {
-        hmSetting.setBrightScreenCancel()
-      }
-    } catch {
-      // Non-fatal.
-    }
+    keepAwake.setKeepAwake(false)
   },
 
   handleLifecycleAutoSave() {
@@ -344,6 +220,9 @@ Page({
       this.persistedSessionState = hasValidActiveSession
         ? cloneMatchState(persistedMatchState)
         : null
+      this.lastPersistedRuntimeStateSignature = hasValidActiveSession
+        ? serializeMatchStateForComparison(persistedMatchState)
+        : null
 
       if (!hasValidActiveSession) {
         this.navigateToSetupPage()
@@ -353,24 +232,14 @@ Page({
     } catch {
       this.persistedSessionState = null
       this.isSessionAccessGranted = false
+      this.lastPersistedRuntimeStateSignature = null
       this.navigateToSetupPage()
       return false
     }
   },
 
   navigateToSetupPage() {
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
-    }
-
-    try {
-      hmApp.gotoPage({
-        url: 'page/setup'
-      })
-      return true
-    } catch {
-      return false
-    }
+    return router.redirectTo('page/setup')
   },
 
   clearWidgets() {
@@ -468,101 +337,20 @@ Page({
     }
 
     const shouldForcePersistence = isRecord(options) && options.force === true
-    this.enqueueRuntimeStatePersistence(app.globalData.matchState, {
-      force: shouldForcePersistence
-    })
+    const runtimeState = cloneMatchState(app.globalData.matchState)
+    const signature = serializeMatchStateForComparison(runtimeState)
 
-    return true
-  },
-
-  enqueueRuntimeStatePersistence(matchState, options = {}) {
-    if (!isValidRuntimeMatchState(matchState)) {
-      return false
-    }
-
-    this.pendingRuntimeStatePersistence = {
-      runtimeState: cloneMatchState(matchState),
-      signature: serializeMatchStateForComparison(matchState)
-    }
-
-    const shouldForcePersistence = isRecord(options) && options.force === true
-
-    if (shouldForcePersistence) {
-      this.clearRuntimeStatePersistenceTimer()
-      this.drainRuntimeStatePersistenceQueue()
+    if (
+      !shouldForcePersistence &&
+      signature.length > 0 &&
+      signature === this.lastPersistedRuntimeStateSignature
+    ) {
       return true
     }
 
-    this.scheduleRuntimeStatePersistenceDrain()
+    this.persistRuntimeStateSnapshot(runtimeState, signature)
+
     return true
-  },
-
-  scheduleRuntimeStatePersistenceDrain() {
-    if (this.runtimeStatePersistenceTimer !== null) {
-      return
-    }
-
-    if (typeof setTimeout !== 'function') {
-      this.drainRuntimeStatePersistenceQueue()
-      return
-    }
-
-    const configuredDebounceWindowMs =
-      Number.isFinite(this.persistenceDebounceWindowMs) &&
-      this.persistenceDebounceWindowMs >= 0
-        ? this.persistenceDebounceWindowMs
-        : PERSISTENCE_DEBOUNCE_WINDOW_MS
-
-    this.runtimeStatePersistenceTimer = setTimeout(() => {
-      this.runtimeStatePersistenceTimer = null
-      this.drainRuntimeStatePersistenceQueue()
-    }, configuredDebounceWindowMs)
-  },
-
-  clearRuntimeStatePersistenceTimer() {
-    if (this.runtimeStatePersistenceTimer === null) {
-      return
-    }
-
-    if (typeof clearTimeout === 'function') {
-      clearTimeout(this.runtimeStatePersistenceTimer)
-    }
-
-    this.runtimeStatePersistenceTimer = null
-  },
-
-  drainRuntimeStatePersistenceQueue() {
-    if (this.isRuntimeStatePersistenceInFlight) {
-      return
-    }
-
-    this.isRuntimeStatePersistenceInFlight = true
-
-    try {
-      while (this.pendingRuntimeStatePersistence !== null) {
-        const nextPersistenceTask = this.pendingRuntimeStatePersistence
-        this.pendingRuntimeStatePersistence = null
-
-        if (
-          nextPersistenceTask.signature.length > 0 &&
-          nextPersistenceTask.signature ===
-            this.lastPersistedRuntimeStateSignature
-        ) {
-          continue
-        }
-
-        this.persistRuntimeStateSnapshot(
-          nextPersistenceTask.runtimeState,
-          nextPersistenceTask.signature
-        )
-      }
-    } finally {
-      this.isRuntimeStatePersistenceInFlight = false
-    }
-
-    if (this.pendingRuntimeStatePersistence !== null) {
-      this.drainRuntimeStatePersistenceQueue()
-    }
   },
 
   persistRuntimeStateSnapshot(runtimeState, signature) {
@@ -608,19 +396,7 @@ Page({
 
   navigateToSummaryPage() {
     this.resetManualFinishConfirmState()
-
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return false
-    }
-
-    try {
-      hmApp.gotoPage({
-        url: 'page/summary'
-      })
-      return true
-    } catch {
-      return false
-    }
+    return router.navigateTo('page/summary')
   },
 
   handleMatchFinishedTransition() {
@@ -640,18 +416,7 @@ Page({
 
   navigateToHomePage() {
     this.resetManualFinishConfirmState()
-
-    if (typeof hmApp === 'undefined' || typeof hmApp.gotoPage !== 'function') {
-      return
-    }
-
-    try {
-      hmApp.gotoPage({
-        url: 'page/index'
-      })
-    } catch {
-      // Non-fatal: navigation failed
-    }
+    return router.navigateTo('page/index')
   },
 
   handleBackToHome() {
@@ -843,6 +608,10 @@ Page({
       this.isScoringInteractionDebounced(interactionStartedAt)
     ) {
       return
+    }
+
+    if (this.manualFinishConfirmMode) {
+      this.resetManualFinishConfirmState()
     }
 
     const previousState = this.getRuntimeMatchState()

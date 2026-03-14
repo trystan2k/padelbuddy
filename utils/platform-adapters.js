@@ -118,6 +118,36 @@ export const router = {
     }
 
     return false
+  },
+
+  goHome() {
+    const modernRouter = resolveModernRouter()
+    const modernGoHome =
+      resolveFunction(modernRouter, 'home') ||
+      resolveFunction(modernRouter, 'goHome') ||
+      resolveFunction(modernRouter, 'exit')
+
+    if (modernGoHome) {
+      try {
+        modernGoHome()
+        return true
+      } catch {
+        // Ignore runtime navigation failures.
+      }
+    }
+
+    const legacyApp = resolveLegacyApp()
+
+    if (legacyApp && typeof legacyApp.gotoHome === 'function') {
+      try {
+        legacyApp.gotoHome()
+        return true
+      } catch {
+        // Ignore runtime navigation failures.
+      }
+    }
+
+    return false
   }
 }
 

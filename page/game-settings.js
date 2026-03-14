@@ -6,6 +6,7 @@ import {
 } from '../utils/haptic-feedback-settings.js'
 import { resolveLayout } from '../utils/layout-engine.js'
 import { createStandardPageLayout } from '../utils/layout-presets.js'
+import { router } from '../utils/platform-adapters.js'
 import { clamp, getScreenMetrics } from '../utils/screen-utils.js'
 import {
   createBackground,
@@ -98,25 +99,8 @@ Page({
   },
 
   goBack() {
-    if (typeof hmApp === 'undefined') {
-      return
-    }
-
-    if (typeof hmApp.goBack === 'function') {
-      try {
-        hmApp.goBack()
-        return
-      } catch {
-        // Fall through to gotoPage fallback.
-      }
-    }
-
-    if (typeof hmApp.gotoPage === 'function') {
-      try {
-        hmApp.gotoPage({ url: 'page/settings' })
-      } catch {
-        // Ignore navigation errors.
-      }
+    if (router.navigateBack() !== true) {
+      router.navigateTo('page/settings')
     }
   },
 

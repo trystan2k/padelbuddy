@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { HISTORY_STORAGE_KEY } from '../utils/match-history-storage.js'
+import { MATCH_HISTORY_SCHEMA_VERSION } from '../utils/match-history-types.js'
+import { saveState } from '../utils/persistence.js'
 import {
   createLocalStorageMock,
   withMockLocalStorage
@@ -9,12 +12,15 @@ import { toProjectFileUrl } from './helpers/project-paths.js'
 
 let settingsPageImportCounter = 0
 let gameSettingsPageImportCounter = 0
+let historyDetailPageImportCounter = 0
 
 function createHmUiRecorder() {
   const createdWidgets = []
+  const shownToasts = []
 
   return {
     createdWidgets,
+    shownToasts,
     hmUI: {
       widget: {
         FILL_RECT: 'FILL_RECT',
@@ -59,6 +65,9 @@ function createHmUiRecorder() {
         if (widget && typeof widget === 'object') {
           widget.deleted = true
         }
+      },
+      showToast(payload) {
+        shownToasts.push(payload)
       }
     }
   }
@@ -70,12 +79,51 @@ function getVisibleWidgets(createdWidgets, type) {
   )
 }
 
+function getVisibleScrollList(createdWidgets) {
+  return getVisibleWidgets(createdWidgets, 'SCROLL_LIST')[0] ?? null
+}
+
+function findVisibleButtonByImageSrc(createdWidgets, imageSrc) {
+  return getVisibleWidgets(createdWidgets, 'BUTTON').find(
+    (widget) => widget.properties.normal_src === imageSrc
+  )
+}
+
+function createHistoryEntry(overrides = {}) {
+  return {
+    id: 'match-1',
+    completedAt: 1700000000000,
+    localTime: {
+      year: 2026,
+      month: 3,
+      day: 14,
+      hour: 17,
+      minute: 30
+    },
+    teamALabel: 'Team A',
+    teamBLabel: 'Team B',
+    setsWonTeamA: 2,
+    setsWonTeamB: 1,
+    setHistory: [
+      {
+        setNumber: 1,
+        teamAGames: 6,
+        teamBGames: 4
+      }
+    ],
+    winnerTeam: 'teamA',
+    schemaVersion: MATCH_HISTORY_SCHEMA_VERSION,
+    ...overrides
+  }
+}
+
 async function loadSettingsPageDefinition() {
   const sourceUrl = toProjectFileUrl('page/settings.js')
   const appDataClearUrl = toProjectFileUrl('utils/app-data-clear.js')
   const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
   const versionUrl = toProjectFileUrl('utils/version.js')
@@ -102,6 +150,10 @@ async function loadSettingsPageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}'`
     )
     .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
     .replace(
@@ -149,6 +201,7 @@ async function loadGameSettingsPageDefinition() {
   )
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
@@ -174,6 +227,10 @@ async function loadGameSettingsPageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}'`
     )
     .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
     .replace(
@@ -208,6 +265,86 @@ async function loadGameSettingsPageDefinition() {
   if (!capturedDefinition) {
     throw new Error(
       'Page definition was not registered by page/game-settings.js.'
+    )
+  }
+
+  return capturedDefinition
+}
+
+async function loadHistoryDetailPageDefinition() {
+  const sourceUrl = toProjectFileUrl('page/history-detail.js')
+  const designTokensUrl = toProjectFileUrl('utils/design-tokens.js')
+  const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
+  const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const matchHistoryStorageUrl = toProjectFileUrl(
+    'utils/match-history-storage.js'
+  )
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
+  const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
+  const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
+  const validationUrl = toProjectFileUrl('utils/validation.js')
+
+  let source = await readFile(sourceUrl, 'utf8')
+
+  source = source
+    .replace(
+      "import { gettext } from 'i18n'\n",
+      'const gettext = (key) => key\n'
+    )
+    .replace(
+      "from '../utils/design-tokens.js'",
+      `from '${designTokensUrl.href}'`
+    )
+    .replace(
+      "from '../utils/layout-engine.js'",
+      `from '${layoutEngineUrl.href}'`
+    )
+    .replace(
+      "from '../utils/layout-presets.js'",
+      `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/match-history-storage.js'",
+      `from '${matchHistoryStorageUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}?history-detail=${historyDetailPageImportCounter}'`
+    )
+    .replace("from '../utils/screen-utils.js'", `from '${screenUtilsUrl.href}'`)
+    .replace(
+      "from '../utils/ui-components.js'",
+      `from '${uiComponentsUrl.href}'`
+    )
+    .replace("from '../utils/validation.js'", `from '${validationUrl.href}'`)
+
+  const moduleUrl =
+    'data:text/javascript;charset=utf-8,' +
+    encodeURIComponent(source) +
+    `#history-detail-page-${Date.now()}-${historyDetailPageImportCounter}`
+
+  historyDetailPageImportCounter += 1
+
+  const originalPage = globalThis.Page
+  let capturedDefinition = null
+
+  globalThis.Page = (definition) => {
+    capturedDefinition = definition
+  }
+
+  try {
+    await import(moduleUrl)
+  } finally {
+    if (typeof originalPage === 'undefined') {
+      delete globalThis.Page
+    } else {
+      globalThis.Page = originalPage
+    }
+  }
+
+  if (!capturedDefinition) {
+    throw new Error(
+      'Page definition was not registered by page/history-detail.js.'
     )
   }
 
@@ -315,6 +452,494 @@ test('settings game settings row navigates to dedicated page', async () => {
       delete globalThis.hmApp
     } else {
       globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('settings clear-data first tap enters confirmation mode', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+
+  const { hmUI, createdWidgets } = createHmUiRecorder()
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+
+  try {
+    const definition = await loadSettingsPageDefinition()
+    const page = { ...definition }
+
+    page.onInit()
+    page.build()
+
+    const scrollList = getVisibleScrollList(createdWidgets)
+    assert.ok(scrollList)
+
+    scrollList.properties.item_click_func(scrollList, 2)
+
+    assert.equal(page.clearConfirmMode, true)
+    assert.equal(
+      scrollList.properties.data_array[2].label,
+      'settings.clearDataConfirm'
+    )
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+  }
+})
+
+test('settings clear-data second tap clears data and navigates home', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+  const originalHmApp = globalThis.hmApp
+  const originalGetApp = globalThis.getApp
+
+  const { hmUI, createdWidgets, shownToasts } = createHmUiRecorder()
+  const storageMock = createLocalStorageMock()
+  const { storage } = storageMock
+  const navigationCalls = []
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+  globalThis.hmApp = {
+    gotoPage(payload) {
+      navigationCalls.push(payload)
+    }
+  }
+  globalThis.getApp = () => ({
+    globalData: {
+      matchState: {},
+      matchHistory: { clear() {} },
+      _lastPersistedSchemaState: {}
+    }
+  })
+
+  try {
+    await withMockLocalStorage(storage, async () => {
+      storage.setItem('review-follow-up', 'pending')
+
+      const definition = await loadSettingsPageDefinition()
+      const page = { ...definition }
+
+      page.onInit()
+      page.build()
+
+      const scrollList = getVisibleScrollList(createdWidgets)
+      assert.ok(scrollList)
+
+      scrollList.properties.item_click_func(scrollList, 2)
+      scrollList.properties.item_click_func(scrollList, 2)
+
+      assert.equal(page.clearConfirmMode, false)
+      assert.equal(
+        scrollList.properties.data_array[2].label,
+        'settings.clearAppData'
+      )
+      assert.deepEqual(storageMock.snapshot(), {})
+      assert.deepEqual(navigationCalls, [{ url: 'page/index' }])
+      assert.equal(shownToasts[0]?.text, 'settings.dataCleared')
+    })
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+
+    if (typeof originalGetApp === 'undefined') {
+      delete globalThis.getApp
+    } else {
+      globalThis.getApp = originalGetApp
+    }
+  }
+})
+
+test('settings clear-data confirmation resets when another item is tapped', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+  const originalHmApp = globalThis.hmApp
+
+  const { hmUI, createdWidgets } = createHmUiRecorder()
+  const navigationCalls = []
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+  globalThis.hmApp = {
+    gotoPage(payload) {
+      navigationCalls.push(payload)
+    }
+  }
+
+  try {
+    const definition = await loadSettingsPageDefinition()
+    const page = { ...definition }
+
+    page.onInit()
+    page.build()
+
+    const scrollList = getVisibleScrollList(createdWidgets)
+    assert.ok(scrollList)
+
+    scrollList.properties.item_click_func(scrollList, 2)
+    scrollList.properties.item_click_func(scrollList, 0)
+
+    assert.equal(page.clearConfirmMode, false)
+    assert.equal(
+      scrollList.properties.data_array[2].label,
+      'settings.clearAppData'
+    )
+    assert.deepEqual(navigationCalls, [{ url: 'page/history' }])
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('settings onDestroy clears pending clear-data confirmation state', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+
+  const { hmUI, createdWidgets } = createHmUiRecorder()
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+
+  try {
+    const definition = await loadSettingsPageDefinition()
+    const page = { ...definition }
+
+    page.onInit()
+    page.build()
+
+    const scrollList = getVisibleScrollList(createdWidgets)
+    assert.ok(scrollList)
+
+    scrollList.properties.item_click_func(scrollList, 2)
+    assert.equal(page.clearConfirmMode, true)
+
+    page.onDestroy()
+
+    assert.equal(page.clearConfirmMode, false)
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+  }
+})
+
+test('history detail first tap enters delete confirmation mode', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+
+  const { hmUI, createdWidgets, shownToasts } = createHmUiRecorder()
+  const { storage } = createLocalStorageMock()
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+
+  try {
+    await withMockLocalStorage(storage, async () => {
+      saveState(HISTORY_STORAGE_KEY, {
+        matches: [createHistoryEntry()],
+        schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
+      })
+
+      const definition = await loadHistoryDetailPageDefinition()
+      const page = { ...definition }
+
+      page.onInit({ id: 'match-1' })
+
+      let deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'delete-icon.png'
+      )
+      assert.ok(deleteButton)
+
+      deleteButton.properties.click_func()
+
+      deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'remove-icon.png'
+      )
+
+      assert.equal(page.deleteConfirmMode, true)
+      assert.ok(deleteButton)
+      assert.equal(shownToasts[0]?.text, 'history.deleteConfirmToast')
+    })
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+  }
+})
+
+test('history detail second tap deletes match and navigates back on success', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+  const originalHmApp = globalThis.hmApp
+
+  const { hmUI, createdWidgets } = createHmUiRecorder()
+  const { storage } = createLocalStorageMock()
+  const goBackCalls = []
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+  globalThis.hmApp = {
+    goBack() {
+      goBackCalls.push(true)
+    }
+  }
+
+  try {
+    await withMockLocalStorage(storage, async () => {
+      saveState(HISTORY_STORAGE_KEY, {
+        matches: [createHistoryEntry()],
+        schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
+      })
+
+      const definition = await loadHistoryDetailPageDefinition()
+      const page = { ...definition }
+
+      page.onInit({ id: 'match-1' })
+
+      let deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'delete-icon.png'
+      )
+      deleteButton.properties.click_func()
+
+      deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'remove-icon.png'
+      )
+      deleteButton.properties.click_func()
+
+      assert.equal(page.deleteConfirmMode, false)
+      assert.deepEqual(goBackCalls, [true])
+    })
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('history detail delete failure resets confirmation state and icon', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+  const originalHmApp = globalThis.hmApp
+
+  const { hmUI, createdWidgets } = createHmUiRecorder()
+  const { storage } = createLocalStorageMock()
+  const goBackCalls = []
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+  globalThis.hmApp = {
+    goBack() {
+      goBackCalls.push(true)
+    }
+  }
+
+  try {
+    await withMockLocalStorage(storage, async () => {
+      saveState(HISTORY_STORAGE_KEY, {
+        matches: [createHistoryEntry()],
+        schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
+      })
+
+      const definition = await loadHistoryDetailPageDefinition()
+      const page = { ...definition }
+
+      page.onInit({ id: 'match-1' })
+      page.matchEntry = createHistoryEntry({ id: 'missing-id' })
+
+      let deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'delete-icon.png'
+      )
+      deleteButton.properties.click_func()
+
+      deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'remove-icon.png'
+      )
+      deleteButton.properties.click_func()
+
+      deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'delete-icon.png'
+      )
+
+      assert.equal(page.deleteConfirmMode, false)
+      assert.ok(deleteButton)
+      assert.deepEqual(goBackCalls, [])
+    })
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
+    }
+
+    if (typeof originalHmApp === 'undefined') {
+      delete globalThis.hmApp
+    } else {
+      globalThis.hmApp = originalHmApp
+    }
+  }
+})
+
+test('history detail onDestroy clears pending delete confirmation state', async () => {
+  const originalHmUI = globalThis.hmUI
+  const originalHmSetting = globalThis.hmSetting
+
+  const { hmUI, createdWidgets } = createHmUiRecorder()
+  const { storage } = createLocalStorageMock()
+
+  globalThis.hmUI = hmUI
+  globalThis.hmSetting = {
+    getDeviceInfo() {
+      return { width: 390, height: 450 }
+    }
+  }
+
+  try {
+    await withMockLocalStorage(storage, async () => {
+      saveState(HISTORY_STORAGE_KEY, {
+        matches: [createHistoryEntry()],
+        schemaVersion: MATCH_HISTORY_SCHEMA_VERSION
+      })
+
+      const definition = await loadHistoryDetailPageDefinition()
+      const page = { ...definition }
+
+      page.onInit({ id: 'match-1' })
+
+      const deleteButton = findVisibleButtonByImageSrc(
+        createdWidgets,
+        'delete-icon.png'
+      )
+      deleteButton.properties.click_func()
+
+      assert.equal(page.deleteConfirmMode, true)
+
+      page.onDestroy()
+
+      assert.equal(page.deleteConfirmMode, false)
+      assert.equal(page.deleteButton, null)
+    })
+  } finally {
+    if (typeof originalHmUI === 'undefined') {
+      delete globalThis.hmUI
+    } else {
+      globalThis.hmUI = originalHmUI
+    }
+
+    if (typeof originalHmSetting === 'undefined') {
+      delete globalThis.hmSetting
+    } else {
+      globalThis.hmSetting = originalHmSetting
     }
   }
 })

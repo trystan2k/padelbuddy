@@ -144,6 +144,7 @@ async function loadHomePageDefinition() {
   const screenUtilsUrl = toProjectFileUrl('utils/screen-utils.js')
   const layoutEngineUrl = toProjectFileUrl('utils/layout-engine.js')
   const layoutPresetsUrl = toProjectFileUrl('utils/layout-presets.js')
+  const platformAdaptersUrl = toProjectFileUrl('utils/platform-adapters.js')
   const uiComponentsUrl = toProjectFileUrl('utils/ui-components.js')
 
   let source = await readFile(sourceUrl, 'utf8')
@@ -185,6 +186,10 @@ async function loadHomePageDefinition() {
     .replace(
       "from '../utils/layout-presets.js'",
       `from '${layoutPresetsUrl.href}'`
+    )
+    .replace(
+      "from '../utils/platform-adapters.js'",
+      `from '${platformAdaptersUrl.href}'`
     )
     .replace(
       "from '../utils/ui-components.js'",
